@@ -1,0 +1,9 @@
+market: JP
+timezone: Asia/Tokyo
+regular_sessions:
+  - start: "09:00"
+    end: "11:30"
+  - start: "12:30"
+    end: "15:30"
+default_lot_size: 100
+currency: JPY

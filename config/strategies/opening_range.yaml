@@ -1,0 +1,6 @@
+strategy_id: jp_orb_v1
+opening_range_minutes: 15
+breakout_atr_fraction: 0.05
+min_relative_volume: 1.5
+stop_atr_fraction: 0.6
+take_profit_r_multiple: 1.5
