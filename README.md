@@ -35,6 +35,24 @@ src/autotrade/          主代码
 tests/                  单元测试
 ```
 
+## 项目文档
+
+- [Roadmap](docs/roadmap.md)
+- [Task Catalog](docs/task-catalog.md)
+- [CLI Usage](docs/cli-usage.md)
+- [Operations](docs/operations.md)
+- [Limitations](docs/limitations.md)
+- [Rollback](docs/rollback.md)
+- [English overview](docs/locales/en/overview.md)
+- [Japanese overview](docs/locales/ja/overview.md)
+- [Simplified Chinese overview](docs/locales/zh-CN/overview.md)
+
+`docs/task-catalog.md` 是生成文件，必须从 `docs/task-source.json` 重建：
+
+```bash
+python3 scripts/generate_task_catalog.py
+```
+
 ## 实盘前必须补齐
 
 - 授权行情数据接入与历史数据落库。

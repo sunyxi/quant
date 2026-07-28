@@ -1,0 +1,89 @@
+name: Open PR as Codex App
+
+on:
+  workflow_dispatch:
+    inputs:
+      head:
+        description: Existing source branch
+        required: true
+        type: string
+      base:
+        description: Target branch
+        required: true
+        default: main
+        type: string
+      title:
+        description: Pull request title
+        required: true
+        type: string
+      body:
+        description: Pull request body for single-line or API-dispatched content
+        required: false
+        default: ""
+        type: string
+      bodyBase64:
+        description: Base64-encoded UTF-8 pull request body
+        required: false
+        default: ""
+        type: string
+      draft:
+        description: Create as draft
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  open-pr:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Create GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.CODEX_APP_CLIENT_ID }}
+          private-key: ${{ secrets.CODEX_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Open pull request
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_HEAD: ${{ inputs.head }}
+          PR_BASE: ${{ inputs.base }}
+          PR_TITLE: ${{ inputs.title }}
+          PR_BODY: ${{ inputs.body }}
+          PR_BODY_BASE64: ${{ inputs.bodyBase64 }}
+          PR_DRAFT: ${{ inputs.draft }}
+        run: |
+          set -euo pipefail
+
+          body_file="$(mktemp)"
+          trap 'rm -f "$body_file"' EXIT
+
+          if [[ -n "$PR_BODY_BASE64" ]]; then
+            if ! printf '%s' "$PR_BODY_BASE64" | base64 --decode > "$body_file"; then
+              echo "bodyBase64 must be valid Base64-encoded UTF-8 text." >&2
+              exit 1
+            fi
+          else
+            printf '%s' "$PR_BODY" > "$body_file"
+          fi
+
+          args=(
+            --repo "$GH_REPO"
+            --head "$PR_HEAD"
+            --base "$PR_BASE"
+            --title "$PR_TITLE"
+            --body-file "$body_file"
+          )
+
+          if [[ "$PR_DRAFT" == "true" ]]; then
+            args+=(--draft)
+          fi
+
+          gh pr create "${args[@]}"
