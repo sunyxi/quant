@@ -10,6 +10,8 @@
 
 現在のバックテスト層は、保守的な約定と、手数料、半スプレッド、スリッページ、インパクトのコスト帰属を記録します。
 
+現在の戦略層は、スプレッド上限を超えた場合、または板情報の鮮度・健全性フラグが不利な場合に、ORB と VWAP のシグナルを抑止できます。
+
 リポジトリ CI は、プルリクエストと `main` への push に対して Python 単体テスト、Task Catalog の差分チェック、Markdown リンク・スタイルチェック、基本的なシークレットスキャンを実行します。
 
-詳細は `docs/roadmap.md`、`docs/task-catalog.md`、`docs/scope.md`、`docs/risk-policy.md`、`docs/broker-decision.md`、`docs/implementation-plan.md`、`docs/market-calendar.md`、`docs/order-book-intelligence.md`、`docs/backtest-fill-cost.md`、`docs/operations.md`、`docs/limitations.md`、`docs/rollback.md` を参照してください。
+詳細は `docs/roadmap.md`、`docs/task-catalog.md`、`docs/scope.md`、`docs/risk-policy.md`、`docs/broker-decision.md`、`docs/implementation-plan.md`、`docs/market-calendar.md`、`docs/order-book-intelligence.md`、`docs/backtest-fill-cost.md`、`docs/strategy-market-quality.md`、`docs/operations.md`、`docs/limitations.md`、`docs/rollback.md` を参照してください。

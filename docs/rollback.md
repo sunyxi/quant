@@ -14,6 +14,10 @@ Generated catalogs must be rebuilt from their Source of Truth. Do not manually e
 python3 scripts/generate_task_catalog.py
 ```
 
+## Strategy Filter Rollback
+
+If market quality filters suppress expected research signals, remove `max_spread_bps` and `require_fresh_order_book` from strategy configuration first. If the issue is code-level behavior, revert the ISSUE-007 branch in a new PR.
+
 ## Live Trading Rollback
 
 Live trading is not supported yet. Future live rollback must follow this order:

@@ -48,6 +48,7 @@ Order book intelligence P0.
 
 Strategy research hardening.
 
+- ISSUE-007: add strategy market quality filters.
 - Improve opening range breakout with regime, volume, VWAP, spread, and board confirmation filters.
 - Improve VWAP reversion with trend-state exclusion and order flow recovery confirmation.
 - Deliverable: strategy candidates have explainable signal reports and cost sensitivity.
@@ -84,7 +85,7 @@ Shadow Mode.
 | Market Rules | ISSUE-003 | Session fixtures pass |
 | Data and Backtest | ISSUE-005 | Cost-aware replay reports |
 | Board Intelligence | ISSUE-004 | Snapshot and feature tests pass |
-| Strategy Research | Later strategy Issues | Walk-forward report |
+| Strategy Research | ISSUE-007 and later strategy Issues | Strategy filters and walk-forward report |
 | Risk and OMS | Later execution Issues | Fault fixtures pass |
 | Broker Integration | Later adapter Issues | Contract and shadow tests pass |
 

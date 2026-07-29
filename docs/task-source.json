@@ -90,7 +90,7 @@
     {
       "id": "ISSUE-005",
       "title": "Harden backtest fill and cost modeling",
-      "status": "in-progress",
+      "status": "complete",
       "phase": "Phase 1",
       "dependencies": ["ISSUE-003"],
       "summary": "Replace simplified fills with conservative partial-fill, spread, slippage, and participation assumptions.",
@@ -120,6 +120,23 @@
       "gates": ["Python Unit Tests", "Documentation Localization", "Markdown Links/Style", "Secret Scan", "Task Catalog Generation"],
       "changed_assets": [".github/workflows/ci.yml", "scripts/check_secrets.py", "tests/test_ci_workflow.py", "docs/operations.md", "docs/cli-usage.md"],
       "rollback": "Remove .github/workflows/ci.yml and the workflow catalog test."
+    },
+    {
+      "id": "ISSUE-007",
+      "title": "Add strategy market quality filters",
+      "status": "in-progress",
+      "phase": "Phase 2",
+      "dependencies": ["ISSUE-003", "ISSUE-004", "ISSUE-005"],
+      "summary": "Connect P0 spread and stale order book health checks to ORB and VWAP strategy signal generation.",
+      "acceptance_criteria": [
+        "ORB signals are blocked when configured spread limits are exceeded.",
+        "VWAP reversion signals are blocked when configured spread limits are exceeded.",
+        "Strategies can require fresh order book data before producing signals.",
+        "Unhealthy order book flags always block strategy signals."
+      ],
+      "gates": ["Python Unit Tests", "Fixture Tests", "Documentation Localization", "Markdown Links/Style", "Secret Scan", "Task Catalog Generation"],
+      "changed_assets": ["src/autotrade/strategies/market_quality.py", "src/autotrade/strategies/opening_range.py", "src/autotrade/strategies/vwap_reversion.py", "tests/test_strategies.py", "docs/strategy-market-quality.md"],
+      "rollback": "Disable strategy market quality filters by reverting the feature branch."
     }
   ]
 }
