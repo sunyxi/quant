@@ -290,7 +290,7 @@ Rollback: Disable strategy market quality filters by reverting the feature branc
 
 ## ISSUE-008: Add OMS order state machine
 
-- Status: `in-progress`
+- Status: `complete`
 - Phase: `Phase 3`
 - Dependencies: ISSUE-005, ISSUE-007
 - Roadmap: see `docs/roadmap.md#phase-3`
@@ -325,3 +325,41 @@ Rollback: Disable strategy market quality filters by reverting the feature branc
 - Refactor: optional, but must keep gates accurate.
 
 Rollback: Revert the OMS state machine branch; no broker or live order side effects exist in this change.
+
+## ISSUE-009: Add local execution ledger
+
+- Status: `in-progress`
+- Phase: `Phase 3`
+- Dependencies: ISSUE-008
+- Roadmap: see `docs/roadmap.md#phase-3`
+- Summary: Add an in-memory execution ledger that records approved orders, applies fills idempotently, and maintains position quantity, average price, and realized PnL.
+
+### Acceptance Criteria
+
+- Orders are recorded once by client_order_id.
+- Fills referencing unknown orders are rejected.
+- Long position average price updates after multiple buys.
+- Selling a long position realizes PnL and resets average price when flat.
+
+### Gates
+
+- Python Unit Tests
+- Fixture Tests
+- Documentation Localization
+- Markdown Links/Style
+- Secret Scan
+- Task Catalog Generation
+
+### Changed Assets
+
+- `src/autotrade/execution/ledger.py`
+- `tests/test_execution_ledger.py`
+- `docs/execution-ledger.md`
+
+### Test-first Evidence
+
+- Red: required before implementation starts.
+- Green: required after implementation.
+- Refactor: optional, but must keep gates accurate.
+
+Rollback: Revert the local execution ledger branch; no broker or persistent state side effects exist in this change.

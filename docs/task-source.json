@@ -141,7 +141,7 @@
     {
       "id": "ISSUE-008",
       "title": "Add OMS order state machine",
-      "status": "in-progress",
+      "status": "complete",
       "phase": "Phase 3",
       "dependencies": ["ISSUE-005", "ISSUE-007"],
       "summary": "Introduce the broker-independent OMS state machine used to register order intents idempotently and track auditable order lifecycle transitions.",
@@ -154,6 +154,23 @@
       "gates": ["Python Unit Tests", "Fixture Tests", "Documentation Localization", "Markdown Links/Style", "Secret Scan", "Task Catalog Generation"],
       "changed_assets": ["src/autotrade/execution/oms.py", "tests/test_oms.py", "docs/oms.md"],
       "rollback": "Revert the OMS state machine branch; no broker or live order side effects exist in this change."
+    },
+    {
+      "id": "ISSUE-009",
+      "title": "Add local execution ledger",
+      "status": "in-progress",
+      "phase": "Phase 3",
+      "dependencies": ["ISSUE-008"],
+      "summary": "Add an in-memory execution ledger that records approved orders, applies fills idempotently, and maintains position quantity, average price, and realized PnL.",
+      "acceptance_criteria": [
+        "Orders are recorded once by client_order_id.",
+        "Fills referencing unknown orders are rejected.",
+        "Long position average price updates after multiple buys.",
+        "Selling a long position realizes PnL and resets average price when flat."
+      ],
+      "gates": ["Python Unit Tests", "Fixture Tests", "Documentation Localization", "Markdown Links/Style", "Secret Scan", "Task Catalog Generation"],
+      "changed_assets": ["src/autotrade/execution/ledger.py", "tests/test_execution_ledger.py", "docs/execution-ledger.md"],
+      "rollback": "Revert the local execution ledger branch; no broker or persistent state side effects exist in this change."
     }
   ]
 }
