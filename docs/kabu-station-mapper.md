@@ -79,6 +79,19 @@ The token client maps common HTTP statuses into local errors:
 
 The token client does not store API passwords and does not construct a real HTTP transport. A later issue must explicitly approve any real localhost probe.
 
+## Sendorder Client
+
+ISSUE-020 adds a fake-transport-testable sendorder client. It posts the official cash order payload to the configured localhost sendorder endpoint through an injected transport, sets the `X-API-KEY` header, and returns the `OrderId` field from a successful response.
+
+The sendorder client maps common HTTP statuses into the same local error categories used by the token client:
+
+- `401` and `403`: authentication error;
+- `429`: rate limit error;
+- `5xx`: server error;
+- other non-`200`: generic client error.
+
+The sendorder client does not create a real HTTP transport and does not place live orders. A later issue must explicitly approve any real localhost probe or live submission path.
+
 ## Rejections
 
 The mapper rejects:

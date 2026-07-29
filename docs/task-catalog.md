@@ -780,3 +780,52 @@ Rollback: Revert the kabu Station official contract branch; no live broker API c
 - Refactor: optional, but must keep gates accurate.
 
 Rollback: Revert the kabu Station token client branch; no live broker API calls or persistent broker side effects exist in this change.
+
+## ISSUE-020: Add kabu Station fake-transport sendorder client
+
+- Status: `in-progress`
+- Phase: `Phase 4`
+- Dependencies: ISSUE-018, ISSUE-019
+- Roadmap: see `docs/roadmap.md#phase-4`
+- Summary: Add a kabu Station sendorder client that posts official cash order payloads through an injected fake-testable transport, sets X-API-KEY, maps common response statuses, and avoids real order placement.
+
+### Acceptance Criteria
+
+- Sendorder client posts official cash order payloads to the configured localhost sendorder endpoint through an injected transport.
+- Sendorder requests include the X-API-KEY header.
+- Successful sendorder responses return the OrderId field.
+- Empty API tokens are rejected before transport calls.
+- 401 and 403 responses map to authentication errors.
+- 429 responses map to rate limit errors.
+- 5xx responses map to server errors.
+- The sendorder client does not create a real HTTP transport or place live orders.
+
+### Gates
+
+- Python Unit Tests
+- Fixture Tests
+- Documentation Localization
+- Markdown Links/Style
+- Secret Scan
+- Task Catalog Generation
+
+### Changed Assets
+
+- `src/autotrade/execution/kabu_station.py`
+- `tests/test_kabu_station_sendorder_client.py`
+- `docs/kabu-station-mapper.md`
+- `docs/cli-usage.md`
+- `docs/operations.md`
+- `docs/limitations.md`
+- `docs/rollback.md`
+- `docs/locales/en/overview.md`
+- `docs/locales/ja/overview.md`
+- `docs/locales/zh-CN/overview.md`
+
+### Test-first Evidence
+
+- Red: required before implementation starts.
+- Green: required after implementation.
+- Refactor: optional, but must keep gates accurate.
+
+Rollback: Revert the kabu Station sendorder client branch; no live broker API calls or persistent broker side effects exist in this change.
