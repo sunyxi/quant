@@ -57,7 +57,7 @@ Rollback: Revert the documentation and GitHub workflow/template changes from thi
 
 ## ISSUE-002: Define project scope and risk policy assets
 
-- Status: `in-progress`
+- Status: `complete`
 - Phase: `Phase 0`
 - Dependencies: ISSUE-001
 - Roadmap: see `docs/roadmap.md#phase-0`
@@ -95,7 +95,7 @@ Rollback: Remove the newly added policy documents or revert to the previous appr
 
 ## ISSUE-003: Add market calendar and JP trading session rules
 
-- Status: `blocked`
+- Status: `in-progress`
 - Phase: `Phase 1`
 - Dependencies: ISSUE-002
 - Roadmap: see `docs/roadmap.md#phase-1`
@@ -106,18 +106,23 @@ Rollback: Remove the newly added policy documents or revert to the previous appr
 - Calendar rejects non-trading timestamps.
 - Lunch break is represented explicitly.
 - Close flattening cutoffs are configurable.
+- Backtest engine can skip snapshots outside entry-allowed sessions.
 
 ### Gates
 
 - Python Unit Tests
 - Fixture Tests
 - Documentation Localization
+- Markdown Links/Style
 - Secret Scan
+- Task Catalog Generation
 
 ### Changed Assets
 
 - `src/autotrade/calendar`
-- `tests`
+- `src/autotrade/backtest/engine.py`
+- `tests/test_market_calendar.py`
+- `docs/market-calendar.md`
 
 ### Test-first Evidence
 

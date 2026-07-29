@@ -4,4 +4,6 @@ This repository implements a research-first intraday trading platform skeleton. 
 
 The first release scope is JP equities, long-only, no overnight, and Shadow Mode before live trading. kabu Station is the future JP broker target; IBKR is reserved for a later US phase.
 
-See `docs/roadmap.md`, `docs/task-catalog.md`, `docs/scope.md`, `docs/risk-policy.md`, `docs/broker-decision.md`, `docs/implementation-plan.md`, `docs/operations.md`, `docs/limitations.md`, and `docs/rollback.md`.
+The current calendar layer covers JP regular sessions, lunch break, weekend rejection, manual holidays, and close-entry cutoff for research filtering.
+
+See `docs/roadmap.md`, `docs/task-catalog.md`, `docs/scope.md`, `docs/risk-policy.md`, `docs/broker-decision.md`, `docs/implementation-plan.md`, `docs/market-calendar.md`, `docs/operations.md`, `docs/limitations.md`, and `docs/rollback.md`.

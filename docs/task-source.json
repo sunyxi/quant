@@ -40,7 +40,7 @@
     {
       "id": "ISSUE-002",
       "title": "Define project scope and risk policy assets",
-      "status": "in-progress",
+      "status": "complete",
       "phase": "Phase 0",
       "dependencies": ["ISSUE-001"],
       "summary": "Write the formal project scope, broker decision, risk policy, and implementation plan before expanding implementation.",
@@ -57,17 +57,18 @@
     {
       "id": "ISSUE-003",
       "title": "Add market calendar and JP trading session rules",
-      "status": "blocked",
+      "status": "in-progress",
       "phase": "Phase 1",
       "dependencies": ["ISSUE-002"],
       "summary": "Implement JP trading day, lunch break, and no-overnight session rules used by research and backtesting.",
       "acceptance_criteria": [
         "Calendar rejects non-trading timestamps.",
         "Lunch break is represented explicitly.",
-        "Close flattening cutoffs are configurable."
+        "Close flattening cutoffs are configurable.",
+        "Backtest engine can skip snapshots outside entry-allowed sessions."
       ],
-      "gates": ["Python Unit Tests", "Fixture Tests", "Documentation Localization", "Secret Scan"],
-      "changed_assets": ["src/autotrade/calendar", "tests"],
+      "gates": ["Python Unit Tests", "Fixture Tests", "Documentation Localization", "Markdown Links/Style", "Secret Scan", "Task Catalog Generation"],
+      "changed_assets": ["src/autotrade/calendar", "src/autotrade/backtest/engine.py", "tests/test_market_calendar.py", "docs/market-calendar.md"],
       "rollback": "Disable the calendar integration by reverting the feature branch."
     },
     {

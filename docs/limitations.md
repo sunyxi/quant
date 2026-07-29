@@ -3,7 +3,8 @@
 - The current repository is a research skeleton, not a live trading system.
 - No real broker order placement is implemented.
 - The backtest engine is simplified and does not yet model realistic queue position, partial fills, bid/ask spread, or market impact.
-- JP market calendar, lunch break, special quotes, halts, and limit-up or limit-down states are not fully modeled.
+- JP regular sessions, lunch break, weekends, manual holidays, and close-entry cutoff are modeled for research filtering.
+- Official JP holiday source integration, special quotes, halts, and limit-up or limit-down states are not fully modeled.
 - Order book intelligence is documented in the roadmap but not yet implemented.
 - Machine learning, meta-labeling, model registry, and degradation monitoring are out of scope for the current code.
 - US market execution through IBKR is future work.
