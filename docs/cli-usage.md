@@ -72,6 +72,14 @@ PYTHONPATH=src python3 -m unittest tests.test_kabu_station_mapper
 
 These tests cover local mapper behavior and official request-contract payload construction only. They do not connect to kabu Station.
 
+## kabu Station Token Client Tests
+
+```bash
+PYTHONPATH=src python3 -m unittest tests.test_kabu_station_token_client
+```
+
+These tests use a fake transport only. They do not connect to kabu Station or require Windows.
+
 ## Governance Documentation Tests
 
 ```bash

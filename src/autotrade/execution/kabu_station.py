@@ -1,13 +1,39 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Protocol
 
 from autotrade.core.models import Market, OrderIntent, OrderStyle, Side
 
 
+class KabuStationClientError(RuntimeError):
+    pass
+
+
+class KabuStationAuthError(KabuStationClientError):
+    pass
+
+
+class KabuStationRateLimitError(KabuStationClientError):
+    pass
+
+
+class KabuStationServerError(KabuStationClientError):
+    pass
+
+
 class KabuStationMappingError(ValueError):
     pass
+
+
+class JsonPostResponse(Protocol):
+    status_code: int
+    payload: dict[str, Any]
+
+
+class JsonPostTransport(Protocol):
+    def post_json(self, url: str, payload: dict[str, Any]) -> JsonPostResponse:
+        ...
 
 
 @dataclass(frozen=True)
@@ -29,6 +55,41 @@ class KabuStationEnvironment:
     @property
     def sendorder_url(self) -> str:
         return f"{self.base_url}/kabusapi/sendorder"
+
+
+@dataclass(frozen=True)
+class KabuStationTokenClient:
+    environment: KabuStationEnvironment
+    transport: JsonPostTransport
+    mapper: KabuStationOrderMapper | None = None
+
+    def fetch_token(self, api_password: str) -> str:
+        mapper = self.mapper or KabuStationOrderMapper()
+        try:
+            payload = mapper.to_token_payload(api_password)
+        except KabuStationMappingError as exc:
+            raise KabuStationClientError(str(exc)) from exc
+
+        response = self.transport.post_json(self.environment.token_url, payload)
+        self._raise_for_status(response.status_code)
+        token = response.payload.get("Token")
+        if not isinstance(token, str) or not token:
+            raise KabuStationClientError("token response did not include Token")
+        return token
+
+    @staticmethod
+    def _raise_for_status(status_code: int) -> None:
+        if status_code == 200:
+            return
+        if status_code in {401, 403}:
+            raise KabuStationAuthError("kabu Station token request was unauthorized")
+        if status_code == 429:
+            raise KabuStationRateLimitError("kabu Station token request was rate limited")
+        if status_code >= 500:
+            raise KabuStationServerError("kabu Station token request failed server-side")
+        raise KabuStationClientError(
+            f"kabu Station token request failed with status {status_code}"
+        )
 
 
 @dataclass(frozen=True)

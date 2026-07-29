@@ -66,6 +66,19 @@ The contract helpers are still local-only. They do not send HTTP requests, store
 
 The current default `Exchange` is `27` for TSE+. This value is configurable because the official reference distinguishes exchange routing codes and broker-side availability can vary by product and maintenance state.
 
+## Token Client
+
+ISSUE-019 adds a fake-transport-testable token client. It posts the official token payload to the configured localhost token endpoint through an injected transport and returns the `Token` field from a successful response.
+
+The token client maps common HTTP statuses into local errors:
+
+- `401` and `403`: authentication error;
+- `429`: rate limit error;
+- `5xx`: server error;
+- other non-`200`: generic client error.
+
+The token client does not store API passwords and does not construct a real HTTP transport. A later issue must explicitly approve any real localhost probe.
+
 ## Rejections
 
 The mapper rejects:
@@ -80,7 +93,7 @@ The mapper rejects:
 This is not a broker adapter. It does not implement:
 
 - token handling;
-- HTTP requests;
+- real HTTP requests;
 - WebSocket subscriptions;
 - broker error mapping;
 - live order submission;
