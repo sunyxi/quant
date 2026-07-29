@@ -829,3 +829,53 @@ Rollback: Revert the kabu Station token client branch; no live broker API calls 
 - Refactor: optional, but must keep gates accurate.
 
 Rollback: Revert the kabu Station sendorder client branch; no live broker API calls or persistent broker side effects exist in this change.
+
+## ISSUE-021: Add kabu Station fake-transport cancelorder client
+
+- Status: `in-progress`
+- Phase: `Phase 4`
+- Dependencies: ISSUE-019, ISSUE-020
+- Roadmap: see `docs/roadmap.md#phase-4`
+- Summary: Add a kabu Station cancelorder client that sends official cancel payloads through an injected fake-testable transport, sets X-API-KEY, maps common response statuses, and avoids real order cancellation.
+
+### Acceptance Criteria
+
+- Cancelorder client sends OrderId payloads to the configured localhost cancelorder endpoint through an injected transport.
+- Cancelorder requests include the X-API-KEY header.
+- Successful cancelorder responses return the OrderId field.
+- Empty API tokens are rejected before transport calls.
+- Empty order ids are rejected before transport calls.
+- 401 and 403 responses map to authentication errors.
+- 429 responses map to rate limit errors.
+- 5xx responses map to server errors.
+- The cancelorder client does not create a real HTTP transport or cancel live orders.
+
+### Gates
+
+- Python Unit Tests
+- Fixture Tests
+- Documentation Localization
+- Markdown Links/Style
+- Secret Scan
+- Task Catalog Generation
+
+### Changed Assets
+
+- `src/autotrade/execution/kabu_station.py`
+- `tests/test_kabu_station_cancelorder_client.py`
+- `docs/kabu-station-mapper.md`
+- `docs/cli-usage.md`
+- `docs/operations.md`
+- `docs/limitations.md`
+- `docs/rollback.md`
+- `docs/locales/en/overview.md`
+- `docs/locales/ja/overview.md`
+- `docs/locales/zh-CN/overview.md`
+
+### Test-first Evidence
+
+- Red: required before implementation starts.
+- Green: required after implementation.
+- Refactor: optional, but must keep gates accurate.
+
+Rollback: Revert the kabu Station cancelorder client branch; no live broker API calls or persistent broker side effects exist in this change.
