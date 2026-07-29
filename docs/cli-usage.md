@@ -40,6 +40,12 @@ PYTHONPATH=src python3 -m unittest tests.test_oms
 PYTHONPATH=src python3 -m unittest tests.test_execution_ledger
 ```
 
+## Risk Tests
+
+```bash
+PYTHONPATH=src python3 -m unittest tests.test_risk_manager
+```
+
 ## Rebuild Task Catalog
 
 ```bash
