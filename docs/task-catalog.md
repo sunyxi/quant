@@ -642,7 +642,7 @@ Rollback: Revert the replay hardening branch to restore ISSUE-014 replay behavio
 
 ## ISSUE-017: Add kabu Station order request mapper
 
-- Status: `in-progress`
+- Status: `complete`
 - Phase: `Phase 4`
 - Dependencies: ISSUE-008, ISSUE-014
 - Roadmap: see `docs/roadmap.md#phase-4`
