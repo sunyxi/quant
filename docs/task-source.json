@@ -307,7 +307,7 @@
     {
       "id": "ISSUE-017",
       "title": "Add kabu Station order request mapper",
-      "status": "in-progress",
+      "status": "complete",
       "phase": "Phase 4",
       "dependencies": ["ISSUE-008", "ISSUE-014"],
       "summary": "Add a local-only kabu Station order request mapper that translates approved JP OrderIntent objects into adapter-boundary payloads without calling live broker APIs.",
