@@ -59,7 +59,8 @@ OMS and risk runtime.
 
 - ISSUE-008: add OMS order state machine.
 - ISSUE-009: add local execution ledger.
-- Add risk-paused state and reconciliation hooks.
+- ISSUE-010: add risk paused state.
+- Add reconciliation hooks.
 - Add failure fixtures for timeout, duplicate signal, partial fill, stale market data, and restart.
 - Deliverable: order state is auditable before any broker adapter is enabled.
 
@@ -88,7 +89,7 @@ Shadow Mode.
 | Data and Backtest | ISSUE-005 | Cost-aware replay reports |
 | Board Intelligence | ISSUE-004 | Snapshot and feature tests pass |
 | Strategy Research | ISSUE-007 and later strategy Issues | Strategy filters and walk-forward report |
-| Risk and OMS | ISSUE-008, ISSUE-009, and later execution Issues | Fault fixtures pass |
+| Risk and OMS | ISSUE-008, ISSUE-009, ISSUE-010, and later execution Issues | Fault fixtures pass |
 | Broker Integration | Later adapter Issues | Contract and shadow tests pass |
 
 ## Stop Conditions

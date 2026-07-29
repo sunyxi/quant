@@ -9,6 +9,7 @@
 - Strategy market quality filters can block ORB and VWAP signals by spread or order book health, but they are not calibrated fill-probability or alpha models.
 - The OMS state machine is local only; it does not persist records, reconcile broker state, or submit/cancel live orders.
 - The local execution ledger is in-memory only and does not include broker reconciliation, commissions, corporate actions, multi-account accounting, or tax lots.
+- Risk paused state blocks new approvals only; it does not cancel open orders, flatten positions, or reconcile broker state.
 - Machine learning, meta-labeling, model registry, and degradation monitoring are out of scope for the current code.
 - US market execution through IBKR is future work.
 - Nothing in this repository is financial advice or a guarantee of profit.

@@ -26,6 +26,10 @@ The current OMS has no broker side effects. Revert the ISSUE-008 branch if state
 
 The current local ledger has no broker or persistent side effects. Revert the ISSUE-009 branch if accounting behavior needs to return to the previous execution skeleton.
 
+## Risk Pause Rollback
+
+The current paused state has no broker side effects. Revert the ISSUE-010 branch if approval behavior needs to return to the previous risk skeleton.
+
 ## Live Trading Rollback
 
 Live trading is not supported yet. Future live rollback must follow this order:

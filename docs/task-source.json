@@ -158,7 +158,7 @@
     {
       "id": "ISSUE-009",
       "title": "Add local execution ledger",
-      "status": "in-progress",
+      "status": "complete",
       "phase": "Phase 3",
       "dependencies": ["ISSUE-008"],
       "summary": "Add an in-memory execution ledger that records approved orders, applies fills idempotently, and maintains position quantity, average price, and realized PnL.",
@@ -171,6 +171,23 @@
       "gates": ["Python Unit Tests", "Fixture Tests", "Documentation Localization", "Markdown Links/Style", "Secret Scan", "Task Catalog Generation"],
       "changed_assets": ["src/autotrade/execution/ledger.py", "tests/test_execution_ledger.py", "docs/execution-ledger.md"],
       "rollback": "Revert the local execution ledger branch; no broker or persistent state side effects exist in this change."
+    },
+    {
+      "id": "ISSUE-010",
+      "title": "Add risk paused state",
+      "status": "in-progress",
+      "phase": "Phase 3",
+      "dependencies": ["ISSUE-008", "ISSUE-009"],
+      "summary": "Add explicit risk pause and resume controls so risk review can block all new order approvals after manual or system-triggered incidents.",
+      "acceptance_criteria": [
+        "RiskManager can enter a paused state with a required reason.",
+        "Paused RiskManager rejects new order approvals.",
+        "Pause reason is retained for operations and incident review.",
+        "RiskManager can resume and approve new orders when normal limits pass."
+      ],
+      "gates": ["Python Unit Tests", "Fixture Tests", "Documentation Localization", "Markdown Links/Style", "Secret Scan", "Task Catalog Generation"],
+      "changed_assets": ["src/autotrade/risk/manager.py", "tests/test_risk_manager.py", "docs/risk-paused-state.md"],
+      "rollback": "Revert the risk paused state branch; no broker or persistent state side effects exist in this change."
     }
   ]
 }

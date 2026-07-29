@@ -20,6 +20,8 @@ class RiskConfig:
 class RiskState:
     open_risk: float = 0.0
     realized_pnl_today: float = 0.0
+    is_paused: bool = False
+    pause_reason: str | None = None
 
 
 class RiskManager:
@@ -28,6 +30,9 @@ class RiskManager:
         self.state = state or RiskState()
 
     def approve(self, signal: Signal, trading_date: str) -> OrderIntent | None:
+        if self.state.is_paused:
+            return None
+
         if self.state.realized_pnl_today <= -self.config.account_equity * self.config.daily_loss_stop_pct:
             return None
 
@@ -78,3 +83,13 @@ class RiskManager:
     @staticmethod
     def _order_style(side: Side) -> OrderStyle:
         return OrderStyle.PASSIVE_LIMIT if side in {Side.BUY, Side.SELL} else OrderStyle.AGGRESSIVE_LIMIT
+
+    def pause(self, reason: str) -> None:
+        if not reason:
+            raise ValueError("pause reason is required")
+        self.state.is_paused = True
+        self.state.pause_reason = reason
+
+    def resume(self) -> None:
+        self.state.is_paused = False
+        self.state.pause_reason = None

@@ -328,7 +328,7 @@ Rollback: Revert the OMS state machine branch; no broker or live order side effe
 
 ## ISSUE-009: Add local execution ledger
 
-- Status: `in-progress`
+- Status: `complete`
 - Phase: `Phase 3`
 - Dependencies: ISSUE-008
 - Roadmap: see `docs/roadmap.md#phase-3`
@@ -363,3 +363,41 @@ Rollback: Revert the OMS state machine branch; no broker or live order side effe
 - Refactor: optional, but must keep gates accurate.
 
 Rollback: Revert the local execution ledger branch; no broker or persistent state side effects exist in this change.
+
+## ISSUE-010: Add risk paused state
+
+- Status: `in-progress`
+- Phase: `Phase 3`
+- Dependencies: ISSUE-008, ISSUE-009
+- Roadmap: see `docs/roadmap.md#phase-3`
+- Summary: Add explicit risk pause and resume controls so risk review can block all new order approvals after manual or system-triggered incidents.
+
+### Acceptance Criteria
+
+- RiskManager can enter a paused state with a required reason.
+- Paused RiskManager rejects new order approvals.
+- Pause reason is retained for operations and incident review.
+- RiskManager can resume and approve new orders when normal limits pass.
+
+### Gates
+
+- Python Unit Tests
+- Fixture Tests
+- Documentation Localization
+- Markdown Links/Style
+- Secret Scan
+- Task Catalog Generation
+
+### Changed Assets
+
+- `src/autotrade/risk/manager.py`
+- `tests/test_risk_manager.py`
+- `docs/risk-paused-state.md`
+
+### Test-first Evidence
+
+- Red: required before implementation starts.
+- Green: required after implementation.
+- Refactor: optional, but must keep gates accurate.
+
+Rollback: Revert the risk paused state branch; no broker or persistent state side effects exist in this change.

@@ -20,6 +20,10 @@ Treat `UNKNOWN` as a blocking operational state. It means the system cannot safe
 
 Use the local ledger only for research, replay, and simulation. A fill that references an unknown local order should be treated as an operational error until reconciliation explains it.
 
+## Risk Pause Handling
+
+Use `RiskManager.pause(reason)` when an incident requires blocking all new order approvals. Resume only after the reason has been reviewed and any required reconciliation is complete.
+
 ## Issue Workflow
 
 1. Select the first ready task from `docs/task-catalog.md`.
