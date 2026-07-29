@@ -981,3 +981,54 @@ Rollback: Revert the kabu Station read-only client branch; no live broker API ca
 - Refactor: optional, but must keep gates accurate.
 
 Rollback: Revert the kabu Station snapshot mapper branch; no live broker API calls or persistent broker side effects exist in this change.
+
+## ISSUE-024: Add kabu Station read-only reconciliation orchestration
+
+- Status: `complete`
+- Phase: `Phase 4`
+- Dependencies: ISSUE-011, ISSUE-022, ISSUE-023
+- Roadmap: see `docs/roadmap.md#phase-4`
+- Summary: Add a fake-client-testable kabu Station read-only reconciler that fetches orders and positions through an injected client, maps them to broker snapshots, and runs the broker-independent reconciliation engine without live broker side effects.
+
+### Acceptance Criteria
+
+- Read-only reconciliation fetches orders and positions through the injected kabu Station read-only client.
+- Fetched payloads are mapped into BrokerStateSnapshot before reconciliation.
+- Consistent local and broker state returns no critical discrepancy.
+- Broker open orders missing from the local OMS are returned as critical discrepancies.
+- Local and broker position quantity mismatches are returned as critical discrepancies.
+- Critical discrepancies pause a configured RiskManager.
+- Orders and positions requests pass the supplied API token.
+- Client and mapper errors propagate to the caller.
+- The reconciler does not create a real HTTP transport, query real kabu Station, or call sendorder or cancelorder.
+
+### Gates
+
+- Python Unit Tests
+- Fixture Tests
+- Documentation Localization
+- Markdown Links/Style
+- Secret Scan
+- Task Catalog Generation
+
+### Changed Assets
+
+- `src/autotrade/execution/kabu_station.py`
+- `tests/test_kabu_station_readonly_reconciler.py`
+- `tests/test_documentation_catalog.py`
+- `docs/kabu-station-mapper.md`
+- `docs/cli-usage.md`
+- `docs/operations.md`
+- `docs/limitations.md`
+- `docs/rollback.md`
+- `docs/locales/en/overview.md`
+- `docs/locales/ja/overview.md`
+- `docs/locales/zh-CN/overview.md`
+
+### Test-first Evidence
+
+- Red: required before implementation starts.
+- Green: required after implementation.
+- Refactor: optional, but must keep gates accurate.
+
+Rollback: Revert the kabu Station read-only reconciler branch; no live broker API calls or persistent broker side effects exist in this change.

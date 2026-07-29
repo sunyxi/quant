@@ -10,12 +10,12 @@
 - The OMS state machine is local only; it does not persist records, reconcile broker state, or submit/cancel live orders.
 - The local execution ledger is in-memory only and does not include broker reconciliation, commissions, corporate actions, multi-account accounting, or tax lots.
 - Risk paused state blocks new approvals only; it does not cancel open orders, flatten positions, or reconcile broker state.
-- Reconciliation checks currently compare snapshot fixtures only; they do not call broker APIs, persist results, compare cash, or resolve discrepancies.
+- Reconciliation checks currently compare snapshot fixtures or injected fake-client read-only kabu Station payloads only; they do not create real broker transports, persist results, compare cash, or resolve discrepancies.
 - The simulated broker adapter does not connect to live brokers, model broker rejection rules, enforce cash or margin, or match orders against market data.
 - Simulated broker state snapshots include order existence and position quantity only; they do not include cash, buying power, fees, or broker-native statuses.
 - `AGENT.md` captures workflow rules only; it does not replace human review or branch protection.
 - Replay execution now supports configurable cancellation policy, but does not yet model broker errors, submit timeouts, restart recovery, or cost attribution in replay results.
-- The kabu Station mapper, official request contract helpers, fake-transport token client, fake-transport sendorder client, fake-transport cancelorder client, fake-transport read-only client, and snapshot mapper are local-only and do not perform real authentication, send real HTTP requests, cancel orders, query real order status, query real positions, reconcile a real account, or place live orders.
+- The kabu Station mapper, official request contract helpers, fake-transport token client, fake-transport sendorder client, fake-transport cancelorder client, fake-transport read-only client, snapshot mapper, and read-only reconciler are local-only and do not perform real authentication, send real HTTP requests, cancel orders, query real order status, query real positions, reconcile a real account, or place live orders.
 - Machine learning, meta-labeling, model registry, and degradation monitoring are out of scope for the current code.
 - US market execution through IBKR is future work.
 - Nothing in this repository is financial advice or a guarantee of profit.

@@ -170,6 +170,22 @@ Symbols are normalized from broker code form, such as `7203`, into internal JP s
 
 Missing required fields raise local client errors. This mapper does not query kabu Station, prove real response completeness, or reconcile a live account by itself.
 
+## Read-only Reconciler
+
+ISSUE-024 adds a local-only read-only reconciler that orchestrates the fake-transport-testable kabu Station read-only client, snapshot mapper, and broker-independent reconciliation engine.
+
+The reconciler:
+
+- fetches orders and positions through an injected read-only client;
+- passes the supplied API token to both read-only requests;
+- optionally forwards product, symbol, and order details filters;
+- maps the returned payloads into `BrokerStateSnapshot`;
+- compares the broker snapshot with the supplied local OMS and execution ledger;
+- returns critical discrepancies for broker open orders missing from the local OMS and position quantity mismatches;
+- pauses a supplied `RiskManager` when reconciliation returns any critical discrepancy.
+
+Client and mapper errors propagate to the caller. The reconciler does not create a real HTTP transport, query a real account, call `sendorder`, or call `cancelorder`.
+
 ## Rejections
 
 The mapper rejects:

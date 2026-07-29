@@ -74,6 +74,10 @@ The kabu Station fake-transport read-only client has no live broker side effects
 
 The kabu Station snapshot mapper has no live broker side effects. Revert the ISSUE-023 branch if broker snapshot conversion needs to be removed.
 
+## kabu Station Read-only Reconciler Rollback
+
+The kabu Station read-only reconciler has no live broker side effects. Revert the ISSUE-024 branch if local read-only reconciliation orchestration needs to be removed.
+
 ## Agent Rules Rollback
 
 Revert the ISSUE-015 branch if the root agent rules document needs to be removed or replaced.

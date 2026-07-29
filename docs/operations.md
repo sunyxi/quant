@@ -56,6 +56,8 @@ The kabu Station read-only client must use an injected transport in tests. Treat
 
 The kabu Station snapshot mapper may convert fake or read-only payloads into reconciliation fixtures. Treat the result as broker-shaped local data only; it is not live reconciliation evidence without a separately approved real read path.
 
+The kabu Station read-only reconciler may orchestrate an injected read-only client, snapshot mapper, OMS, ledger, reconciliation engine, and optional `RiskManager`. Treat its reports as local reconciliation results over supplied fake-client data only; it must not construct a real transport, query a live account, submit orders, or cancel orders.
+
 ## Issue Workflow
 
 0. Read `AGENT.md`.
