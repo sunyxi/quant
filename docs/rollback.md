@@ -46,6 +46,10 @@ The simulated broker snapshots have no live broker side effects. Revert the ISSU
 
 The replay execution loop has no live broker side effects. Revert the ISSUE-014 branch if replay orchestration needs to return to the previous execution skeleton.
 
+## Agent Rules Rollback
+
+Revert the ISSUE-015 branch if the root agent rules document needs to be removed or replaced.
+
 ## Live Trading Rollback
 
 Live trading is not supported yet. Future live rollback must follow this order:

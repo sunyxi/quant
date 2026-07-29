@@ -555,6 +555,44 @@ Rollback: Revert the simulated broker snapshot branch; no live broker side effec
 
 Rollback: Revert the replay execution engine branch; no live broker side effects exist in this change.
 
+## ISSUE-015: Add agent rules document
+
+- Status: `in-progress`
+- Phase: `Phase 0`
+- Dependencies: ISSUE-001
+- Roadmap: see `docs/roadmap.md#phase-0`
+- Summary: Add AGENT.md to capture the repository rules for test-first work, documentation synchronization, generated files, Git and PR workflow, and trading safety.
+
+### Acceptance Criteria
+
+- AGENT.md exists at the repository root.
+- AGENT.md documents Test-first workflow and Repository Gates.
+- AGENT.md documents Documentation and Generated Files rules.
+- AGENT.md documents Git and PR workflow including Draft PR, GitHub App, and Do not merge rules.
+
+### Gates
+
+- Python Unit Tests
+- Documentation Localization
+- Markdown Links/Style
+- Secret Scan
+- Task Catalog Generation
+
+### Changed Assets
+
+- `AGENT.md`
+- `tests/test_documentation_catalog.py`
+- `docs/task-source.json`
+- `docs/task-catalog.md`
+
+### Test-first Evidence
+
+- Red: required before implementation starts.
+- Green: required after implementation.
+- Refactor: optional, but must keep gates accurate.
+
+Rollback: Revert the agent rules document branch.
+
 ## ISSUE-016: Address replay execution review findings
 
 - Status: `in-progress`

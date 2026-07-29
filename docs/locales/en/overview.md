@@ -26,6 +26,8 @@ The simulated broker can export broker state snapshots for reconciliation tests.
 
 The execution layer now has a local replay execution loop that connects strategies, risk, OMS, simulated broker fills, and reconciliation.
 
+Repository agent rules are captured in `AGENT.md`.
+
 Replay execution now skips duplicate client order IDs within a run, fails fast on critical reconciliation discrepancies, isolates default run results, and rejects snapshots that do not match the supplied trading date.
 
 Repository CI runs Python unit tests, Task Catalog drift checks, Markdown link/style checks, and a basic secret scan for pull requests and pushes to `main`.

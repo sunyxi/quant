@@ -42,6 +42,7 @@ Critical reconciliation discrepancies during replay should fail fast and be inve
 
 ## Issue Workflow
 
+0. Read `AGENT.md`.
 1. Select the first ready task from `docs/task-catalog.md`.
 2. Create a branch named `feat/issue-...`.
 3. Add a failing test or documentation check first.
