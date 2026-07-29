@@ -200,3 +200,42 @@ Rollback: Disable order book filters and revert the added model modules.
 - Refactor: optional, but must keep gates accurate.
 
 Rollback: Revert the fill model feature branch and restore the previous simplified engine.
+
+## ISSUE-006: Add repository CI gates workflow
+
+- Status: `complete`
+- Phase: `Phase 0`
+- Dependencies: ISSUE-001, ISSUE-002
+- Roadmap: see `docs/roadmap.md#phase-0`
+- Summary: Add a GitHub Actions workflow that runs the repository gates for pull requests and pushes to main.
+
+### Acceptance Criteria
+
+- CI runs Python unit tests on Python 3.12.
+- CI checks Markdown links and whitespace style.
+- CI rebuilds the generated Task Catalog and fails on drift.
+- CI runs a basic secret scan.
+
+### Gates
+
+- Python Unit Tests
+- Documentation Localization
+- Markdown Links/Style
+- Secret Scan
+- Task Catalog Generation
+
+### Changed Assets
+
+- `.github/workflows/ci.yml`
+- `scripts/check_secrets.py`
+- `tests/test_ci_workflow.py`
+- `docs/operations.md`
+- `docs/cli-usage.md`
+
+### Test-first Evidence
+
+- Red: required before implementation starts.
+- Green: required after implementation.
+- Refactor: optional, but must keep gates accurate.
+
+Rollback: Remove .github/workflows/ci.yml and the workflow catalog test.

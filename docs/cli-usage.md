@@ -35,3 +35,14 @@ The generated `docs/task-catalog.md` must match `docs/task-source.json`.
 ```bash
 python3 scripts/check_markdown_links.py
 ```
+
+## Local CI Equivalent
+
+```bash
+PYTHONPATH=src python3 -m unittest discover -s tests
+python3 scripts/generate_task_catalog.py
+git diff --exit-code -- docs/task-catalog.md
+python3 scripts/check_markdown_links.py
+git diff --check
+python3 scripts/check_secrets.py
+```
