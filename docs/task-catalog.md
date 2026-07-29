@@ -832,7 +832,7 @@ Rollback: Revert the kabu Station sendorder client branch; no live broker API ca
 
 ## ISSUE-021: Add kabu Station fake-transport cancelorder client
 
-- Status: `in-progress`
+- Status: `complete`
 - Phase: `Phase 4`
 - Dependencies: ISSUE-019, ISSUE-020
 - Roadmap: see `docs/roadmap.md#phase-4`

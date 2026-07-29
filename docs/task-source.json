@@ -429,7 +429,7 @@
     {
       "id": "ISSUE-021",
       "title": "Add kabu Station fake-transport cancelorder client",
-      "status": "in-progress",
+      "status": "complete",
       "phase": "Phase 4",
       "dependencies": ["ISSUE-019", "ISSUE-020"],
       "summary": "Add a kabu Station cancelorder client that sends official cancel payloads through an injected fake-testable transport, sets X-API-KEY, maps common response statuses, and avoids real order cancellation.",
