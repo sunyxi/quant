@@ -480,7 +480,7 @@ Rollback: Revert the simulated broker adapter branch; no live broker side effect
 
 ## ISSUE-013: Export simulated broker reconciliation snapshots
 
-- Status: `in-progress`
+- Status: `complete`
 - Phase: `Phase 4`
 - Dependencies: ISSUE-011, ISSUE-012
 - Roadmap: see `docs/roadmap.md#phase-4`
@@ -515,3 +515,42 @@ Rollback: Revert the simulated broker adapter branch; no live broker side effect
 - Refactor: optional, but must keep gates accurate.
 
 Rollback: Revert the simulated broker snapshot branch; no live broker side effects exist in this change.
+
+## ISSUE-014: Add replay execution engine
+
+- Status: `in-progress`
+- Phase: `Phase 4`
+- Dependencies: ISSUE-007, ISSUE-008, ISSUE-011, ISSUE-012, ISSUE-013
+- Roadmap: see `docs/roadmap.md#phase-4`
+- Summary: Add a local replay execution loop that connects strategies, risk approval, OMS transitions, simulated broker submission, conservative fills, and reconciliation reports.
+
+### Acceptance Criteria
+
+- Replay can turn a strategy signal into an approved order intent.
+- Approved replay orders flow through OMS and simulated broker submission.
+- Marketable replay orders can be filled and marked FILLED in the OMS.
+- Replay produces reconciliation reports and respects risk rejection.
+
+### Gates
+
+- Python Unit Tests
+- Fixture Tests
+- Documentation Localization
+- Markdown Links/Style
+- Secret Scan
+- Task Catalog Generation
+
+### Changed Assets
+
+- `src/autotrade/execution/replay.py`
+- `src/autotrade/execution/simulated_broker.py`
+- `tests/test_replay_execution.py`
+- `docs/replay-execution.md`
+
+### Test-first Evidence
+
+- Red: required before implementation starts.
+- Green: required after implementation.
+- Refactor: optional, but must keep gates accurate.
+
+Rollback: Revert the replay execution engine branch; no live broker side effects exist in this change.

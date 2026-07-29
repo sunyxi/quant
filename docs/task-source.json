@@ -226,7 +226,7 @@
     {
       "id": "ISSUE-013",
       "title": "Export simulated broker reconciliation snapshots",
-      "status": "in-progress",
+      "status": "complete",
       "phase": "Phase 4",
       "dependencies": ["ISSUE-011", "ISSUE-012"],
       "summary": "Extend the simulated broker to export broker state snapshots containing open orders and simulated positions for reconciliation fixtures.",
@@ -239,6 +239,23 @@
       "gates": ["Python Unit Tests", "Fixture Tests", "Documentation Localization", "Markdown Links/Style", "Secret Scan", "Task Catalog Generation"],
       "changed_assets": ["src/autotrade/execution/simulated_broker.py", "tests/test_simulated_broker.py", "docs/simulated-broker.md"],
       "rollback": "Revert the simulated broker snapshot branch; no live broker side effects exist in this change."
+    },
+    {
+      "id": "ISSUE-014",
+      "title": "Add replay execution engine",
+      "status": "in-progress",
+      "phase": "Phase 4",
+      "dependencies": ["ISSUE-007", "ISSUE-008", "ISSUE-011", "ISSUE-012", "ISSUE-013"],
+      "summary": "Add a local replay execution loop that connects strategies, risk approval, OMS transitions, simulated broker submission, conservative fills, and reconciliation reports.",
+      "acceptance_criteria": [
+        "Replay can turn a strategy signal into an approved order intent.",
+        "Approved replay orders flow through OMS and simulated broker submission.",
+        "Marketable replay orders can be filled and marked FILLED in the OMS.",
+        "Replay produces reconciliation reports and respects risk rejection."
+      ],
+      "gates": ["Python Unit Tests", "Fixture Tests", "Documentation Localization", "Markdown Links/Style", "Secret Scan", "Task Catalog Generation"],
+      "changed_assets": ["src/autotrade/execution/replay.py", "src/autotrade/execution/simulated_broker.py", "tests/test_replay_execution.py", "docs/replay-execution.md"],
+      "rollback": "Revert the replay execution engine branch; no live broker side effects exist in this change."
     }
   ]
 }

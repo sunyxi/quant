@@ -42,6 +42,10 @@ The simulated broker has no live broker side effects. Revert the ISSUE-012 branc
 
 The simulated broker snapshots have no live broker side effects. Revert the ISSUE-013 branch if simulator reconciliation output needs to be removed.
 
+## Replay Execution Rollback
+
+The replay execution loop has no live broker side effects. Revert the ISSUE-014 branch if replay orchestration needs to return to the previous execution skeleton.
+
 ## Live Trading Rollback
 
 Live trading is not supported yet. Future live rollback must follow this order:

@@ -61,6 +61,10 @@ MarketData -> Strategy -> RiskManager -> OMS -> BrokerAdapter
 
 模拟券商可以导出券商状态快照，供对账检查复用。
 
+## 回放执行
+
+当前回放执行循环将策略、风控、OMS、模拟券商、保守成交模型和对账检查串联起来，只用于本地 fixture 验证。
+
 ## 后续接入边界
 
 真实券商适配器必须实现：

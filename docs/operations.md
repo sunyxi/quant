@@ -34,6 +34,10 @@ Use the simulated broker only for tests, replay, and simulation. Fills must be i
 
 Use `state_snapshot()` when reconciliation fixtures need broker-shaped open orders and positions from the simulator.
 
+## Replay Execution Handling
+
+Use replay execution only with local market snapshots and simulated broker state. Replay results are for fixture validation and must not be treated as live execution evidence.
+
 ## Issue Workflow
 
 1. Select the first ready task from `docs/task-catalog.md`.

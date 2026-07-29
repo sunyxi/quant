@@ -58,6 +58,12 @@ PYTHONPATH=src python3 -m unittest tests.test_reconciliation
 PYTHONPATH=src python3 -m unittest tests.test_simulated_broker
 ```
 
+## Replay Execution Tests
+
+```bash
+PYTHONPATH=src python3 -m unittest tests.test_replay_execution
+```
+
 ## Rebuild Task Catalog
 
 ```bash
