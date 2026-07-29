@@ -40,6 +40,10 @@ Use replay execution only with local market snapshots and simulated broker state
 
 Critical reconciliation discrepancies during replay should fail fast and be investigated from the replay fixture, OMS records, simulated broker state, and local ledger before the fixture is trusted.
 
+## kabu Station Mapper Handling
+
+Use the kabu Station mapper only for local adapter-boundary tests. It must not be treated as a live broker client, and its payload shape must stay behind the broker adapter boundary until a later reviewed issue approves real API calls.
+
 ## Issue Workflow
 
 0. Read `AGENT.md`.

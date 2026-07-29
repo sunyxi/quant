@@ -639,3 +639,50 @@ Rollback: Revert the agent rules document branch.
 - Refactor: optional, but must keep gates accurate.
 
 Rollback: Revert the replay hardening branch to restore ISSUE-014 replay behavior; no live broker side effects exist in this change.
+
+## ISSUE-017: Add kabu Station order request mapper
+
+- Status: `in-progress`
+- Phase: `Phase 4`
+- Dependencies: ISSUE-008, ISSUE-014
+- Roadmap: see `docs/roadmap.md#phase-4`
+- Summary: Add a local-only kabu Station order request mapper that translates approved JP OrderIntent objects into adapter-boundary payloads without calling live broker APIs.
+
+### Acceptance Criteria
+
+- JP .T symbols are converted into broker-boundary symbol codes.
+- BUY and SELL sides are mapped into stable local payload values.
+- Passive and aggressive limit order styles map to limit payloads.
+- Non-JP markets are rejected.
+- JP equity quantities must use 100-share lots.
+- Market-protected order style is rejected until a later adapter issue approves it.
+
+### Gates
+
+- Python Unit Tests
+- Fixture Tests
+- Documentation Localization
+- Markdown Links/Style
+- Secret Scan
+- Task Catalog Generation
+
+### Changed Assets
+
+- `src/autotrade/execution/kabu_station.py`
+- `tests/test_kabu_station_mapper.py`
+- `docs/kabu-station-mapper.md`
+- `docs/cli-usage.md`
+- `docs/operations.md`
+- `docs/limitations.md`
+- `docs/rollback.md`
+- `docs/locales/en/overview.md`
+- `docs/locales/ja/overview.md`
+- `docs/locales/zh-CN/overview.md`
+
+### Test-first Evidence
+
+- Red: required before implementation starts.
+- Green: required after implementation.
+- Refactor: optional, but must keep gates accurate.
+
+Rollback: Revert the kabu Station mapper branch; no live broker API calls or persistent broker side effects exist in this change.

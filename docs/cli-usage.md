@@ -64,6 +64,12 @@ PYTHONPATH=src python3 -m unittest tests.test_simulated_broker
 PYTHONPATH=src python3 -m unittest tests.test_replay_execution
 ```
 
+## kabu Station Mapper Tests
+
+```bash
+PYTHONPATH=src python3 -m unittest tests.test_kabu_station_mapper
+```
+
 ## Governance Documentation Tests
 
 ```bash
