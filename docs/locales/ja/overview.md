@@ -30,6 +30,8 @@
 
 リプレイ実行は、1回の実行内の重複したクライアント注文IDをスキップし、重大な照合差異で即時失敗し、標準実行結果を分離し、指定された取引日と一致しないスナップショットを拒否します。
 
+現在の実行層は、将来のアダプター境界テスト向けにローカル専用の kabu Station 注文マッパーも含みます。これは実注文を発注しません。
+
 リポジトリ CI は、プルリクエストと `main` への push に対して Python 単体テスト、Task Catalog の差分チェック、Markdown リンク・スタイルチェック、基本的なシークレットスキャンを実行します。
 
-詳細は `docs/roadmap.md`、`docs/task-catalog.md`、`docs/scope.md`、`docs/risk-policy.md`、`docs/broker-decision.md`、`docs/implementation-plan.md`、`docs/market-calendar.md`、`docs/order-book-intelligence.md`、`docs/backtest-fill-cost.md`、`docs/strategy-market-quality.md`、`docs/oms.md`、`docs/execution-ledger.md`、`docs/risk-paused-state.md`、`docs/reconciliation.md`、`docs/simulated-broker.md`、`docs/replay-execution.md`、`docs/operations.md`、`docs/limitations.md`、`docs/rollback.md` を参照してください。
+詳細は `docs/roadmap.md`、`docs/task-catalog.md`、`docs/scope.md`、`docs/risk-policy.md`、`docs/broker-decision.md`、`docs/implementation-plan.md`、`docs/market-calendar.md`、`docs/order-book-intelligence.md`、`docs/backtest-fill-cost.md`、`docs/strategy-market-quality.md`、`docs/oms.md`、`docs/execution-ledger.md`、`docs/risk-paused-state.md`、`docs/reconciliation.md`、`docs/simulated-broker.md`、`docs/replay-execution.md`、`docs/kabu-station-mapper.md`、`docs/operations.md`、`docs/limitations.md`、`docs/rollback.md` を参照してください。
