@@ -50,6 +50,10 @@ The replay execution loop has no live broker side effects. Revert the ISSUE-014 
 
 The kabu Station mapper has no live broker side effects. Revert the ISSUE-017 branch if adapter-boundary payload mapping needs to be removed.
 
+## kabu Station Contract Rollback
+
+The kabu Station official request contract helpers have no live broker side effects. Revert the ISSUE-018 branch if token or sendorder payload construction needs to be removed.
+
 ## Agent Rules Rollback
 
 Revert the ISSUE-015 branch if the root agent rules document needs to be removed or replaced.

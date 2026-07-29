@@ -31,6 +31,41 @@ The mapper currently supports:
 
 This payload is an internal adapter-boundary structure. It is not claimed to be a final kabu Station REST request body.
 
+## Official Request Contract
+
+ISSUE-018 adds local constructors for the official kabu Station request contract documented at `https://kabucom.github.io/kabusapi/reference/index.html`.
+
+Token request:
+
+```python
+{
+    "APIPassword": "test-password",
+}
+```
+
+Cash equity limit sendorder request:
+
+```python
+{
+    "Symbol": "7203",
+    "Exchange": 27,
+    "SecurityType": 1,
+    "Side": "2",
+    "CashMargin": 1,
+    "DelivType": 2,
+    "FundType": "02",
+    "AccountType": 4,
+    "Qty": 100,
+    "FrontOrderType": 20,
+    "Price": 1000,
+    "ExpireDay": 0,
+}
+```
+
+The contract helpers are still local-only. They do not send HTTP requests, store API passwords, acquire tokens, or place orders.
+
+The current default `Exchange` is `27` for TSE+. This value is configurable because the official reference distinguishes exchange routing codes and broker-side availability can vary by product and maintenance state.
+
 ## Rejections
 
 The mapper rejects:
