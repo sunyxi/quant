@@ -64,6 +64,12 @@ PYTHONPATH=src python3 -m unittest tests.test_simulated_broker
 PYTHONPATH=src python3 -m unittest tests.test_replay_execution
 ```
 
+## Governance Documentation Tests
+
+```bash
+PYTHONPATH=src python3 -m unittest tests.test_documentation_catalog
+```
+
 ## Rebuild Task Catalog
 
 ```bash

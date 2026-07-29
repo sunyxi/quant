@@ -14,6 +14,7 @@
 - The simulated broker adapter does not connect to live brokers, model broker rejection rules, enforce cash or margin, or match orders against market data.
 - Simulated broker state snapshots include order existence and position quantity only; they do not include cash, buying power, fees, or broker-native statuses.
 - Replay execution uses local fixtures only and does not yet model broker errors, submit timeouts, restart recovery, cancellation policy, or cost attribution in replay results.
+- `AGENT.md` captures workflow rules only; it does not replace human review or branch protection.
 - Machine learning, meta-labeling, model registry, and degradation monitoring are out of scope for the current code.
 - US market execution through IBKR is future work.
 - Nothing in this repository is financial advice or a guarantee of profit.

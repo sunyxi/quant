@@ -26,6 +26,8 @@
 
 現在の実行層は、戦略、リスク、OMS、シミュレート約定、照合を接続するローカル回放実行ループも持ちます。
 
+リポジトリのエージェント規則は `AGENT.md` に記録されています。
+
 リポジトリ CI は、プルリクエストと `main` への push に対して Python 単体テスト、Task Catalog の差分チェック、Markdown リンク・スタイルチェック、基本的なシークレットスキャンを実行します。
 
 詳細は `docs/roadmap.md`、`docs/task-catalog.md`、`docs/scope.md`、`docs/risk-policy.md`、`docs/broker-decision.md`、`docs/implementation-plan.md`、`docs/market-calendar.md`、`docs/order-book-intelligence.md`、`docs/backtest-fill-cost.md`、`docs/strategy-market-quality.md`、`docs/oms.md`、`docs/execution-ledger.md`、`docs/risk-paused-state.md`、`docs/reconciliation.md`、`docs/simulated-broker.md`、`docs/replay-execution.md`、`docs/operations.md`、`docs/limitations.md`、`docs/rollback.md` を参照してください。

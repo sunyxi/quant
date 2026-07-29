@@ -26,6 +26,8 @@ The simulated broker can export broker state snapshots for reconciliation tests.
 
 The execution layer now has a local replay execution loop that connects strategies, risk, OMS, simulated broker fills, and reconciliation.
 
+Repository agent rules are captured in `AGENT.md`.
+
 Repository CI runs Python unit tests, Task Catalog drift checks, Markdown link/style checks, and a basic secret scan for pull requests and pushes to `main`.
 
 See `docs/roadmap.md`, `docs/task-catalog.md`, `docs/scope.md`, `docs/risk-policy.md`, `docs/broker-decision.md`, `docs/implementation-plan.md`, `docs/market-calendar.md`, `docs/order-book-intelligence.md`, `docs/backtest-fill-cost.md`, `docs/strategy-market-quality.md`, `docs/oms.md`, `docs/execution-ledger.md`, `docs/risk-paused-state.md`, `docs/reconciliation.md`, `docs/simulated-broker.md`, `docs/replay-execution.md`, `docs/operations.md`, `docs/limitations.md`, and `docs/rollback.md`.

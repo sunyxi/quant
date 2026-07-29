@@ -40,6 +40,7 @@ Use replay execution only with local market snapshots and simulated broker state
 
 ## Issue Workflow
 
+0. Read `AGENT.md`.
 1. Select the first ready task from `docs/task-catalog.md`.
 2. Create a branch named `feat/issue-...`.
 3. Add a failing test or documentation check first.

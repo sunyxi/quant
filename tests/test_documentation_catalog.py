@@ -11,6 +11,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 class DocumentationCatalogTests(unittest.TestCase):
     def test_required_planning_and_governance_docs_exist(self) -> None:
         required_docs = [
+            "AGENT.md",
             "docs/roadmap.md",
             "docs/task-catalog.md",
             "docs/cli-usage.md",
@@ -27,6 +28,24 @@ class DocumentationCatalogTests(unittest.TestCase):
         ]
 
         self.assertEqual([], missing_docs)
+
+    def test_agent_rules_document_captures_required_workflow(self) -> None:
+        agent_doc = (REPO_ROOT / "AGENT.md").read_text(encoding="utf-8")
+
+        required_terms = [
+            "Test-first",
+            "Repository Gates",
+            "Documentation",
+            "Generated Files",
+            "Git and PR",
+            "Draft PR",
+            "GitHub App",
+            "Do not merge",
+        ]
+
+        missing_terms = [term for term in required_terms if term not in agent_doc]
+
+        self.assertEqual([], missing_terms)
 
     def test_task_catalog_links_first_issue_to_roadmap_and_gates(self) -> None:
         task_catalog = (REPO_ROOT / "docs/task-catalog.md").read_text(encoding="utf-8")
