@@ -337,7 +337,7 @@
     {
       "id": "ISSUE-018",
       "title": "Add kabu Station official request contract",
-      "status": "in-progress",
+      "status": "complete",
       "phase": "Phase 4",
       "dependencies": ["ISSUE-017"],
       "summary": "Add official kabu Station token and cash sendorder request contract helpers using localhost-only URLs and fake-client-testable payloads without sending real requests.",
