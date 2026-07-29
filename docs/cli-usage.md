@@ -104,6 +104,14 @@ PYTHONPATH=src python3 -m unittest tests.test_kabu_station_readonly_client
 
 These tests use a fake transport only. They do not connect to kabu Station, require Windows, query real orders, or query real positions.
 
+## kabu Station Snapshot Mapper Tests
+
+```bash
+PYTHONPATH=src python3 -m unittest tests.test_kabu_station_snapshot_mapper
+```
+
+These tests use local fixture payloads only. They do not connect to kabu Station, require Windows, or reconcile a real account.
+
 ## Governance Documentation Tests
 
 ```bash
