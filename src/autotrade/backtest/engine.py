@@ -1,19 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
-from typing import Protocol
 
 from autotrade.backtest.cost_model import CostBreakdown, CostModel
 from autotrade.backtest.fill_model import ConservativeFillModel
+from autotrade.calendar.protocols import MarketCalendar
 from autotrade.core.models import Fill, MarketSnapshot, OrderIntent
 from autotrade.risk.manager import RiskManager
 from autotrade.strategies.base import Strategy
-
-
-class MarketCalendar(Protocol):
-    def accepts_new_entries(self, timestamp: datetime) -> bool:
-        ...
 
 
 @dataclass
