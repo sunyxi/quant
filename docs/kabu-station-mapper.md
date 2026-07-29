@@ -92,6 +92,19 @@ The sendorder client maps common HTTP statuses into the same local error categor
 
 The sendorder client does not create a real HTTP transport and does not place live orders. A later issue must explicitly approve any real localhost probe or live submission path.
 
+## Cancelorder Client
+
+ISSUE-021 adds a fake-transport-testable cancelorder client. It sends the official cancel payload to the configured localhost cancelorder endpoint through an injected transport, sets the `X-API-KEY` header, and returns the `OrderId` field from a successful response.
+
+The cancelorder client uses the same local error categories as token and sendorder clients:
+
+- `401` and `403`: authentication error;
+- `429`: rate limit error;
+- `5xx`: server error;
+- other non-`200`: generic client error.
+
+The cancelorder client does not create a real HTTP transport and does not cancel live orders. A later issue must explicitly approve any real localhost probe or live cancel path.
+
 ## Rejections
 
 The mapper rejects:

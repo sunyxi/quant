@@ -41,6 +41,16 @@ class JsonPostTransport(Protocol):
         ...
 
 
+class JsonPutTransport(Protocol):
+    def put_json(
+        self,
+        url: str,
+        payload: dict[str, Any],
+        headers: dict[str, str] | None = None,
+    ) -> JsonPostResponse:
+        ...
+
+
 @dataclass(frozen=True)
 class KabuStationEnvironment:
     base_url: str
@@ -60,6 +70,10 @@ class KabuStationEnvironment:
     @property
     def sendorder_url(self) -> str:
         return f"{self.base_url}/kabusapi/sendorder"
+
+    @property
+    def cancelorder_url(self) -> str:
+        return f"{self.base_url}/kabusapi/cancelorder"
 
 
 @dataclass(frozen=True)
@@ -109,6 +123,29 @@ class KabuStationSendOrderClient:
         if not isinstance(order_id, str) or not order_id:
             raise KabuStationClientError("sendorder response did not include OrderId")
         return order_id
+
+
+@dataclass(frozen=True)
+class KabuStationCancelOrderClient:
+    environment: KabuStationEnvironment
+    transport: JsonPutTransport
+
+    def cancel_order(self, order_id: str, api_token: str) -> str:
+        if not api_token:
+            raise KabuStationClientError("API token is required")
+        if not order_id:
+            raise KabuStationClientError("OrderId is required")
+
+        response = self.transport.put_json(
+            self.environment.cancelorder_url,
+            {"OrderId": order_id},
+            headers={"X-API-KEY": api_token},
+        )
+        raise_for_kabu_station_status(response.status_code, "cancelorder request")
+        cancelled_order_id = response.payload.get("OrderId")
+        if not isinstance(cancelled_order_id, str) or not cancelled_order_id:
+            raise KabuStationClientError("cancelorder response did not include OrderId")
+        return cancelled_order_id
 
 
 def raise_for_kabu_station_status(status_code: int, operation: str) -> None:
