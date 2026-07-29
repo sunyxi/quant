@@ -175,7 +175,7 @@
     {
       "id": "ISSUE-010",
       "title": "Add risk paused state",
-      "status": "in-progress",
+      "status": "complete",
       "phase": "Phase 3",
       "dependencies": ["ISSUE-008", "ISSUE-009"],
       "summary": "Add explicit risk pause and resume controls so risk review can block all new order approvals after manual or system-triggered incidents.",
@@ -188,6 +188,23 @@
       "gates": ["Python Unit Tests", "Fixture Tests", "Documentation Localization", "Markdown Links/Style", "Secret Scan", "Task Catalog Generation"],
       "changed_assets": ["src/autotrade/risk/manager.py", "tests/test_risk_manager.py", "docs/risk-paused-state.md"],
       "rollback": "Revert the risk paused state branch; no broker or persistent state side effects exist in this change."
+    },
+    {
+      "id": "ISSUE-011",
+      "title": "Add reconciliation discrepancy checks",
+      "status": "in-progress",
+      "phase": "Phase 3",
+      "dependencies": ["ISSUE-008", "ISSUE-009", "ISSUE-010"],
+      "summary": "Add broker snapshot reconciliation checks that detect unknown local orders, broker orders missing locally, and position quantity mismatches, with optional risk pause on critical discrepancies.",
+      "acceptance_criteria": [
+        "UNKNOWN local OMS orders are reported as critical discrepancies.",
+        "Broker open orders missing from local OMS are reported as critical discrepancies.",
+        "Local and broker position quantity mismatches are reported as critical discrepancies.",
+        "Critical reconciliation discrepancies can pause the RiskManager."
+      ],
+      "gates": ["Python Unit Tests", "Fixture Tests", "Documentation Localization", "Markdown Links/Style", "Secret Scan", "Task Catalog Generation"],
+      "changed_assets": ["src/autotrade/execution/reconciliation.py", "tests/test_reconciliation.py", "docs/reconciliation.md"],
+      "rollback": "Revert the reconciliation checks branch; no broker or persistent state side effects exist in this change."
     }
   ]
 }

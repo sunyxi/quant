@@ -366,7 +366,7 @@ Rollback: Revert the local execution ledger branch; no broker or persistent stat
 
 ## ISSUE-010: Add risk paused state
 
-- Status: `in-progress`
+- Status: `complete`
 - Phase: `Phase 3`
 - Dependencies: ISSUE-008, ISSUE-009
 - Roadmap: see `docs/roadmap.md#phase-3`
@@ -401,3 +401,41 @@ Rollback: Revert the local execution ledger branch; no broker or persistent stat
 - Refactor: optional, but must keep gates accurate.
 
 Rollback: Revert the risk paused state branch; no broker or persistent state side effects exist in this change.
+
+## ISSUE-011: Add reconciliation discrepancy checks
+
+- Status: `in-progress`
+- Phase: `Phase 3`
+- Dependencies: ISSUE-008, ISSUE-009, ISSUE-010
+- Roadmap: see `docs/roadmap.md#phase-3`
+- Summary: Add broker snapshot reconciliation checks that detect unknown local orders, broker orders missing locally, and position quantity mismatches, with optional risk pause on critical discrepancies.
+
+### Acceptance Criteria
+
+- UNKNOWN local OMS orders are reported as critical discrepancies.
+- Broker open orders missing from local OMS are reported as critical discrepancies.
+- Local and broker position quantity mismatches are reported as critical discrepancies.
+- Critical reconciliation discrepancies can pause the RiskManager.
+
+### Gates
+
+- Python Unit Tests
+- Fixture Tests
+- Documentation Localization
+- Markdown Links/Style
+- Secret Scan
+- Task Catalog Generation
+
+### Changed Assets
+
+- `src/autotrade/execution/reconciliation.py`
+- `tests/test_reconciliation.py`
+- `docs/reconciliation.md`
+
+### Test-first Evidence
+
+- Red: required before implementation starts.
+- Green: required after implementation.
+- Refactor: optional, but must keep gates accurate.
+
+Rollback: Revert the reconciliation checks branch; no broker or persistent state side effects exist in this change.

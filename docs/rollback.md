@@ -30,6 +30,10 @@ The current local ledger has no broker or persistent side effects. Revert the IS
 
 The current paused state has no broker side effects. Revert the ISSUE-010 branch if approval behavior needs to return to the previous risk skeleton.
 
+## Reconciliation Rollback
+
+The current reconciliation checks have no broker or persistent side effects. Revert the ISSUE-011 branch if comparison behavior needs to return to the previous execution skeleton.
+
 ## Live Trading Rollback
 
 Live trading is not supported yet. Future live rollback must follow this order:
