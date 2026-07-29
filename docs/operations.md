@@ -16,6 +16,10 @@ When evaluating ORB or VWAP signals, include spread and order book health fields
 
 Treat `UNKNOWN` as a blocking operational state. It means the system cannot safely infer whether the broker accepted, rejected, filled, or cancelled an order until reconciliation confirms the broker state.
 
+## Ledger Handling
+
+Use the local ledger only for research, replay, and simulation. A fill that references an unknown local order should be treated as an operational error until reconciliation explains it.
+
 ## Issue Workflow
 
 1. Select the first ready task from `docs/task-catalog.md`.

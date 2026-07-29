@@ -14,6 +14,8 @@ The strategy layer can now block ORB and VWAP signals when spread limits are exc
 
 The execution layer now has a broker-independent OMS state machine for idempotent local order registration and auditable lifecycle transitions.
 
+The execution layer also has an in-memory ledger for local orders, fills, positions, average price, and realized PnL in research fixtures.
+
 Repository CI runs Python unit tests, Task Catalog drift checks, Markdown link/style checks, and a basic secret scan for pull requests and pushes to `main`.
 
-See `docs/roadmap.md`, `docs/task-catalog.md`, `docs/scope.md`, `docs/risk-policy.md`, `docs/broker-decision.md`, `docs/implementation-plan.md`, `docs/market-calendar.md`, `docs/order-book-intelligence.md`, `docs/backtest-fill-cost.md`, `docs/strategy-market-quality.md`, `docs/oms.md`, `docs/operations.md`, `docs/limitations.md`, and `docs/rollback.md`.
+See `docs/roadmap.md`, `docs/task-catalog.md`, `docs/scope.md`, `docs/risk-policy.md`, `docs/broker-decision.md`, `docs/implementation-plan.md`, `docs/market-calendar.md`, `docs/order-book-intelligence.md`, `docs/backtest-fill-cost.md`, `docs/strategy-market-quality.md`, `docs/oms.md`, `docs/execution-ledger.md`, `docs/operations.md`, `docs/limitations.md`, and `docs/rollback.md`.

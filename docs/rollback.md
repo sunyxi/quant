@@ -22,6 +22,10 @@ If market quality filters suppress expected research signals, remove `max_spread
 
 The current OMS has no broker side effects. Revert the ISSUE-008 branch if state transitions need to return to the previous execution skeleton.
 
+## Ledger Rollback
+
+The current local ledger has no broker or persistent side effects. Revert the ISSUE-009 branch if accounting behavior needs to return to the previous execution skeleton.
+
 ## Live Trading Rollback
 
 Live trading is not supported yet. Future live rollback must follow this order:

@@ -34,6 +34,12 @@ PYTHONPATH=src python3 -m unittest tests.test_strategies
 PYTHONPATH=src python3 -m unittest tests.test_oms
 ```
 
+## Ledger Tests
+
+```bash
+PYTHONPATH=src python3 -m unittest tests.test_execution_ledger
+```
+
 ## Rebuild Task Catalog
 
 ```bash
