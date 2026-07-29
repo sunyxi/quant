@@ -57,7 +57,8 @@ Strategy research hardening.
 
 OMS and risk runtime.
 
-- Add order state machine, idempotency keys, local ledger, risk-paused state, and reconciliation hooks.
+- ISSUE-008: add OMS order state machine.
+- Add idempotency keys, local ledger, risk-paused state, and reconciliation hooks.
 - Add failure fixtures for timeout, duplicate signal, partial fill, stale market data, and restart.
 - Deliverable: order state is auditable before any broker adapter is enabled.
 
@@ -86,7 +87,7 @@ Shadow Mode.
 | Data and Backtest | ISSUE-005 | Cost-aware replay reports |
 | Board Intelligence | ISSUE-004 | Snapshot and feature tests pass |
 | Strategy Research | ISSUE-007 and later strategy Issues | Strategy filters and walk-forward report |
-| Risk and OMS | Later execution Issues | Fault fixtures pass |
+| Risk and OMS | ISSUE-008 and later execution Issues | Fault fixtures pass |
 | Broker Integration | Later adapter Issues | Contract and shadow tests pass |
 
 ## Stop Conditions

@@ -124,7 +124,7 @@
     {
       "id": "ISSUE-007",
       "title": "Add strategy market quality filters",
-      "status": "in-progress",
+      "status": "complete",
       "phase": "Phase 2",
       "dependencies": ["ISSUE-003", "ISSUE-004", "ISSUE-005"],
       "summary": "Connect P0 spread and stale order book health checks to ORB and VWAP strategy signal generation.",
@@ -137,6 +137,23 @@
       "gates": ["Python Unit Tests", "Fixture Tests", "Documentation Localization", "Markdown Links/Style", "Secret Scan", "Task Catalog Generation"],
       "changed_assets": ["src/autotrade/strategies/market_quality.py", "src/autotrade/strategies/opening_range.py", "src/autotrade/strategies/vwap_reversion.py", "tests/test_strategies.py", "docs/strategy-market-quality.md"],
       "rollback": "Disable strategy market quality filters by reverting the feature branch."
+    },
+    {
+      "id": "ISSUE-008",
+      "title": "Add OMS order state machine",
+      "status": "in-progress",
+      "phase": "Phase 3",
+      "dependencies": ["ISSUE-005", "ISSUE-007"],
+      "summary": "Introduce the broker-independent OMS state machine used to register order intents idempotently and track auditable order lifecycle transitions.",
+      "acceptance_criteria": [
+        "Order intents are registered once by client_order_id.",
+        "Valid lifecycle transitions from CREATED through FILLED are supported.",
+        "Invalid lifecycle transitions raise a domain error.",
+        "Uncertain broker submission can be marked UNKNOWN with a reason."
+      ],
+      "gates": ["Python Unit Tests", "Fixture Tests", "Documentation Localization", "Markdown Links/Style", "Secret Scan", "Task Catalog Generation"],
+      "changed_assets": ["src/autotrade/execution/oms.py", "tests/test_oms.py", "docs/oms.md"],
+      "rollback": "Revert the OMS state machine branch; no broker or live order side effects exist in this change."
     }
   ]
 }

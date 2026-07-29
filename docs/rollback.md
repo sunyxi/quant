@@ -18,6 +18,10 @@ python3 scripts/generate_task_catalog.py
 
 If market quality filters suppress expected research signals, remove `max_spread_bps` and `require_fresh_order_book` from strategy configuration first. If the issue is code-level behavior, revert the ISSUE-007 branch in a new PR.
 
+## OMS Rollback
+
+The current OMS has no broker side effects. Revert the ISSUE-008 branch if state transitions need to return to the previous execution skeleton.
+
 ## Live Trading Rollback
 
 Live trading is not supported yet. Future live rollback must follow this order:

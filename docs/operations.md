@@ -12,6 +12,10 @@
 
 When evaluating ORB or VWAP signals, include spread and order book health fields in fixtures. A stale or unhealthy book should suppress signals before any risk or execution decision is built.
 
+## OMS State Handling
+
+Treat `UNKNOWN` as a blocking operational state. It means the system cannot safely infer whether the broker accepted, rejected, filled, or cancelled an order until reconciliation confirms the broker state.
+
 ## Issue Workflow
 
 1. Select the first ready task from `docs/task-catalog.md`.
