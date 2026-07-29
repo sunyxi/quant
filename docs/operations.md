@@ -33,6 +33,17 @@ Each PR must report:
 
 Use `not-run` when a gate could not execute. Use `skipped` only when the PR explains why the gate is not applicable.
 
+## Continuous Integration
+
+`.github/workflows/ci.yml` runs on pull requests, pushes to `main`, and manual dispatch. It executes:
+
+- Python Unit Tests
+- Task Catalog Generation drift check
+- Markdown Links/Style
+- Secret Scan
+
+CI results supplement, but do not replace, the PR body validation table. If CI does not run, the PR must report it as `not-run`.
+
 ## Incident Handling
 
 Any live-trading incident must stop new orders first, then reconcile broker state, local orders, fills, positions, cash, and PnL. The system should not resume live trading from a failed state without a written review.
