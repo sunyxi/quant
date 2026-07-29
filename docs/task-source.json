@@ -74,7 +74,7 @@
     {
       "id": "ISSUE-004",
       "title": "Introduce order book intelligence data model",
-      "status": "in-progress",
+      "status": "complete",
       "phase": "Phase 1.5",
       "dependencies": ["ISSUE-003"],
       "summary": "Add P0 board information structures for best bid/ask, five-level depth, spread, imbalance, microprice, freshness, and health checks.",
@@ -90,17 +90,18 @@
     {
       "id": "ISSUE-005",
       "title": "Harden backtest fill and cost modeling",
-      "status": "blocked",
+      "status": "in-progress",
       "phase": "Phase 1",
       "dependencies": ["ISSUE-003"],
       "summary": "Replace simplified fills with conservative partial-fill, spread, slippage, and participation assumptions.",
       "acceptance_criteria": [
         "Limit orders do not assume guaranteed fills from minute lows/highs.",
         "Costs include commission, half-spread, slippage, and impact placeholders.",
-        "Backtest output reports cost attribution."
+        "Backtest output reports cost attribution.",
+        "Fill quantity is capped by a participation-rate assumption."
       ],
-      "gates": ["Python Unit Tests", "Fixture Tests", "Documentation Localization", "Secret Scan"],
-      "changed_assets": ["src/autotrade/backtest", "tests"],
+      "gates": ["Python Unit Tests", "Fixture Tests", "Documentation Localization", "Markdown Links/Style", "Secret Scan", "Task Catalog Generation"],
+      "changed_assets": ["src/autotrade/backtest/fill_model.py", "src/autotrade/backtest/cost_model.py", "src/autotrade/backtest/engine.py", "tests/test_backtest_fill_cost.py", "docs/backtest-fill-cost.md"],
       "rollback": "Revert the fill model feature branch and restore the previous simplified engine."
     },
     {
