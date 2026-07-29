@@ -46,6 +46,10 @@ class SimulatedBrokerAdapter(BrokerAdapter):
     def fills(self) -> list[Fill]:
         return list(self._fills)
 
+    @property
+    def ledger(self) -> LocalExecutionLedger:
+        return self._ledger
+
     def record_fill(self, fill: Fill) -> None:
         order = self._orders_by_client_id.get(fill.client_order_id)
         if order is None:
