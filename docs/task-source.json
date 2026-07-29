@@ -366,7 +366,7 @@
     {
       "id": "ISSUE-019",
       "title": "Add kabu Station fake-transport token client",
-      "status": "in-progress",
+      "status": "complete",
       "phase": "Phase 4",
       "dependencies": ["ISSUE-018"],
       "summary": "Add a kabu Station token client that posts official token payloads through an injected fake-testable transport, maps common response statuses, and avoids storing credentials or opening real network connections.",
