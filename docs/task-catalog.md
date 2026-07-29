@@ -686,3 +686,49 @@ Rollback: Revert the replay hardening branch to restore ISSUE-014 replay behavio
 - Refactor: optional, but must keep gates accurate.
 
 Rollback: Revert the kabu Station mapper branch; no live broker API calls or persistent broker side effects exist in this change.
+
+## ISSUE-018: Add kabu Station official request contract
+
+- Status: `in-progress`
+- Phase: `Phase 4`
+- Dependencies: ISSUE-017
+- Roadmap: see `docs/roadmap.md#phase-4`
+- Summary: Add official kabu Station token and cash sendorder request contract helpers using localhost-only URLs and fake-client-testable payloads without sending real requests.
+
+### Acceptance Criteria
+
+- Token payload uses the official APIPassword field.
+- Production and test endpoint URLs are localhost-only.
+- Cash buy limit payload uses official sendorder field names and enum values.
+- Cash sell limit payload uses official sell side, delivery, and fund type values.
+- The contract remains local-only and does not authenticate or place orders.
+
+### Gates
+
+- Python Unit Tests
+- Fixture Tests
+- Documentation Localization
+- Markdown Links/Style
+- Secret Scan
+- Task Catalog Generation
+
+### Changed Assets
+
+- `src/autotrade/execution/kabu_station.py`
+- `tests/test_kabu_station_mapper.py`
+- `docs/kabu-station-mapper.md`
+- `docs/cli-usage.md`
+- `docs/operations.md`
+- `docs/limitations.md`
+- `docs/rollback.md`
+- `docs/locales/en/overview.md`
+- `docs/locales/ja/overview.md`
+- `docs/locales/zh-CN/overview.md`
+
+### Test-first Evidence
+
+- Red: required before implementation starts.
+- Green: required after implementation.
+- Refactor: optional, but must keep gates accurate.
+
+Rollback: Revert the kabu Station official contract branch; no live broker API calls or persistent broker side effects exist in this change.

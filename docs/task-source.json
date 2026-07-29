@@ -333,6 +333,35 @@
         "docs/locales/zh-CN/overview.md"
       ],
       "rollback": "Revert the kabu Station mapper branch; no live broker API calls or persistent broker side effects exist in this change."
+    },
+    {
+      "id": "ISSUE-018",
+      "title": "Add kabu Station official request contract",
+      "status": "in-progress",
+      "phase": "Phase 4",
+      "dependencies": ["ISSUE-017"],
+      "summary": "Add official kabu Station token and cash sendorder request contract helpers using localhost-only URLs and fake-client-testable payloads without sending real requests.",
+      "acceptance_criteria": [
+        "Token payload uses the official APIPassword field.",
+        "Production and test endpoint URLs are localhost-only.",
+        "Cash buy limit payload uses official sendorder field names and enum values.",
+        "Cash sell limit payload uses official sell side, delivery, and fund type values.",
+        "The contract remains local-only and does not authenticate or place orders."
+      ],
+      "gates": ["Python Unit Tests", "Fixture Tests", "Documentation Localization", "Markdown Links/Style", "Secret Scan", "Task Catalog Generation"],
+      "changed_assets": [
+        "src/autotrade/execution/kabu_station.py",
+        "tests/test_kabu_station_mapper.py",
+        "docs/kabu-station-mapper.md",
+        "docs/cli-usage.md",
+        "docs/operations.md",
+        "docs/limitations.md",
+        "docs/rollback.md",
+        "docs/locales/en/overview.md",
+        "docs/locales/ja/overview.md",
+        "docs/locales/zh-CN/overview.md"
+      ],
+      "rollback": "Revert the kabu Station official contract branch; no live broker API calls or persistent broker side effects exist in this change."
     }
   ]
 }

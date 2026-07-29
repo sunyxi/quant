@@ -44,6 +44,8 @@ Critical reconciliation discrepancies during replay should fail fast and be inve
 
 Use the kabu Station mapper only for local adapter-boundary tests. It must not be treated as a live broker client, and its payload shape must stay behind the broker adapter boundary until a later reviewed issue approves real API calls.
 
+Official kabu Station contract helpers may construct token and sendorder payloads, but they must not store passwords, open network connections, or place orders until a later adapter issue explicitly approves those behaviors.
+
 ## Issue Workflow
 
 0. Read `AGENT.md`.
