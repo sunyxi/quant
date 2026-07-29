@@ -277,7 +277,7 @@
     {
       "id": "ISSUE-016",
       "title": "Address replay execution review findings",
-      "status": "in-progress",
+      "status": "complete",
       "phase": "Phase 4",
       "dependencies": ["ISSUE-014"],
       "summary": "Harden replay execution after review by making duplicate order handling idempotent, cancelling unfilled simulated orders, failing fast on critical reconciliation discrepancies, isolating default run results, sharing the market calendar protocol, and validating snapshot dates.",

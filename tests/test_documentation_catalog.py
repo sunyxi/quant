@@ -56,6 +56,14 @@ class DocumentationCatalogTests(unittest.TestCase):
 
         self.assertEqual("complete", tasks["ISSUE-015"]["status"])
 
+    def test_replay_review_issue_is_marked_complete(self) -> None:
+        source = json.loads(
+            (REPO_ROOT / "docs/task-source.json").read_text(encoding="utf-8")
+        )
+        tasks = {task["id"]: task for task in source["tasks"]}
+
+        self.assertEqual("complete", tasks["ISSUE-016"]["status"])
+
     def test_task_catalog_links_first_issue_to_roadmap_and_gates(self) -> None:
         task_catalog = (REPO_ROOT / "docs/task-catalog.md").read_text(encoding="utf-8")
 
