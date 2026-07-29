@@ -9,6 +9,7 @@
 - VWAP 均值回归策略。
 - 单笔风险、日亏损、交易单位与资金占用检查。
 - 日股普通交易时段、午休、周末和收盘前 cutoff 过滤。
+- 订单簿快照、价差、深度、OBI、microprice 和 stale book health。
 - 简化事件驱动回测引擎。
 - 面向 kabu Station / IBKR 的执行适配器边界。
 
@@ -45,6 +46,7 @@ tests/                  单元测试
 - [Broker Decision](docs/broker-decision.md)
 - [Implementation Plan](docs/implementation-plan.md)
 - [Market Calendar](docs/market-calendar.md)
+- [Order Book Intelligence](docs/order-book-intelligence.md)
 - [CLI Usage](docs/cli-usage.md)
 - [Operations](docs/operations.md)
 - [Limitations](docs/limitations.md)
