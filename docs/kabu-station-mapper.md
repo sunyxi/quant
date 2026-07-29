@@ -137,6 +137,39 @@ The read-only client uses the same local error categories as token, sendorder, a
 
 The read-only client validates that successful orders and positions responses are list payloads. It does not create a real HTTP transport, query a real account, or prove kabu Station runtime availability. A later issue must explicitly approve any real localhost probe.
 
+## Snapshot Mapper
+
+ISSUE-023 adds a local-only mapper from kabu Station read-only payloads into the broker snapshot structure used by reconciliation fixtures.
+
+The mapper currently expects the read-only order payload to include:
+
+```python
+{
+    "ID": "broker-order-1",
+    "Symbol": "7203",
+    "LeavesQty": 100,
+}
+```
+
+Orders with positive `LeavesQty` are represented as open broker orders. Orders with zero `LeavesQty` are excluded from open order snapshots.
+
+The mapper currently expects the read-only position payload to include:
+
+```python
+{
+    "ExecutionID": "position-1",
+    "Symbol": "7203",
+    "Side": "2",
+    "LeavesQty": 100,
+}
+```
+
+Buy-side positions use positive quantities. Sell-side positions use negative quantities. Flat positions are excluded.
+
+Symbols are normalized from broker code form, such as `7203`, into internal JP symbol form, such as `7203.T`.
+
+Missing required fields raise local client errors. This mapper does not query kabu Station, prove real response completeness, or reconcile a live account by itself.
+
 ## Rejections
 
 The mapper rejects:

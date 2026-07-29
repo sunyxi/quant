@@ -493,6 +493,39 @@
         "docs/locales/zh-CN/overview.md"
       ],
       "rollback": "Revert the kabu Station read-only client branch; no live broker API calls or persistent broker side effects exist in this change."
+    },
+    {
+      "id": "ISSUE-023",
+      "title": "Map kabu Station read-only payloads to broker snapshots",
+      "status": "complete",
+      "phase": "Phase 4",
+      "dependencies": ["ISSUE-011", "ISSUE-022"],
+      "summary": "Add a local-only mapper that converts kabu Station read-only orders and positions payloads into BrokerStateSnapshot fixtures for reconciliation without querying a real broker.",
+      "acceptance_criteria": [
+        "Open order payloads with positive LeavesQty map to BrokerOrderSnapshot entries.",
+        "Filled or closed order payloads with zero LeavesQty are excluded from open order snapshots.",
+        "Position payloads with positive LeavesQty map to BrokerPositionSnapshot entries.",
+        "Sell-side positions map to negative quantities.",
+        "Flat positions are excluded from position snapshots.",
+        "JP symbol codes are normalized to .T symbols.",
+        "Missing required order or position fields raise local client errors.",
+        "The mapper does not create a real HTTP transport or query kabu Station."
+      ],
+      "gates": ["Python Unit Tests", "Fixture Tests", "Documentation Localization", "Markdown Links/Style", "Secret Scan", "Task Catalog Generation"],
+      "changed_assets": [
+        "src/autotrade/execution/kabu_station.py",
+        "tests/test_kabu_station_snapshot_mapper.py",
+        "tests/test_documentation_catalog.py",
+        "docs/kabu-station-mapper.md",
+        "docs/cli-usage.md",
+        "docs/operations.md",
+        "docs/limitations.md",
+        "docs/rollback.md",
+        "docs/locales/en/overview.md",
+        "docs/locales/ja/overview.md",
+        "docs/locales/zh-CN/overview.md"
+      ],
+      "rollback": "Revert the kabu Station snapshot mapper branch; no live broker API calls or persistent broker side effects exist in this change."
     }
   ]
 }

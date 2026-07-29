@@ -931,3 +931,53 @@ Rollback: Revert the kabu Station cancelorder client branch; no live broker API 
 - Refactor: optional, but must keep gates accurate.
 
 Rollback: Revert the kabu Station read-only client branch; no live broker API calls or persistent broker side effects exist in this change.
+
+## ISSUE-023: Map kabu Station read-only payloads to broker snapshots
+
+- Status: `complete`
+- Phase: `Phase 4`
+- Dependencies: ISSUE-011, ISSUE-022
+- Roadmap: see `docs/roadmap.md#phase-4`
+- Summary: Add a local-only mapper that converts kabu Station read-only orders and positions payloads into BrokerStateSnapshot fixtures for reconciliation without querying a real broker.
+
+### Acceptance Criteria
+
+- Open order payloads with positive LeavesQty map to BrokerOrderSnapshot entries.
+- Filled or closed order payloads with zero LeavesQty are excluded from open order snapshots.
+- Position payloads with positive LeavesQty map to BrokerPositionSnapshot entries.
+- Sell-side positions map to negative quantities.
+- Flat positions are excluded from position snapshots.
+- JP symbol codes are normalized to .T symbols.
+- Missing required order or position fields raise local client errors.
+- The mapper does not create a real HTTP transport or query kabu Station.
+
+### Gates
+
+- Python Unit Tests
+- Fixture Tests
+- Documentation Localization
+- Markdown Links/Style
+- Secret Scan
+- Task Catalog Generation
+
+### Changed Assets
+
+- `src/autotrade/execution/kabu_station.py`
+- `tests/test_kabu_station_snapshot_mapper.py`
+- `tests/test_documentation_catalog.py`
+- `docs/kabu-station-mapper.md`
+- `docs/cli-usage.md`
+- `docs/operations.md`
+- `docs/limitations.md`
+- `docs/rollback.md`
+- `docs/locales/en/overview.md`
+- `docs/locales/ja/overview.md`
+- `docs/locales/zh-CN/overview.md`
+
+### Test-first Evidence
+
+- Red: required before implementation starts.
+- Green: required after implementation.
+- Refactor: optional, but must keep gates accurate.
+
+Rollback: Revert the kabu Station snapshot mapper branch; no live broker API calls or persistent broker side effects exist in this change.

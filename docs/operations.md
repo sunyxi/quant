@@ -54,6 +54,8 @@ The kabu Station cancelorder client must use an injected transport in tests. Tre
 
 The kabu Station read-only client must use an injected transport in tests. Treat orders and positions responses as fake-transport contract data only; no real account query is approved by this issue.
 
+The kabu Station snapshot mapper may convert fake or read-only payloads into reconciliation fixtures. Treat the result as broker-shaped local data only; it is not live reconciliation evidence without a separately approved real read path.
+
 ## Issue Workflow
 
 0. Read `AGENT.md`.

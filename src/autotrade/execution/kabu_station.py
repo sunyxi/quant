@@ -4,6 +4,11 @@ from dataclasses import dataclass
 from typing import Any, Protocol
 
 from autotrade.core.models import Market, OrderIntent, OrderStyle, Side
+from autotrade.execution.reconciliation import (
+    BrokerOrderSnapshot,
+    BrokerPositionSnapshot,
+    BrokerStateSnapshot,
+)
 
 
 class KabuStationClientError(RuntimeError):
@@ -233,6 +238,71 @@ class KabuStationReadOnlyClient:
                 f"kabu Station {operation} response did not include a list payload"
             )
         return response.payload
+
+
+@dataclass(frozen=True)
+class KabuStationSnapshotMapper:
+    def to_broker_state_snapshot(
+        self,
+        *,
+        orders: list[dict[str, Any]],
+        positions: list[dict[str, Any]],
+    ) -> BrokerStateSnapshot:
+        return BrokerStateSnapshot(
+            open_orders=[
+                self._order_snapshot(order)
+                for order in orders
+                if self._quantity(order, "LeavesQty") > 0
+            ],
+            positions=[
+                self._position_snapshot(position)
+                for position in positions
+                if self._quantity(position, "LeavesQty") != 0
+            ],
+        )
+
+    def _order_snapshot(self, order: dict[str, Any]) -> BrokerOrderSnapshot:
+        return BrokerOrderSnapshot(
+            client_order_id=self._text(order, "ID"),
+            symbol=self._jp_symbol(order),
+        )
+
+    def _position_snapshot(self, position: dict[str, Any]) -> BrokerPositionSnapshot:
+        quantity = self._quantity(position, "LeavesQty")
+        side = self._text(position, "Side")
+        if side == "1":
+            quantity = -quantity
+        elif side != "2":
+            raise KabuStationClientError(
+                f"unsupported kabu Station position Side: {side}"
+            )
+
+        return BrokerPositionSnapshot(
+            symbol=self._jp_symbol(position),
+            quantity=quantity,
+        )
+
+    def _jp_symbol(self, payload: dict[str, Any]) -> str:
+        symbol = self._text(payload, "Symbol")
+        return symbol if symbol.endswith(".T") else f"{symbol}.T"
+
+    @staticmethod
+    def _text(payload: dict[str, Any], field_name: str) -> str:
+        value = payload.get(field_name)
+        if not isinstance(value, str) or not value:
+            raise KabuStationClientError(
+                f"kabu Station snapshot payload did not include {field_name}"
+            )
+        return value
+
+    @staticmethod
+    def _quantity(payload: dict[str, Any], field_name: str) -> int:
+        value = payload.get(field_name)
+        if not isinstance(value, int):
+            raise KabuStationClientError(
+                f"kabu Station snapshot payload did not include integer {field_name}"
+            )
+        return value
 
 
 def raise_for_kabu_station_status(status_code: int, operation: str) -> None:
