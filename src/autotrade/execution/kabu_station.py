@@ -32,7 +32,12 @@ class JsonPostResponse(Protocol):
 
 
 class JsonPostTransport(Protocol):
-    def post_json(self, url: str, payload: dict[str, Any]) -> JsonPostResponse:
+    def post_json(
+        self,
+        url: str,
+        payload: dict[str, Any],
+        headers: dict[str, str] | None = None,
+    ) -> JsonPostResponse:
         ...
 
 
@@ -71,25 +76,53 @@ class KabuStationTokenClient:
             raise KabuStationClientError(str(exc)) from exc
 
         response = self.transport.post_json(self.environment.token_url, payload)
-        self._raise_for_status(response.status_code)
+        raise_for_kabu_station_status(response.status_code, "token request")
         token = response.payload.get("Token")
         if not isinstance(token, str) or not token:
             raise KabuStationClientError("token response did not include Token")
         return token
 
-    @staticmethod
-    def _raise_for_status(status_code: int) -> None:
-        if status_code == 200:
-            return
-        if status_code in {401, 403}:
-            raise KabuStationAuthError("kabu Station token request was unauthorized")
-        if status_code == 429:
-            raise KabuStationRateLimitError("kabu Station token request was rate limited")
-        if status_code >= 500:
-            raise KabuStationServerError("kabu Station token request failed server-side")
-        raise KabuStationClientError(
-            f"kabu Station token request failed with status {status_code}"
+
+@dataclass(frozen=True)
+class KabuStationSendOrderClient:
+    environment: KabuStationEnvironment
+    transport: JsonPostTransport
+    mapper: KabuStationOrderMapper | None = None
+
+    def submit_cash_order(self, intent: OrderIntent, api_token: str) -> str:
+        if not api_token:
+            raise KabuStationClientError("API token is required")
+
+        mapper = self.mapper or KabuStationOrderMapper()
+        try:
+            payload = mapper.to_cash_sendorder_payload(intent)
+        except KabuStationMappingError as exc:
+            raise KabuStationClientError(str(exc)) from exc
+
+        response = self.transport.post_json(
+            self.environment.sendorder_url,
+            payload,
+            headers={"X-API-KEY": api_token},
         )
+        raise_for_kabu_station_status(response.status_code, "sendorder request")
+        order_id = response.payload.get("OrderId")
+        if not isinstance(order_id, str) or not order_id:
+            raise KabuStationClientError("sendorder response did not include OrderId")
+        return order_id
+
+
+def raise_for_kabu_station_status(status_code: int, operation: str) -> None:
+    if status_code == 200:
+        return
+    if status_code in {401, 403}:
+        raise KabuStationAuthError(f"kabu Station {operation} was unauthorized")
+    if status_code == 429:
+        raise KabuStationRateLimitError(f"kabu Station {operation} was rate limited")
+    if status_code >= 500:
+        raise KabuStationServerError(f"kabu Station {operation} failed server-side")
+    raise KabuStationClientError(
+        f"kabu Station {operation} failed with status {status_code}"
+    )
 
 
 @dataclass(frozen=True)

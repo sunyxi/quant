@@ -393,6 +393,38 @@
         "docs/locales/zh-CN/overview.md"
       ],
       "rollback": "Revert the kabu Station token client branch; no live broker API calls or persistent broker side effects exist in this change."
+    },
+    {
+      "id": "ISSUE-020",
+      "title": "Add kabu Station fake-transport sendorder client",
+      "status": "in-progress",
+      "phase": "Phase 4",
+      "dependencies": ["ISSUE-018", "ISSUE-019"],
+      "summary": "Add a kabu Station sendorder client that posts official cash order payloads through an injected fake-testable transport, sets X-API-KEY, maps common response statuses, and avoids real order placement.",
+      "acceptance_criteria": [
+        "Sendorder client posts official cash order payloads to the configured localhost sendorder endpoint through an injected transport.",
+        "Sendorder requests include the X-API-KEY header.",
+        "Successful sendorder responses return the OrderId field.",
+        "Empty API tokens are rejected before transport calls.",
+        "401 and 403 responses map to authentication errors.",
+        "429 responses map to rate limit errors.",
+        "5xx responses map to server errors.",
+        "The sendorder client does not create a real HTTP transport or place live orders."
+      ],
+      "gates": ["Python Unit Tests", "Fixture Tests", "Documentation Localization", "Markdown Links/Style", "Secret Scan", "Task Catalog Generation"],
+      "changed_assets": [
+        "src/autotrade/execution/kabu_station.py",
+        "tests/test_kabu_station_sendorder_client.py",
+        "docs/kabu-station-mapper.md",
+        "docs/cli-usage.md",
+        "docs/operations.md",
+        "docs/limitations.md",
+        "docs/rollback.md",
+        "docs/locales/en/overview.md",
+        "docs/locales/ja/overview.md",
+        "docs/locales/zh-CN/overview.md"
+      ],
+      "rollback": "Revert the kabu Station sendorder client branch; no live broker API calls or persistent broker side effects exist in this change."
     }
   ]
 }

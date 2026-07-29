@@ -58,6 +58,10 @@ The kabu Station official request contract helpers have no live broker side effe
 
 The kabu Station fake-transport token client has no live broker side effects. Revert the ISSUE-019 branch if token response handling needs to be removed.
 
+## kabu Station Sendorder Client Rollback
+
+The kabu Station fake-transport sendorder client has no live broker side effects. Revert the ISSUE-020 branch if sendorder response handling needs to be removed.
+
 ## Agent Rules Rollback
 
 Revert the ISSUE-015 branch if the root agent rules document needs to be removed or replaced.

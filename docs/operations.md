@@ -48,6 +48,8 @@ Official kabu Station contract helpers may construct token and sendorder payload
 
 The kabu Station token client must use an injected transport in tests and must not create a real HTTP client until a later localhost probe issue explicitly approves that boundary.
 
+The kabu Station sendorder client must use an injected transport in tests. Treat it as contract plumbing only; no real order submission is approved by this issue.
+
 ## Issue Workflow
 
 0. Read `AGENT.md`.
