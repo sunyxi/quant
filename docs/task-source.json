@@ -458,6 +458,41 @@
         "docs/locales/zh-CN/overview.md"
       ],
       "rollback": "Revert the kabu Station cancelorder client branch; no live broker API calls or persistent broker side effects exist in this change."
+    },
+    {
+      "id": "ISSUE-022",
+      "title": "Add kabu Station fake-transport read-only client",
+      "status": "complete",
+      "phase": "Phase 4",
+      "dependencies": ["ISSUE-019", "ISSUE-020", "ISSUE-021"],
+      "summary": "Add a kabu Station read-only client that queries orders and positions through an injected fake-testable GET transport, sets X-API-KEY, maps common response statuses, validates list payloads, and avoids real broker connections.",
+      "acceptance_criteria": [
+        "Read-only orders requests call the configured localhost orders endpoint through an injected transport.",
+        "Read-only positions requests call the configured localhost positions endpoint through an injected transport.",
+        "Orders and positions requests include the X-API-KEY header.",
+        "Orders requests can pass product, symbol, and details query parameters.",
+        "Positions requests can pass product and symbol query parameters.",
+        "Empty API tokens are rejected before transport calls.",
+        "Successful orders and positions responses must be list payloads.",
+        "401 and 403 responses map to authentication errors.",
+        "429 responses map to rate limit errors.",
+        "5xx responses map to server errors.",
+        "The read-only client does not create a real HTTP transport or connect to kabu Station."
+      ],
+      "gates": ["Python Unit Tests", "Fixture Tests", "Documentation Localization", "Markdown Links/Style", "Secret Scan", "Task Catalog Generation"],
+      "changed_assets": [
+        "src/autotrade/execution/kabu_station.py",
+        "tests/test_kabu_station_readonly_client.py",
+        "docs/kabu-station-mapper.md",
+        "docs/cli-usage.md",
+        "docs/operations.md",
+        "docs/limitations.md",
+        "docs/rollback.md",
+        "docs/locales/en/overview.md",
+        "docs/locales/ja/overview.md",
+        "docs/locales/zh-CN/overview.md"
+      ],
+      "rollback": "Revert the kabu Station read-only client branch; no live broker API calls or persistent broker side effects exist in this change."
     }
   ]
 }

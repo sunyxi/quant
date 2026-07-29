@@ -52,6 +52,8 @@ The kabu Station sendorder client must use an injected transport in tests. Treat
 
 The kabu Station cancelorder client must use an injected transport in tests. Treat it as contract plumbing only; no real order cancellation is approved by this issue.
 
+The kabu Station read-only client must use an injected transport in tests. Treat orders and positions responses as fake-transport contract data only; no real account query is approved by this issue.
+
 ## Issue Workflow
 
 0. Read `AGENT.md`.

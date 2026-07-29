@@ -66,6 +66,10 @@ The kabu Station fake-transport sendorder client has no live broker side effects
 
 The kabu Station fake-transport cancelorder client has no live broker side effects. Revert the ISSUE-021 branch if cancelorder response handling needs to be removed.
 
+## kabu Station Read-only Client Rollback
+
+The kabu Station fake-transport read-only client has no live broker side effects. Revert the ISSUE-022 branch if orders or positions response handling needs to be removed.
+
 ## Agent Rules Rollback
 
 Revert the ISSUE-015 branch if the root agent rules document needs to be removed or replaced.

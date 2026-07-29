@@ -105,6 +105,38 @@ The cancelorder client uses the same local error categories as token and sendord
 
 The cancelorder client does not create a real HTTP transport and does not cancel live orders. A later issue must explicitly approve any real localhost probe or live cancel path.
 
+## Read-only Client
+
+ISSUE-022 adds a fake-transport-testable read-only client for orders and positions. It sends GET requests to the configured localhost `orders` and `positions` endpoints through an injected transport, sets the `X-API-KEY` header, and returns successful list payloads.
+
+Orders requests may include:
+
+```python
+{
+    "product": "1",
+    "symbol": "7203",
+    "details": "false",
+}
+```
+
+Positions requests may include:
+
+```python
+{
+    "product": "1",
+    "symbol": "7203",
+}
+```
+
+The read-only client uses the same local error categories as token, sendorder, and cancelorder clients:
+
+- `401` and `403`: authentication error;
+- `429`: rate limit error;
+- `5xx`: server error;
+- other non-`200`: generic client error.
+
+The read-only client validates that successful orders and positions responses are list payloads. It does not create a real HTTP transport, query a real account, or prove kabu Station runtime availability. A later issue must explicitly approve any real localhost probe.
+
 ## Rejections
 
 The mapper rejects:
@@ -121,12 +153,10 @@ This is not a broker adapter. It does not implement:
 - token handling;
 - real HTTP requests;
 - WebSocket subscriptions;
-- broker error mapping;
 - live order submission;
 - cancel requests;
-- order status queries;
-- positions or cash queries.
+- cash queries.
 
 ## Rollback
 
-This change has no live broker side effects. Rollback by reverting the ISSUE-017 branch or by removing mapper use from future adapter contract tests.
+This change has no live broker side effects. Rollback by reverting the relevant kabu Station feature branch or by removing mapper/client use from future adapter contract tests.

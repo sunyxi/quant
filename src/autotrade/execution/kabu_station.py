@@ -28,7 +28,7 @@ class KabuStationMappingError(ValueError):
 
 class JsonPostResponse(Protocol):
     status_code: int
-    payload: dict[str, Any]
+    payload: Any
 
 
 class JsonPostTransport(Protocol):
@@ -46,6 +46,16 @@ class JsonPutTransport(Protocol):
         self,
         url: str,
         payload: dict[str, Any],
+        headers: dict[str, str] | None = None,
+    ) -> JsonPostResponse:
+        ...
+
+
+class JsonGetTransport(Protocol):
+    def get_json(
+        self,
+        url: str,
+        query: dict[str, str] | None = None,
         headers: dict[str, str] | None = None,
     ) -> JsonPostResponse:
         ...
@@ -74,6 +84,14 @@ class KabuStationEnvironment:
     @property
     def cancelorder_url(self) -> str:
         return f"{self.base_url}/kabusapi/cancelorder"
+
+    @property
+    def orders_url(self) -> str:
+        return f"{self.base_url}/kabusapi/orders"
+
+    @property
+    def positions_url(self) -> str:
+        return f"{self.base_url}/kabusapi/positions"
 
 
 @dataclass(frozen=True)
@@ -146,6 +164,75 @@ class KabuStationCancelOrderClient:
         if not isinstance(cancelled_order_id, str) or not cancelled_order_id:
             raise KabuStationClientError("cancelorder response did not include OrderId")
         return cancelled_order_id
+
+
+@dataclass(frozen=True)
+class KabuStationReadOnlyClient:
+    environment: KabuStationEnvironment
+    transport: JsonGetTransport
+
+    def get_orders(
+        self,
+        api_token: str,
+        product: str | None = None,
+        symbol: str | None = None,
+        details: bool | None = None,
+    ) -> list[dict[str, Any]]:
+        query: dict[str, str] = {}
+        if product is not None:
+            query["product"] = product
+        if symbol is not None:
+            query["symbol"] = symbol
+        if details is not None:
+            query["details"] = "true" if details else "false"
+
+        return self._get_list(
+            operation="orders request",
+            url=self.environment.orders_url,
+            api_token=api_token,
+            query=query,
+        )
+
+    def get_positions(
+        self,
+        api_token: str,
+        product: str | None = None,
+        symbol: str | None = None,
+    ) -> list[dict[str, Any]]:
+        query: dict[str, str] = {}
+        if product is not None:
+            query["product"] = product
+        if symbol is not None:
+            query["symbol"] = symbol
+
+        return self._get_list(
+            operation="positions request",
+            url=self.environment.positions_url,
+            api_token=api_token,
+            query=query,
+        )
+
+    def _get_list(
+        self,
+        operation: str,
+        url: str,
+        api_token: str,
+        query: dict[str, str],
+    ) -> list[dict[str, Any]]:
+        if not api_token:
+            raise KabuStationClientError("API token is required")
+
+        response = self.transport.get_json(
+            url,
+            query=query or None,
+            headers={"X-API-KEY": api_token},
+        )
+        raise_for_kabu_station_status(response.status_code, operation)
+        if not isinstance(response.payload, list):
+            raise KabuStationClientError(
+                f"kabu Station {operation} response did not include a list payload"
+            )
+        return response.payload
 
 
 def raise_for_kabu_station_status(status_code: int, operation: str) -> None:
