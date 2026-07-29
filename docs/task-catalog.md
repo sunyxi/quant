@@ -404,7 +404,7 @@ Rollback: Revert the risk paused state branch; no broker or persistent state sid
 
 ## ISSUE-011: Add reconciliation discrepancy checks
 
-- Status: `in-progress`
+- Status: `complete`
 - Phase: `Phase 3`
 - Dependencies: ISSUE-008, ISSUE-009, ISSUE-010
 - Roadmap: see `docs/roadmap.md#phase-3`
@@ -439,3 +439,41 @@ Rollback: Revert the risk paused state branch; no broker or persistent state sid
 - Refactor: optional, but must keep gates accurate.
 
 Rollback: Revert the reconciliation checks branch; no broker or persistent state side effects exist in this change.
+
+## ISSUE-012: Add simulated broker adapter
+
+- Status: `in-progress`
+- Phase: `Phase 4`
+- Dependencies: ISSUE-008, ISSUE-009, ISSUE-011
+- Roadmap: see `docs/roadmap.md#phase-4`
+- Summary: Add a broker-interface-compatible simulator that supports idempotent order submission, cancellation, open order queries, and injected fills without live broker side effects.
+
+### Acceptance Criteria
+
+- Submitting the same client_order_id returns the same simulated broker order id.
+- Cancelled simulated orders disappear from open order queries.
+- Injected full fills are recorded and close the open order.
+- Injected partial fills reduce the remaining open order quantity.
+
+### Gates
+
+- Python Unit Tests
+- Fixture Tests
+- Documentation Localization
+- Markdown Links/Style
+- Secret Scan
+- Task Catalog Generation
+
+### Changed Assets
+
+- `src/autotrade/execution/simulated_broker.py`
+- `tests/test_simulated_broker.py`
+- `docs/simulated-broker.md`
+
+### Test-first Evidence
+
+- Red: required before implementation starts.
+- Green: required after implementation.
+- Refactor: optional, but must keep gates accurate.
+
+Rollback: Revert the simulated broker adapter branch; no live broker side effects exist in this change.

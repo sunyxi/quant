@@ -20,6 +20,8 @@ The risk layer can now enter a paused state with an incident reason and reject a
 
 The execution layer can compare local OMS and ledger state with broker snapshots and pause risk on critical reconciliation discrepancies.
 
+The execution layer now includes a simulated broker adapter for idempotent order submission, cancellation, open order queries, and fixture-driven fills without live broker access.
+
 Repository CI runs Python unit tests, Task Catalog drift checks, Markdown link/style checks, and a basic secret scan for pull requests and pushes to `main`.
 
-See `docs/roadmap.md`, `docs/task-catalog.md`, `docs/scope.md`, `docs/risk-policy.md`, `docs/broker-decision.md`, `docs/implementation-plan.md`, `docs/market-calendar.md`, `docs/order-book-intelligence.md`, `docs/backtest-fill-cost.md`, `docs/strategy-market-quality.md`, `docs/oms.md`, `docs/execution-ledger.md`, `docs/risk-paused-state.md`, `docs/reconciliation.md`, `docs/operations.md`, `docs/limitations.md`, and `docs/rollback.md`.
+See `docs/roadmap.md`, `docs/task-catalog.md`, `docs/scope.md`, `docs/risk-policy.md`, `docs/broker-decision.md`, `docs/implementation-plan.md`, `docs/market-calendar.md`, `docs/order-book-intelligence.md`, `docs/backtest-fill-cost.md`, `docs/strategy-market-quality.md`, `docs/oms.md`, `docs/execution-ledger.md`, `docs/risk-paused-state.md`, `docs/reconciliation.md`, `docs/simulated-broker.md`, `docs/operations.md`, `docs/limitations.md`, and `docs/rollback.md`.

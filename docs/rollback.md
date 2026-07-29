@@ -34,6 +34,10 @@ The current paused state has no broker side effects. Revert the ISSUE-010 branch
 
 The current reconciliation checks have no broker or persistent side effects. Revert the ISSUE-011 branch if comparison behavior needs to return to the previous execution skeleton.
 
+## Simulated Broker Rollback
+
+The simulated broker has no live broker side effects. Revert the ISSUE-012 branch if simulator behavior needs to return to the previous adapter skeleton.
+
 ## Live Trading Rollback
 
 Live trading is not supported yet. Future live rollback must follow this order:

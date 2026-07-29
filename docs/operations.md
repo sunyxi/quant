@@ -28,6 +28,10 @@ Use `RiskManager.pause(reason)` when an incident requires blocking all new order
 
 Treat critical reconciliation discrepancies as blocking. A broker order missing from the local OMS, an `UNKNOWN` local order, or a position mismatch should pause new approvals until the discrepancy is explained.
 
+## Simulated Broker Handling
+
+Use the simulated broker only for tests, replay, and simulation. Fills must be injected by fixtures or replay orchestration; the simulator does not independently match against live market data.
+
 ## Issue Workflow
 
 1. Select the first ready task from `docs/task-catalog.md`.
