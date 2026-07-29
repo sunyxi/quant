@@ -689,7 +689,7 @@ Rollback: Revert the kabu Station mapper branch; no live broker API calls or per
 
 ## ISSUE-018: Add kabu Station official request contract
 
-- Status: `in-progress`
+- Status: `complete`
 - Phase: `Phase 4`
 - Dependencies: ISSUE-017
 - Roadmap: see `docs/roadmap.md#phase-4`
