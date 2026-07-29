@@ -46,6 +46,8 @@ Use the kabu Station mapper only for local adapter-boundary tests. It must not b
 
 Official kabu Station contract helpers may construct token and sendorder payloads, but they must not store passwords, open network connections, or place orders until a later adapter issue explicitly approves those behaviors.
 
+The kabu Station token client must use an injected transport in tests and must not create a real HTTP client until a later localhost probe issue explicitly approves that boundary.
+
 ## Issue Workflow
 
 0. Read `AGENT.md`.

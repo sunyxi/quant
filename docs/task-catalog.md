@@ -732,3 +732,51 @@ Rollback: Revert the kabu Station mapper branch; no live broker API calls or per
 - Refactor: optional, but must keep gates accurate.
 
 Rollback: Revert the kabu Station official contract branch; no live broker API calls or persistent broker side effects exist in this change.
+
+## ISSUE-019: Add kabu Station fake-transport token client
+
+- Status: `in-progress`
+- Phase: `Phase 4`
+- Dependencies: ISSUE-018
+- Roadmap: see `docs/roadmap.md#phase-4`
+- Summary: Add a kabu Station token client that posts official token payloads through an injected fake-testable transport, maps common response statuses, and avoids storing credentials or opening real network connections.
+
+### Acceptance Criteria
+
+- Token client posts APIPassword payloads to the configured localhost token endpoint through an injected transport.
+- Successful token responses return the Token field.
+- Empty passwords are rejected before transport calls.
+- 401 and 403 responses map to authentication errors.
+- 429 responses map to rate limit errors.
+- 5xx responses map to server errors.
+- The token client does not store API passwords or create a real HTTP transport.
+
+### Gates
+
+- Python Unit Tests
+- Fixture Tests
+- Documentation Localization
+- Markdown Links/Style
+- Secret Scan
+- Task Catalog Generation
+
+### Changed Assets
+
+- `src/autotrade/execution/kabu_station.py`
+- `tests/test_kabu_station_token_client.py`
+- `docs/kabu-station-mapper.md`
+- `docs/cli-usage.md`
+- `docs/operations.md`
+- `docs/limitations.md`
+- `docs/rollback.md`
+- `docs/locales/en/overview.md`
+- `docs/locales/ja/overview.md`
+- `docs/locales/zh-CN/overview.md`
+
+### Test-first Evidence
+
+- Red: required before implementation starts.
+- Green: required after implementation.
+- Refactor: optional, but must keep gates accurate.
+
+Rollback: Revert the kabu Station token client branch; no live broker API calls or persistent broker side effects exist in this change.

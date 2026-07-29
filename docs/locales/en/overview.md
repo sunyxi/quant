@@ -34,6 +34,8 @@ The execution layer now includes a local-only kabu Station order mapper for futu
 
 The mapper also has local official request-contract helpers for token and cash sendorder payloads, still without authentication or network calls.
 
+The kabu Station token client can be tested with a fake transport and maps authentication, rate-limit, and server failures without connecting to kabu Station.
+
 Repository CI runs Python unit tests, Task Catalog drift checks, Markdown link/style checks, and a basic secret scan for pull requests and pushes to `main`.
 
 See `docs/roadmap.md`, `docs/task-catalog.md`, `docs/scope.md`, `docs/risk-policy.md`, `docs/broker-decision.md`, `docs/implementation-plan.md`, `docs/market-calendar.md`, `docs/order-book-intelligence.md`, `docs/backtest-fill-cost.md`, `docs/strategy-market-quality.md`, `docs/oms.md`, `docs/execution-ledger.md`, `docs/risk-paused-state.md`, `docs/reconciliation.md`, `docs/simulated-broker.md`, `docs/replay-execution.md`, `docs/kabu-station-mapper.md`, `docs/operations.md`, `docs/limitations.md`, and `docs/rollback.md`.

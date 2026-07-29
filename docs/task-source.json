@@ -362,6 +362,37 @@
         "docs/locales/zh-CN/overview.md"
       ],
       "rollback": "Revert the kabu Station official contract branch; no live broker API calls or persistent broker side effects exist in this change."
+    },
+    {
+      "id": "ISSUE-019",
+      "title": "Add kabu Station fake-transport token client",
+      "status": "in-progress",
+      "phase": "Phase 4",
+      "dependencies": ["ISSUE-018"],
+      "summary": "Add a kabu Station token client that posts official token payloads through an injected fake-testable transport, maps common response statuses, and avoids storing credentials or opening real network connections.",
+      "acceptance_criteria": [
+        "Token client posts APIPassword payloads to the configured localhost token endpoint through an injected transport.",
+        "Successful token responses return the Token field.",
+        "Empty passwords are rejected before transport calls.",
+        "401 and 403 responses map to authentication errors.",
+        "429 responses map to rate limit errors.",
+        "5xx responses map to server errors.",
+        "The token client does not store API passwords or create a real HTTP transport."
+      ],
+      "gates": ["Python Unit Tests", "Fixture Tests", "Documentation Localization", "Markdown Links/Style", "Secret Scan", "Task Catalog Generation"],
+      "changed_assets": [
+        "src/autotrade/execution/kabu_station.py",
+        "tests/test_kabu_station_token_client.py",
+        "docs/kabu-station-mapper.md",
+        "docs/cli-usage.md",
+        "docs/operations.md",
+        "docs/limitations.md",
+        "docs/rollback.md",
+        "docs/locales/en/overview.md",
+        "docs/locales/ja/overview.md",
+        "docs/locales/zh-CN/overview.md"
+      ],
+      "rollback": "Revert the kabu Station token client branch; no live broker API calls or persistent broker side effects exist in this change."
     }
   ]
 }
