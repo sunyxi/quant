@@ -68,6 +68,7 @@ OMS and risk runtime.
 
 Broker adapter and simulation.
 
+- ISSUE-012: add simulated broker adapter.
 - Add kabu Station adapter boundary behind a simulator first.
 - Validate request/response normalization, retry boundaries, and unknown order handling.
 - Deliverable: adapter contract tests pass without live capital.
@@ -90,7 +91,7 @@ Shadow Mode.
 | Board Intelligence | ISSUE-004 | Snapshot and feature tests pass |
 | Strategy Research | ISSUE-007 and later strategy Issues | Strategy filters and walk-forward report |
 | Risk and OMS | ISSUE-008, ISSUE-009, ISSUE-010, ISSUE-011, and later execution Issues | Fault fixtures pass |
-| Broker Integration | Later adapter Issues | Contract and shadow tests pass |
+| Broker Integration | ISSUE-012 and later adapter Issues | Contract and shadow tests pass |
 
 ## Stop Conditions
 

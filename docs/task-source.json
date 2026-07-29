@@ -192,7 +192,7 @@
     {
       "id": "ISSUE-011",
       "title": "Add reconciliation discrepancy checks",
-      "status": "in-progress",
+      "status": "complete",
       "phase": "Phase 3",
       "dependencies": ["ISSUE-008", "ISSUE-009", "ISSUE-010"],
       "summary": "Add broker snapshot reconciliation checks that detect unknown local orders, broker orders missing locally, and position quantity mismatches, with optional risk pause on critical discrepancies.",
@@ -205,6 +205,23 @@
       "gates": ["Python Unit Tests", "Fixture Tests", "Documentation Localization", "Markdown Links/Style", "Secret Scan", "Task Catalog Generation"],
       "changed_assets": ["src/autotrade/execution/reconciliation.py", "tests/test_reconciliation.py", "docs/reconciliation.md"],
       "rollback": "Revert the reconciliation checks branch; no broker or persistent state side effects exist in this change."
+    },
+    {
+      "id": "ISSUE-012",
+      "title": "Add simulated broker adapter",
+      "status": "in-progress",
+      "phase": "Phase 4",
+      "dependencies": ["ISSUE-008", "ISSUE-009", "ISSUE-011"],
+      "summary": "Add a broker-interface-compatible simulator that supports idempotent order submission, cancellation, open order queries, and injected fills without live broker side effects.",
+      "acceptance_criteria": [
+        "Submitting the same client_order_id returns the same simulated broker order id.",
+        "Cancelled simulated orders disappear from open order queries.",
+        "Injected full fills are recorded and close the open order.",
+        "Injected partial fills reduce the remaining open order quantity."
+      ],
+      "gates": ["Python Unit Tests", "Fixture Tests", "Documentation Localization", "Markdown Links/Style", "Secret Scan", "Task Catalog Generation"],
+      "changed_assets": ["src/autotrade/execution/simulated_broker.py", "tests/test_simulated_broker.py", "docs/simulated-broker.md"],
+      "rollback": "Revert the simulated broker adapter branch; no live broker side effects exist in this change."
     }
   ]
 }

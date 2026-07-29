@@ -52,6 +52,12 @@ PYTHONPATH=src python3 -m unittest tests.test_risk_manager
 PYTHONPATH=src python3 -m unittest tests.test_reconciliation
 ```
 
+## Simulated Broker Tests
+
+```bash
+PYTHONPATH=src python3 -m unittest tests.test_simulated_broker
+```
+
 ## Rebuild Task Catalog
 
 ```bash
