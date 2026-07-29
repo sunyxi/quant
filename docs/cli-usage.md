@@ -28,6 +28,12 @@ PYTHONPATH=src python3 -m autotrade.backtest.demo
 PYTHONPATH=src python3 -m unittest tests.test_strategies
 ```
 
+## OMS Tests
+
+```bash
+PYTHONPATH=src python3 -m unittest tests.test_oms
+```
+
 ## Rebuild Task Catalog
 
 ```bash

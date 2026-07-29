@@ -7,6 +7,7 @@
 - Official JP holiday source integration, special quotes, halts, and limit-up or limit-down states are not fully modeled.
 - Order book snapshot features are implemented for fixtures and research, but live WebSocket ingestion, incremental book building, cancellation inference, and refill inference are not implemented.
 - Strategy market quality filters can block ORB and VWAP signals by spread or order book health, but they are not calibrated fill-probability or alpha models.
+- The OMS state machine is local only; it does not persist records, reconcile broker state, or submit/cancel live orders.
 - Machine learning, meta-labeling, model registry, and degradation monitoring are out of scope for the current code.
 - US market execution through IBKR is future work.
 - Nothing in this repository is financial advice or a guarantee of profit.

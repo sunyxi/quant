@@ -12,6 +12,8 @@
 
 当前策略层可以在价差超过限制，或盘口新鲜度、健康状态不合格时，阻断 ORB 和 VWAP 信号。
 
+当前执行层已有独立于券商的 OMS 状态机，用于幂等登记本地订单并审计订单生命周期转换。
+
 仓库 CI 会在 PR 和推送到 `main` 时运行 Python 单元测试、Task Catalog 漂移检查、Markdown 链接/样式检查和基础密钥扫描。
 
-请阅读 `docs/roadmap.md`、`docs/task-catalog.md`、`docs/scope.md`、`docs/risk-policy.md`、`docs/broker-decision.md`、`docs/implementation-plan.md`、`docs/market-calendar.md`、`docs/order-book-intelligence.md`、`docs/backtest-fill-cost.md`、`docs/strategy-market-quality.md`、`docs/operations.md`、`docs/limitations.md` 和 `docs/rollback.md`。
+请阅读 `docs/roadmap.md`、`docs/task-catalog.md`、`docs/scope.md`、`docs/risk-policy.md`、`docs/broker-decision.md`、`docs/implementation-plan.md`、`docs/market-calendar.md`、`docs/order-book-intelligence.md`、`docs/backtest-fill-cost.md`、`docs/strategy-market-quality.md`、`docs/oms.md`、`docs/operations.md`、`docs/limitations.md` 和 `docs/rollback.md`。

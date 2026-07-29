@@ -250,7 +250,7 @@ Rollback: Remove .github/workflows/ci.yml and the workflow catalog test.
 
 ## ISSUE-007: Add strategy market quality filters
 
-- Status: `in-progress`
+- Status: `complete`
 - Phase: `Phase 2`
 - Dependencies: ISSUE-003, ISSUE-004, ISSUE-005
 - Roadmap: see `docs/roadmap.md#phase-2`
@@ -287,3 +287,41 @@ Rollback: Remove .github/workflows/ci.yml and the workflow catalog test.
 - Refactor: optional, but must keep gates accurate.
 
 Rollback: Disable strategy market quality filters by reverting the feature branch.
+
+## ISSUE-008: Add OMS order state machine
+
+- Status: `in-progress`
+- Phase: `Phase 3`
+- Dependencies: ISSUE-005, ISSUE-007
+- Roadmap: see `docs/roadmap.md#phase-3`
+- Summary: Introduce the broker-independent OMS state machine used to register order intents idempotently and track auditable order lifecycle transitions.
+
+### Acceptance Criteria
+
+- Order intents are registered once by client_order_id.
+- Valid lifecycle transitions from CREATED through FILLED are supported.
+- Invalid lifecycle transitions raise a domain error.
+- Uncertain broker submission can be marked UNKNOWN with a reason.
+
+### Gates
+
+- Python Unit Tests
+- Fixture Tests
+- Documentation Localization
+- Markdown Links/Style
+- Secret Scan
+- Task Catalog Generation
+
+### Changed Assets
+
+- `src/autotrade/execution/oms.py`
+- `tests/test_oms.py`
+- `docs/oms.md`
+
+### Test-first Evidence
+
+- Red: required before implementation starts.
+- Green: required after implementation.
+- Refactor: optional, but must keep gates accurate.
+
+Rollback: Revert the OMS state machine branch; no broker or live order side effects exist in this change.
