@@ -12,7 +12,7 @@ A gate that did not execute must never be reported as passed.
 
 ## ISSUE-001: Document roadmap, task catalog, and contribution gates
 
-- Status: `in-progress`
+- Status: `complete`
 - Phase: `Phase 0`
 - Dependencies: None
 - Roadmap: see `docs/roadmap.md#phase-0`
@@ -57,29 +57,33 @@ Rollback: Revert the documentation and GitHub workflow/template changes from thi
 
 ## ISSUE-002: Define project scope and risk policy assets
 
-- Status: `ready`
+- Status: `in-progress`
 - Phase: `Phase 0`
 - Dependencies: ISSUE-001
 - Roadmap: see `docs/roadmap.md#phase-0`
-- Summary: Write the formal project scope, broker decision, and risk policy before expanding implementation.
+- Summary: Write the formal project scope, broker decision, risk policy, and implementation plan before expanding implementation.
 
 ### Acceptance Criteria
 
 - Scope fixes JP equities as the first automated market.
 - Risk policy defines pre-trade, in-trade, and post-trade controls.
 - Broker decision records kabu Station as the JP execution target and IBKR as later US target.
+- Implementation plan maps early iterations to task IDs and Go / No-Go evidence.
 
 ### Gates
 
+- Python Unit Tests
 - Documentation Localization
 - Markdown Links/Style
 - Secret Scan
+- Task Catalog Generation
 
 ### Changed Assets
 
 - `docs/scope.md`
 - `docs/risk-policy.md`
 - `docs/broker-decision.md`
+- `docs/implementation-plan.md`
 
 ### Test-first Evidence
 
