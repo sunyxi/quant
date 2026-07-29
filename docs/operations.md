@@ -8,6 +8,10 @@
 4. Run research or demo commands against non-live data.
 5. Record gate results as `passed`, `failed`, `not-run`, or `skipped`.
 
+## Strategy Research Run
+
+When evaluating ORB or VWAP signals, include spread and order book health fields in fixtures. A stale or unhealthy book should suppress signals before any risk or execution decision is built.
+
 ## Issue Workflow
 
 1. Select the first ready task from `docs/task-catalog.md`.

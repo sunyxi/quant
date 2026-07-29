@@ -30,6 +30,57 @@ class StrategyTests(unittest.TestCase):
         self.assertIsNotNone(signal)
         self.assertEqual(signal.side, Side.BUY)
 
+    def test_opening_range_breakout_blocks_wide_spread(self) -> None:
+        strategy = OpeningRangeBreakout(atr=20, max_spread_bps=5)
+        strategy.set_opening_range(high=1000, low=980)
+        snapshot = MarketSnapshot(
+            symbol="7203.T",
+            market=Market.JP,
+            timestamp=datetime(2026, 7, 28, 9, 16, tzinfo=ZoneInfo("Asia/Tokyo")),
+            bid=1000,
+            ask=1002,
+            last=1002,
+            volume=100_000,
+            vwap=995,
+            features={"relative_volume": 2.0},
+        )
+
+        self.assertIsNone(strategy.on_snapshot(snapshot))
+
+    def test_opening_range_breakout_blocks_stale_order_book(self) -> None:
+        strategy = OpeningRangeBreakout(atr=20, require_fresh_order_book=True)
+        strategy.set_opening_range(high=1000, low=980)
+        snapshot = MarketSnapshot(
+            symbol="7203.T",
+            market=Market.JP,
+            timestamp=datetime(2026, 7, 28, 9, 16, tzinfo=ZoneInfo("Asia/Tokyo")),
+            bid=1001,
+            ask=1002,
+            last=1002,
+            volume=100_000,
+            vwap=995,
+            features={"relative_volume": 2.0, "order_book_stale": 1.0},
+        )
+
+        self.assertIsNone(strategy.on_snapshot(snapshot))
+
+    def test_opening_range_breakout_blocks_unhealthy_order_book(self) -> None:
+        strategy = OpeningRangeBreakout(atr=20)
+        strategy.set_opening_range(high=1000, low=980)
+        snapshot = MarketSnapshot(
+            symbol="7203.T",
+            market=Market.JP,
+            timestamp=datetime(2026, 7, 28, 9, 16, tzinfo=ZoneInfo("Asia/Tokyo")),
+            bid=1001,
+            ask=1002,
+            last=1002,
+            volume=100_000,
+            vwap=995,
+            features={"relative_volume": 2.0, "order_book_unhealthy": 1.0},
+        )
+
+        self.assertIsNone(strategy.on_snapshot(snapshot))
+
     def test_vwap_reversion_ignores_trending_market(self) -> None:
         strategy = VwapReversion()
         snapshot = MarketSnapshot(
@@ -42,6 +93,42 @@ class StrategyTests(unittest.TestCase):
             volume=100_000,
             vwap=1000,
             features={"ewma_sigma": 10, "trend_score": 0.8},
+        )
+
+        self.assertIsNone(strategy.on_snapshot(snapshot))
+
+    def test_vwap_reversion_blocks_wide_spread(self) -> None:
+        strategy = VwapReversion(max_spread_bps=5)
+        snapshot = MarketSnapshot(
+            symbol="7203.T",
+            market=Market.JP,
+            timestamp=datetime(2026, 7, 28, 10, 0, tzinfo=ZoneInfo("Asia/Tokyo")),
+            bid=948,
+            ask=951,
+            last=950,
+            volume=100_000,
+            vwap=1000,
+            features={"ewma_sigma": 10, "trend_score": 0.1},
+        )
+
+        self.assertIsNone(strategy.on_snapshot(snapshot))
+
+    def test_vwap_reversion_blocks_stale_order_book(self) -> None:
+        strategy = VwapReversion(require_fresh_order_book=True)
+        snapshot = MarketSnapshot(
+            symbol="7203.T",
+            market=Market.JP,
+            timestamp=datetime(2026, 7, 28, 10, 0, tzinfo=ZoneInfo("Asia/Tokyo")),
+            bid=950,
+            ask=951,
+            last=950,
+            volume=100_000,
+            vwap=1000,
+            features={
+                "ewma_sigma": 10,
+                "trend_score": 0.1,
+                "order_book_stale": 1.0,
+            },
         )
 
         self.assertIsNone(strategy.on_snapshot(snapshot))

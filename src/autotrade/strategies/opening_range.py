@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 from autotrade.core.models import MarketSnapshot, Side, Signal
 from autotrade.strategies.base import Strategy
+from autotrade.strategies.market_quality import MarketQualityFilter
 
 
 @dataclass
@@ -13,6 +14,8 @@ class OpeningRangeBreakout(Strategy):
     opening_range_low: float | None = None
     atr: float = 1.0
     min_relative_volume: float = 1.5
+    max_spread_bps: float | None = None
+    require_fresh_order_book: bool = False
 
     def set_opening_range(self, high: float, low: float) -> None:
         if high <= low:
@@ -21,6 +24,13 @@ class OpeningRangeBreakout(Strategy):
         self.opening_range_low = low
 
     def on_snapshot(self, snapshot: MarketSnapshot) -> Signal | None:
+        quality_filter = MarketQualityFilter(
+            max_spread_bps=self.max_spread_bps,
+            require_fresh_order_book=self.require_fresh_order_book,
+        )
+        if not quality_filter.allows(snapshot):
+            return None
+
         if self.opening_range_high is None or self.opening_range_low is None:
             return None
 

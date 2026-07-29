@@ -171,7 +171,7 @@ Rollback: Disable order book filters and revert the added model modules.
 
 ## ISSUE-005: Harden backtest fill and cost modeling
 
-- Status: `in-progress`
+- Status: `complete`
 - Phase: `Phase 1`
 - Dependencies: ISSUE-003
 - Roadmap: see `docs/roadmap.md#phase-1`
@@ -247,3 +247,43 @@ Rollback: Revert the fill model feature branch and restore the previous simplifi
 - Refactor: optional, but must keep gates accurate.
 
 Rollback: Remove .github/workflows/ci.yml and the workflow catalog test.
+
+## ISSUE-007: Add strategy market quality filters
+
+- Status: `in-progress`
+- Phase: `Phase 2`
+- Dependencies: ISSUE-003, ISSUE-004, ISSUE-005
+- Roadmap: see `docs/roadmap.md#phase-2`
+- Summary: Connect P0 spread and stale order book health checks to ORB and VWAP strategy signal generation.
+
+### Acceptance Criteria
+
+- ORB signals are blocked when configured spread limits are exceeded.
+- VWAP reversion signals are blocked when configured spread limits are exceeded.
+- Strategies can require fresh order book data before producing signals.
+- Unhealthy order book flags always block strategy signals.
+
+### Gates
+
+- Python Unit Tests
+- Fixture Tests
+- Documentation Localization
+- Markdown Links/Style
+- Secret Scan
+- Task Catalog Generation
+
+### Changed Assets
+
+- `src/autotrade/strategies/market_quality.py`
+- `src/autotrade/strategies/opening_range.py`
+- `src/autotrade/strategies/vwap_reversion.py`
+- `tests/test_strategies.py`
+- `docs/strategy-market-quality.md`
+
+### Test-first Evidence
+
+- Red: required before implementation starts.
+- Green: required after implementation.
+- Refactor: optional, but must keep gates accurate.
+
+Rollback: Disable strategy market quality filters by reverting the feature branch.

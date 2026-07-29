@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from autotrade.core.models import MarketSnapshot, Side, Signal
 from autotrade.features.indicators import zscore
 from autotrade.strategies.base import Strategy
+from autotrade.strategies.market_quality import MarketQualityFilter
 
 
 @dataclass
@@ -12,8 +13,17 @@ class VwapReversion(Strategy):
     strategy_id: str = "jp_vwap_reversion_v1"
     entry_zscore: float = 2.2
     stop_zscore: float = 3.2
+    max_spread_bps: float | None = None
+    require_fresh_order_book: bool = False
 
     def on_snapshot(self, snapshot: MarketSnapshot) -> Signal | None:
+        quality_filter = MarketQualityFilter(
+            max_spread_bps=self.max_spread_bps,
+            require_fresh_order_book=self.require_fresh_order_book,
+        )
+        if not quality_filter.allows(snapshot):
+            return None
+
         if snapshot.vwap is None:
             return None
 
