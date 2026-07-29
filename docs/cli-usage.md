@@ -96,6 +96,14 @@ PYTHONPATH=src python3 -m unittest tests.test_kabu_station_cancelorder_client
 
 These tests use a fake transport only. They do not connect to kabu Station, require Windows, or cancel orders.
 
+## kabu Station Read-only Client Tests
+
+```bash
+PYTHONPATH=src python3 -m unittest tests.test_kabu_station_readonly_client
+```
+
+These tests use a fake transport only. They do not connect to kabu Station, require Windows, query real orders, or query real positions.
+
 ## Governance Documentation Tests
 
 ```bash
