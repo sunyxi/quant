@@ -557,7 +557,7 @@ Rollback: Revert the replay execution engine branch; no live broker side effects
 
 ## ISSUE-015: Add agent rules document
 
-- Status: `in-progress`
+- Status: `complete`
 - Phase: `Phase 0`
 - Dependencies: ISSUE-001
 - Roadmap: see `docs/roadmap.md#phase-0`

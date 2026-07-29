@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import unittest
 import importlib.util
+import json
+import unittest
 from pathlib import Path
 
 
@@ -46,6 +47,14 @@ class DocumentationCatalogTests(unittest.TestCase):
         missing_terms = [term for term in required_terms if term not in agent_doc]
 
         self.assertEqual([], missing_terms)
+
+    def test_agent_rules_issue_is_marked_complete(self) -> None:
+        source = json.loads(
+            (REPO_ROOT / "docs/task-source.json").read_text(encoding="utf-8")
+        )
+        tasks = {task["id"]: task for task in source["tasks"]}
+
+        self.assertEqual("complete", tasks["ISSUE-015"]["status"])
 
     def test_task_catalog_links_first_issue_to_roadmap_and_gates(self) -> None:
         task_catalog = (REPO_ROOT / "docs/task-catalog.md").read_text(encoding="utf-8")

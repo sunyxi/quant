@@ -260,7 +260,7 @@
     {
       "id": "ISSUE-015",
       "title": "Add agent rules document",
-      "status": "in-progress",
+      "status": "complete",
       "phase": "Phase 0",
       "dependencies": ["ISSUE-001"],
       "summary": "Add AGENT.md to capture the repository rules for test-first work, documentation synchronization, generated files, Git and PR workflow, and trading safety.",
