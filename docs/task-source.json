@@ -57,7 +57,7 @@
     {
       "id": "ISSUE-003",
       "title": "Add market calendar and JP trading session rules",
-      "status": "in-progress",
+      "status": "complete",
       "phase": "Phase 1",
       "dependencies": ["ISSUE-002"],
       "summary": "Implement JP trading day, lunch break, and no-overnight session rules used by research and backtesting.",
@@ -74,7 +74,7 @@
     {
       "id": "ISSUE-004",
       "title": "Introduce order book intelligence data model",
-      "status": "blocked",
+      "status": "in-progress",
       "phase": "Phase 1.5",
       "dependencies": ["ISSUE-003"],
       "summary": "Add P0 board information structures for best bid/ask, five-level depth, spread, imbalance, microprice, freshness, and health checks.",
@@ -83,8 +83,8 @@
         "Relative spread, depth, OBI, and microprice are computed from immutable snapshots.",
         "Stale book data blocks signal confirmation."
       ],
-      "gates": ["Python Unit Tests", "Fixture Tests", "Documentation Localization", "Secret Scan"],
-      "changed_assets": ["src/autotrade/market_data", "src/autotrade/features", "tests"],
+      "gates": ["Python Unit Tests", "Fixture Tests", "Documentation Localization", "Markdown Links/Style", "Secret Scan", "Task Catalog Generation"],
+      "changed_assets": ["src/autotrade/market_data", "tests/test_order_book.py", "docs/order-book-intelligence.md"],
       "rollback": "Disable order book filters and revert the added model modules."
     },
     {

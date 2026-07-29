@@ -95,7 +95,7 @@ Rollback: Remove the newly added policy documents or revert to the previous appr
 
 ## ISSUE-003: Add market calendar and JP trading session rules
 
-- Status: `in-progress`
+- Status: `complete`
 - Phase: `Phase 1`
 - Dependencies: ISSUE-002
 - Roadmap: see `docs/roadmap.md#phase-1`
@@ -134,7 +134,7 @@ Rollback: Disable the calendar integration by reverting the feature branch.
 
 ## ISSUE-004: Introduce order book intelligence data model
 
-- Status: `blocked`
+- Status: `in-progress`
 - Phase: `Phase 1.5`
 - Dependencies: ISSUE-003
 - Roadmap: see `docs/roadmap.md#phase-15`
@@ -151,13 +151,15 @@ Rollback: Disable the calendar integration by reverting the feature branch.
 - Python Unit Tests
 - Fixture Tests
 - Documentation Localization
+- Markdown Links/Style
 - Secret Scan
+- Task Catalog Generation
 
 ### Changed Assets
 
 - `src/autotrade/market_data`
-- `src/autotrade/features`
-- `tests`
+- `tests/test_order_book.py`
+- `docs/order-book-intelligence.md`
 
 ### Test-first Evidence
 
