@@ -735,7 +735,7 @@ Rollback: Revert the kabu Station official contract branch; no live broker API c
 
 ## ISSUE-019: Add kabu Station fake-transport token client
 
-- Status: `in-progress`
+- Status: `complete`
 - Phase: `Phase 4`
 - Dependencies: ISSUE-018
 - Roadmap: see `docs/roadmap.md#phase-4`
