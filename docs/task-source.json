@@ -209,7 +209,7 @@
     {
       "id": "ISSUE-012",
       "title": "Add simulated broker adapter",
-      "status": "in-progress",
+      "status": "complete",
       "phase": "Phase 4",
       "dependencies": ["ISSUE-008", "ISSUE-009", "ISSUE-011"],
       "summary": "Add a broker-interface-compatible simulator that supports idempotent order submission, cancellation, open order queries, and injected fills without live broker side effects.",
@@ -222,6 +222,23 @@
       "gates": ["Python Unit Tests", "Fixture Tests", "Documentation Localization", "Markdown Links/Style", "Secret Scan", "Task Catalog Generation"],
       "changed_assets": ["src/autotrade/execution/simulated_broker.py", "tests/test_simulated_broker.py", "docs/simulated-broker.md"],
       "rollback": "Revert the simulated broker adapter branch; no live broker side effects exist in this change."
+    },
+    {
+      "id": "ISSUE-013",
+      "title": "Export simulated broker reconciliation snapshots",
+      "status": "in-progress",
+      "phase": "Phase 4",
+      "dependencies": ["ISSUE-011", "ISSUE-012"],
+      "summary": "Extend the simulated broker to export broker state snapshots containing open orders and simulated positions for reconciliation fixtures.",
+      "acceptance_criteria": [
+        "Simulated broker state snapshots include open order client ids and symbols.",
+        "Injected fills update simulated broker positions.",
+        "Fully filled simulated orders do not appear in open order snapshots.",
+        "Snapshot output uses the same BrokerStateSnapshot structures consumed by reconciliation checks."
+      ],
+      "gates": ["Python Unit Tests", "Fixture Tests", "Documentation Localization", "Markdown Links/Style", "Secret Scan", "Task Catalog Generation"],
+      "changed_assets": ["src/autotrade/execution/simulated_broker.py", "tests/test_simulated_broker.py", "docs/simulated-broker.md"],
+      "rollback": "Revert the simulated broker snapshot branch; no live broker side effects exist in this change."
     }
   ]
 }

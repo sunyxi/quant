@@ -38,6 +38,10 @@ The current reconciliation checks have no broker or persistent side effects. Rev
 
 The simulated broker has no live broker side effects. Revert the ISSUE-012 branch if simulator behavior needs to return to the previous adapter skeleton.
 
+## Simulated Broker Snapshot Rollback
+
+The simulated broker snapshots have no live broker side effects. Revert the ISSUE-013 branch if simulator reconciliation output needs to be removed.
+
 ## Live Trading Rollback
 
 Live trading is not supported yet. Future live rollback must follow this order:

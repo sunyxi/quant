@@ -78,6 +78,28 @@ class SimulatedBrokerAdapterTests(unittest.TestCase):
         self.assertEqual(len(open_orders), 1)
         self.assertEqual(open_orders[0].quantity, 60)
 
+    def test_state_snapshot_includes_open_orders(self) -> None:
+        broker = SimulatedBrokerAdapter()
+        broker.submit_order(_intent())
+
+        snapshot = broker.state_snapshot()
+
+        self.assertEqual(len(snapshot.open_orders), 1)
+        self.assertEqual(snapshot.open_orders[0].client_order_id, "client-1")
+        self.assertEqual(snapshot.open_orders[0].symbol, "7203.T")
+
+    def test_state_snapshot_includes_positions_from_fills(self) -> None:
+        broker = SimulatedBrokerAdapter()
+        broker.submit_order(_intent())
+        broker.record_fill(_fill())
+
+        snapshot = broker.state_snapshot()
+
+        self.assertEqual(snapshot.open_orders, [])
+        self.assertEqual(len(snapshot.positions), 1)
+        self.assertEqual(snapshot.positions[0].symbol, "7203.T")
+        self.assertEqual(snapshot.positions[0].quantity, 100)
+
 
 if __name__ == "__main__":
     unittest.main()
