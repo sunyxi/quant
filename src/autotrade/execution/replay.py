@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
-from typing import Protocol
 
 from autotrade.backtest.fill_model import ConservativeFillModel
+from autotrade.calendar.protocols import MarketCalendar
 from autotrade.core.models import Fill, MarketSnapshot, OrderIntent
 from autotrade.execution.oms import OrderState, OrderStateMachine
 from autotrade.execution.reconciliation import (
@@ -16,9 +15,8 @@ from autotrade.risk.manager import RiskManager
 from autotrade.strategies.base import Strategy
 
 
-class MarketCalendar(Protocol):
-    def accepts_new_entries(self, timestamp: datetime) -> bool:
-        ...
+class ReplayExecutionError(RuntimeError):
+    pass
 
 
 @dataclass
@@ -45,12 +43,16 @@ class ReplayExecutionEngine:
         self.risk_manager = risk_manager
         self.market_calendar = market_calendar
         self.fill_model = fill_model or ConservativeFillModel()
-        self.oms = oms or OrderStateMachine()
-        self.broker = broker or SimulatedBrokerAdapter()
+        self._oms = oms
+        self._broker = broker
         self.reconciliation = reconciliation or ReconciliationEngine()
 
     def run(self, snapshots: list[MarketSnapshot], trading_date: str) -> ReplayExecutionResult:
-        result = ReplayExecutionResult(oms=self.oms, broker=self.broker)
+        self._validate_trading_date(snapshots, trading_date)
+        oms = self._oms or OrderStateMachine()
+        broker = self._broker or SimulatedBrokerAdapter()
+        result = ReplayExecutionResult(oms=oms, broker=broker)
+        submitted_client_ids: set[str] = set()
         for snapshot in snapshots:
             if (
                 self.market_calendar is not None
@@ -61,18 +63,22 @@ class ReplayExecutionEngine:
                 intent = self._intent_for(strategy, snapshot, trading_date)
                 if intent is None:
                     continue
+                if intent.client_order_id in submitted_client_ids:
+                    continue
+                submitted_client_ids.add(intent.client_order_id)
                 result.intents.append(intent)
-                fill = self._submit_and_maybe_fill(intent, snapshot)
+                fill = self._submit_and_maybe_fill(intent, snapshot, oms, broker)
                 if fill is not None:
                     result.fills.append(fill)
 
             report = self.reconciliation.check(
-                oms=self.oms,
-                ledger=self.broker.ledger,
-                broker=self.broker.state_snapshot(),
-                risk_manager=self.risk_manager,
+                oms=oms,
+                ledger=broker.ledger,
+                broker=broker.state_snapshot(),
             )
             result.reconciliation_reports.append(report)
+            if report.has_critical:
+                raise ReplayExecutionError("critical reconciliation discrepancy")
         return result
 
     def _intent_for(
@@ -90,28 +96,57 @@ class ReplayExecutionEngine:
         self,
         intent: OrderIntent,
         snapshot: MarketSnapshot,
+        oms: OrderStateMachine,
+        broker: SimulatedBrokerAdapter,
     ) -> Fill | None:
-        record = self.oms.register(intent)
-        if record.state == OrderState.CREATED:
-            self.oms.transition(intent.client_order_id, OrderState.RISK_APPROVED)
+        record = oms.register(intent)
+        if record.state in {
+            OrderState.ACKNOWLEDGED,
+            OrderState.PARTIALLY_FILLED,
+            OrderState.FILLED,
+            OrderState.CANCELLED,
+            OrderState.REJECTED,
+        }:
+            return None
 
-        broker_order_id = self.broker.submit_order(intent)
-        self.oms.transition(
+        if record.state == OrderState.CREATED:
+            oms.transition(intent.client_order_id, OrderState.RISK_APPROVED)
+
+        broker_order_id = broker.submit_order(intent)
+        oms.transition(
             intent.client_order_id,
             OrderState.SUBMITTED,
             broker_order_id=broker_order_id,
         )
-        self.oms.transition(intent.client_order_id, OrderState.ACKNOWLEDGED)
+        oms.transition(intent.client_order_id, OrderState.ACKNOWLEDGED)
 
         fill = self.fill_model.try_fill(intent, snapshot)
         if fill is None:
+            oms.transition(intent.client_order_id, OrderState.CANCEL_PENDING)
+            broker.cancel_order(broker_order_id)
+            oms.transition(intent.client_order_id, OrderState.CANCELLED)
             return None
 
-        self.broker.record_fill(fill)
+        broker.record_fill(fill)
         next_state = (
             OrderState.FILLED
             if fill.quantity >= intent.quantity
             else OrderState.PARTIALLY_FILLED
         )
-        self.oms.transition(intent.client_order_id, next_state)
+        oms.transition(intent.client_order_id, next_state)
         return fill
+
+    @staticmethod
+    def _validate_trading_date(
+        snapshots: list[MarketSnapshot],
+        trading_date: str,
+    ) -> None:
+        mismatched_dates = {
+            snapshot.timestamp.date().isoformat()
+            for snapshot in snapshots
+            if snapshot.timestamp.date().isoformat() != trading_date
+        }
+        if mismatched_dates:
+            raise ValueError(
+                f"snapshot dates {sorted(mismatched_dates)} do not match trading_date {trading_date}"
+            )

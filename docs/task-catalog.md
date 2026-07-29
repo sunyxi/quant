@@ -592,3 +592,50 @@ Rollback: Revert the replay execution engine branch; no live broker side effects
 - Refactor: optional, but must keep gates accurate.
 
 Rollback: Revert the agent rules document branch.
+
+## ISSUE-016: Address replay execution review findings
+
+- Status: `in-progress`
+- Phase: `Phase 4`
+- Dependencies: ISSUE-014
+- Roadmap: see `docs/roadmap.md#phase-4`
+- Summary: Harden replay execution after review by making duplicate order handling idempotent, cancelling unfilled simulated orders, failing fast on critical reconciliation discrepancies, isolating default run results, sharing the market calendar protocol, and validating snapshot dates.
+
+### Acceptance Criteria
+
+- Duplicate client_order_id values within a replay run do not trigger invalid OMS transitions.
+- Unfilled simulated replay orders are cancelled before reconciliation.
+- Critical reconciliation discrepancies raise a replay execution error instead of silently pausing risk for the rest of the run.
+- Default replay runs return isolated OMS and broker state objects.
+- Replay and backtest share the same MarketCalendar protocol definition.
+- Replay rejects snapshots whose calendar date does not match the supplied trading_date.
+
+### Gates
+
+- Python Unit Tests
+- Fixture Tests
+- Documentation Localization
+- Markdown Links/Style
+- Secret Scan
+- Task Catalog Generation
+
+### Changed Assets
+
+- `src/autotrade/calendar/protocols.py`
+- `src/autotrade/backtest/engine.py`
+- `src/autotrade/execution/replay.py`
+- `tests/test_replay_execution.py`
+- `docs/replay-execution.md`
+- `docs/operations.md`
+- `docs/limitations.md`
+- `docs/locales/en/overview.md`
+- `docs/locales/ja/overview.md`
+- `docs/locales/zh-CN/overview.md`
+
+### Test-first Evidence
+
+- Red: required before implementation starts.
+- Green: required after implementation.
+- Refactor: optional, but must keep gates accurate.
+
+Rollback: Revert the replay hardening branch to restore ISSUE-014 replay behavior; no live broker side effects exist in this change.
