@@ -39,6 +39,10 @@ tests/                  单元测试
 
 - [Roadmap](docs/roadmap.md)
 - [Task Catalog](docs/task-catalog.md)
+- [Scope](docs/scope.md)
+- [Risk Policy](docs/risk-policy.md)
+- [Broker Decision](docs/broker-decision.md)
+- [Implementation Plan](docs/implementation-plan.md)
 - [CLI Usage](docs/cli-usage.md)
 - [Operations](docs/operations.md)
 - [Limitations](docs/limitations.md)

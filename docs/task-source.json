@@ -5,7 +5,7 @@
     {
       "id": "ISSUE-001",
       "title": "Document roadmap, task catalog, and contribution gates",
-      "status": "in-progress",
+      "status": "complete",
       "phase": "Phase 0",
       "dependencies": [],
       "summary": "Create the initial implementation roadmap, task catalog, operational documents, rollback guidance, localization entry points, PR template, and GitHub App PR workflow.",
@@ -40,17 +40,18 @@
     {
       "id": "ISSUE-002",
       "title": "Define project scope and risk policy assets",
-      "status": "ready",
+      "status": "in-progress",
       "phase": "Phase 0",
       "dependencies": ["ISSUE-001"],
-      "summary": "Write the formal project scope, broker decision, and risk policy before expanding implementation.",
+      "summary": "Write the formal project scope, broker decision, risk policy, and implementation plan before expanding implementation.",
       "acceptance_criteria": [
         "Scope fixes JP equities as the first automated market.",
         "Risk policy defines pre-trade, in-trade, and post-trade controls.",
-        "Broker decision records kabu Station as the JP execution target and IBKR as later US target."
+        "Broker decision records kabu Station as the JP execution target and IBKR as later US target.",
+        "Implementation plan maps early iterations to task IDs and Go / No-Go evidence."
       ],
-      "gates": ["Documentation Localization", "Markdown Links/Style", "Secret Scan"],
-      "changed_assets": ["docs/scope.md", "docs/risk-policy.md", "docs/broker-decision.md"],
+      "gates": ["Python Unit Tests", "Documentation Localization", "Markdown Links/Style", "Secret Scan", "Task Catalog Generation"],
+      "changed_assets": ["docs/scope.md", "docs/risk-policy.md", "docs/broker-decision.md", "docs/implementation-plan.md"],
       "rollback": "Remove the newly added policy documents or revert to the previous approved version."
     },
     {
