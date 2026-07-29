@@ -59,6 +59,8 @@ MarketData -> Strategy -> RiskManager -> OMS -> BrokerAdapter
 
 当前模拟券商只用于测试、回放和模拟。它实现内部 broker adapter 接口，但不连接真实券商，也不独立根据行情撮合订单。
 
+模拟券商可以导出券商状态快照，供对账检查复用。
+
 ## 后续接入边界
 
 真实券商适配器必须实现：

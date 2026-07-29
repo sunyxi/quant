@@ -22,6 +22,8 @@
 
 当前执行层也包含模拟券商 adapter，可在不连接真实券商的情况下测试幂等下单、撤单、开放订单查询和 fixture 驱动成交。
 
+模拟券商可以导出券商状态快照，用于对账测试。
+
 仓库 CI 会在 PR 和推送到 `main` 时运行 Python 单元测试、Task Catalog 漂移检查、Markdown 链接/样式检查和基础密钥扫描。
 
 请阅读 `docs/roadmap.md`、`docs/task-catalog.md`、`docs/scope.md`、`docs/risk-policy.md`、`docs/broker-decision.md`、`docs/implementation-plan.md`、`docs/market-calendar.md`、`docs/order-book-intelligence.md`、`docs/backtest-fill-cost.md`、`docs/strategy-market-quality.md`、`docs/oms.md`、`docs/execution-ledger.md`、`docs/risk-paused-state.md`、`docs/reconciliation.md`、`docs/simulated-broker.md`、`docs/operations.md`、`docs/limitations.md` 和 `docs/rollback.md`。

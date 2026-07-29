@@ -442,7 +442,7 @@ Rollback: Revert the reconciliation checks branch; no broker or persistent state
 
 ## ISSUE-012: Add simulated broker adapter
 
-- Status: `in-progress`
+- Status: `complete`
 - Phase: `Phase 4`
 - Dependencies: ISSUE-008, ISSUE-009, ISSUE-011
 - Roadmap: see `docs/roadmap.md#phase-4`
@@ -477,3 +477,41 @@ Rollback: Revert the reconciliation checks branch; no broker or persistent state
 - Refactor: optional, but must keep gates accurate.
 
 Rollback: Revert the simulated broker adapter branch; no live broker side effects exist in this change.
+
+## ISSUE-013: Export simulated broker reconciliation snapshots
+
+- Status: `in-progress`
+- Phase: `Phase 4`
+- Dependencies: ISSUE-011, ISSUE-012
+- Roadmap: see `docs/roadmap.md#phase-4`
+- Summary: Extend the simulated broker to export broker state snapshots containing open orders and simulated positions for reconciliation fixtures.
+
+### Acceptance Criteria
+
+- Simulated broker state snapshots include open order client ids and symbols.
+- Injected fills update simulated broker positions.
+- Fully filled simulated orders do not appear in open order snapshots.
+- Snapshot output uses the same BrokerStateSnapshot structures consumed by reconciliation checks.
+
+### Gates
+
+- Python Unit Tests
+- Fixture Tests
+- Documentation Localization
+- Markdown Links/Style
+- Secret Scan
+- Task Catalog Generation
+
+### Changed Assets
+
+- `src/autotrade/execution/simulated_broker.py`
+- `tests/test_simulated_broker.py`
+- `docs/simulated-broker.md`
+
+### Test-first Evidence
+
+- Red: required before implementation starts.
+- Green: required after implementation.
+- Refactor: optional, but must keep gates accurate.
+
+Rollback: Revert the simulated broker snapshot branch; no live broker side effects exist in this change.

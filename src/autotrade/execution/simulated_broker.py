@@ -5,6 +5,12 @@ from dataclasses import replace
 from autotrade.core.ids import client_order_id
 from autotrade.core.models import Fill, OrderIntent
 from autotrade.execution.broker import BrokerAdapter
+from autotrade.execution.ledger import LocalExecutionLedger
+from autotrade.execution.reconciliation import (
+    BrokerOrderSnapshot,
+    BrokerPositionSnapshot,
+    BrokerStateSnapshot,
+)
 
 
 class SimulatedBrokerAdapter(BrokerAdapter):
@@ -13,6 +19,7 @@ class SimulatedBrokerAdapter(BrokerAdapter):
         self._client_by_broker_id: dict[str, str] = {}
         self._broker_by_client_id: dict[str, str] = {}
         self._fills: list[Fill] = []
+        self._ledger = LocalExecutionLedger()
 
     def submit_order(self, intent: OrderIntent) -> str:
         existing = self._broker_by_client_id.get(intent.client_order_id)
@@ -23,6 +30,7 @@ class SimulatedBrokerAdapter(BrokerAdapter):
         self._orders_by_client_id[intent.client_order_id] = intent
         self._client_by_broker_id[broker_order_id] = intent.client_order_id
         self._broker_by_client_id[intent.client_order_id] = broker_order_id
+        self._ledger.record_order(intent)
         return broker_order_id
 
     def cancel_order(self, broker_order_id: str) -> None:
@@ -44,6 +52,7 @@ class SimulatedBrokerAdapter(BrokerAdapter):
             return
 
         self._fills.append(fill)
+        self._ledger.record_fill(fill)
         remaining_quantity = order.quantity - fill.quantity
         if remaining_quantity <= 0:
             broker_order_id = self._broker_by_client_id.get(fill.client_order_id)
@@ -54,4 +63,23 @@ class SimulatedBrokerAdapter(BrokerAdapter):
         self._orders_by_client_id[fill.client_order_id] = replace(
             order,
             quantity=remaining_quantity,
+        )
+
+    def state_snapshot(self) -> BrokerStateSnapshot:
+        return BrokerStateSnapshot(
+            open_orders=[
+                BrokerOrderSnapshot(
+                    client_order_id=order.client_order_id,
+                    symbol=order.symbol,
+                )
+                for order in self.open_orders()
+            ],
+            positions=[
+                BrokerPositionSnapshot(
+                    symbol=position.symbol,
+                    quantity=position.quantity,
+                )
+                for position in self._ledger.positions()
+                if position.quantity != 0
+            ],
         )

@@ -69,6 +69,7 @@ OMS and risk runtime.
 Broker adapter and simulation.
 
 - ISSUE-012: add simulated broker adapter.
+- ISSUE-013: export simulated broker reconciliation snapshots.
 - Add kabu Station adapter boundary behind a simulator first.
 - Validate request/response normalization, retry boundaries, and unknown order handling.
 - Deliverable: adapter contract tests pass without live capital.

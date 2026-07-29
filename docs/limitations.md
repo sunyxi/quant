@@ -12,6 +12,7 @@
 - Risk paused state blocks new approvals only; it does not cancel open orders, flatten positions, or reconcile broker state.
 - Reconciliation checks currently compare snapshot fixtures only; they do not call broker APIs, persist results, compare cash, or resolve discrepancies.
 - The simulated broker adapter does not connect to live brokers, model broker rejection rules, enforce cash or margin, or match orders against market data.
+- Simulated broker state snapshots include order existence and position quantity only; they do not include cash, buying power, fees, or broker-native statuses.
 - Machine learning, meta-labeling, model registry, and degradation monitoring are out of scope for the current code.
 - US market execution through IBKR is future work.
 - Nothing in this repository is financial advice or a guarantee of profit.

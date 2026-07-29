@@ -22,6 +22,8 @@
 
 現在の実行層は、ライブ証券会社に接続せず、冪等な注文送信、取消、未約定注文照会、フィクスチャ主導の約定を扱うシミュレート証券会社アダプターも含みます。
 
+シミュレート証券会社は、照合テスト向けの証券会社状態スナップショットを出力できます。
+
 リポジトリ CI は、プルリクエストと `main` への push に対して Python 単体テスト、Task Catalog の差分チェック、Markdown リンク・スタイルチェック、基本的なシークレットスキャンを実行します。
 
 詳細は `docs/roadmap.md`、`docs/task-catalog.md`、`docs/scope.md`、`docs/risk-policy.md`、`docs/broker-decision.md`、`docs/implementation-plan.md`、`docs/market-calendar.md`、`docs/order-book-intelligence.md`、`docs/backtest-fill-cost.md`、`docs/strategy-market-quality.md`、`docs/oms.md`、`docs/execution-ledger.md`、`docs/risk-paused-state.md`、`docs/reconciliation.md`、`docs/simulated-broker.md`、`docs/operations.md`、`docs/limitations.md`、`docs/rollback.md` を参照してください。

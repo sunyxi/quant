@@ -24,6 +24,20 @@ Submitting the same `client_order_id` more than once returns the same simulated 
 
 The simulator does not independently match orders against market data. That remains the role of the backtest fill model and future replay orchestration.
 
+## Reconciliation Snapshot
+
+`state_snapshot()` exports the simulator's open orders and non-flat positions as a `BrokerStateSnapshot`. This uses the same fixture structure consumed by reconciliation checks.
+
+Open order snapshots include:
+
+- `client_order_id`;
+- `symbol`.
+
+Position snapshots include:
+
+- `symbol`;
+- signed `quantity`.
+
 ## Limitations
 
 The simulator does not implement:

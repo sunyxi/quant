@@ -32,6 +32,8 @@ Treat critical reconciliation discrepancies as blocking. A broker order missing 
 
 Use the simulated broker only for tests, replay, and simulation. Fills must be injected by fixtures or replay orchestration; the simulator does not independently match against live market data.
 
+Use `state_snapshot()` when reconciliation fixtures need broker-shaped open orders and positions from the simulator.
+
 ## Issue Workflow
 
 1. Select the first ready task from `docs/task-catalog.md`.
