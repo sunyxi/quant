@@ -24,6 +24,10 @@ Use the local ledger only for research, replay, and simulation. A fill that refe
 
 Use `RiskManager.pause(reason)` when an incident requires blocking all new order approvals. Resume only after the reason has been reviewed and any required reconciliation is complete.
 
+## Reconciliation Handling
+
+Treat critical reconciliation discrepancies as blocking. A broker order missing from the local OMS, an `UNKNOWN` local order, or a position mismatch should pause new approvals until the discrepancy is explained.
+
 ## Issue Workflow
 
 1. Select the first ready task from `docs/task-catalog.md`.

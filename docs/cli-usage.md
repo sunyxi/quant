@@ -46,6 +46,12 @@ PYTHONPATH=src python3 -m unittest tests.test_execution_ledger
 PYTHONPATH=src python3 -m unittest tests.test_risk_manager
 ```
 
+## Reconciliation Tests
+
+```bash
+PYTHONPATH=src python3 -m unittest tests.test_reconciliation
+```
+
 ## Rebuild Task Catalog
 
 ```bash
