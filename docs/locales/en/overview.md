@@ -8,6 +8,8 @@ The current calendar layer covers JP regular sessions, lunch break, weekend reje
 
 The current order book layer covers immutable snapshots, spread, visible depth, OBI, microprice, freshness, and stale-book health status for research fixtures.
 
+The backtest layer records conservative fills and cost attribution for commission, half-spread, slippage, and impact placeholders.
+
 Repository CI runs Python unit tests, Task Catalog drift checks, Markdown link/style checks, and a basic secret scan for pull requests and pushes to `main`.
 
-See `docs/roadmap.md`, `docs/task-catalog.md`, `docs/scope.md`, `docs/risk-policy.md`, `docs/broker-decision.md`, `docs/implementation-plan.md`, `docs/market-calendar.md`, `docs/order-book-intelligence.md`, `docs/operations.md`, `docs/limitations.md`, and `docs/rollback.md`.
+See `docs/roadmap.md`, `docs/task-catalog.md`, `docs/scope.md`, `docs/risk-policy.md`, `docs/broker-decision.md`, `docs/implementation-plan.md`, `docs/market-calendar.md`, `docs/order-book-intelligence.md`, `docs/backtest-fill-cost.md`, `docs/operations.md`, `docs/limitations.md`, and `docs/rollback.md`.

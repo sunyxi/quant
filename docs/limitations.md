@@ -2,7 +2,7 @@
 
 - The current repository is a research skeleton, not a live trading system.
 - No real broker order placement is implemented.
-- The backtest engine is simplified and does not yet model realistic queue position, partial fills, bid/ask spread, or market impact.
+- The backtest engine now has conservative limit-order fills and cost attribution, but does not yet model queue position, minute high/low touch logic, or calibrated fill probability.
 - JP regular sessions, lunch break, weekends, manual holidays, and close-entry cutoff are modeled for research filtering.
 - Official JP holiday source integration, special quotes, halts, and limit-up or limit-down states are not fully modeled.
 - Order book snapshot features are implemented for fixtures and research, but live WebSocket ingestion, incremental book building, cancellation inference, refill inference, and strategy integration are not implemented.

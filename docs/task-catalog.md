@@ -134,7 +134,7 @@ Rollback: Disable the calendar integration by reverting the feature branch.
 
 ## ISSUE-004: Introduce order book intelligence data model
 
-- Status: `in-progress`
+- Status: `complete`
 - Phase: `Phase 1.5`
 - Dependencies: ISSUE-003
 - Roadmap: see `docs/roadmap.md#phase-15`
@@ -171,7 +171,7 @@ Rollback: Disable order book filters and revert the added model modules.
 
 ## ISSUE-005: Harden backtest fill and cost modeling
 
-- Status: `blocked`
+- Status: `in-progress`
 - Phase: `Phase 1`
 - Dependencies: ISSUE-003
 - Roadmap: see `docs/roadmap.md#phase-1`
@@ -182,18 +182,24 @@ Rollback: Disable order book filters and revert the added model modules.
 - Limit orders do not assume guaranteed fills from minute lows/highs.
 - Costs include commission, half-spread, slippage, and impact placeholders.
 - Backtest output reports cost attribution.
+- Fill quantity is capped by a participation-rate assumption.
 
 ### Gates
 
 - Python Unit Tests
 - Fixture Tests
 - Documentation Localization
+- Markdown Links/Style
 - Secret Scan
+- Task Catalog Generation
 
 ### Changed Assets
 
-- `src/autotrade/backtest`
-- `tests`
+- `src/autotrade/backtest/fill_model.py`
+- `src/autotrade/backtest/cost_model.py`
+- `src/autotrade/backtest/engine.py`
+- `tests/test_backtest_fill_cost.py`
+- `docs/backtest-fill-cost.md`
 
 ### Test-first Evidence
 
