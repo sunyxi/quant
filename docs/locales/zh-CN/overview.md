@@ -4,6 +4,8 @@
 
 首期范围是日股、只做多、不隔夜，并在任何实盘前先通过 Shadow Mode。日股未来执行目标是 kabu Station，美股 IBKR 留到后续阶段。
 
+当前日历层已覆盖日股普通交易时段、午休、周末过滤、手工假日和收盘前停止新开仓 cutoff，用于研究和回测过滤。
+
 仓库 CI 会在 PR 和推送到 `main` 时运行 Python 单元测试、Task Catalog 漂移检查、Markdown 链接/样式检查和基础密钥扫描。
 
-请阅读 `docs/roadmap.md`、`docs/task-catalog.md`、`docs/scope.md`、`docs/risk-policy.md`、`docs/broker-decision.md`、`docs/implementation-plan.md`、`docs/operations.md`、`docs/limitations.md` 和 `docs/rollback.md`。
+请阅读 `docs/roadmap.md`、`docs/task-catalog.md`、`docs/scope.md`、`docs/risk-policy.md`、`docs/broker-decision.md`、`docs/implementation-plan.md`、`docs/market-calendar.md`、`docs/operations.md`、`docs/limitations.md` 和 `docs/rollback.md`。

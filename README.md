@@ -8,6 +8,7 @@
 - 开盘区间突破策略。
 - VWAP 均值回归策略。
 - 单笔风险、日亏损、交易单位与资金占用检查。
+- 日股普通交易时段、午休、周末和收盘前 cutoff 过滤。
 - 简化事件驱动回测引擎。
 - 面向 kabu Station / IBKR 的执行适配器边界。
 
@@ -43,6 +44,7 @@ tests/                  单元测试
 - [Risk Policy](docs/risk-policy.md)
 - [Broker Decision](docs/broker-decision.md)
 - [Implementation Plan](docs/implementation-plan.md)
+- [Market Calendar](docs/market-calendar.md)
 - [CLI Usage](docs/cli-usage.md)
 - [Operations](docs/operations.md)
 - [Limitations](docs/limitations.md)
