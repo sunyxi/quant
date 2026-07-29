@@ -243,7 +243,7 @@
     {
       "id": "ISSUE-014",
       "title": "Add replay execution engine",
-      "status": "in-progress",
+      "status": "complete",
       "phase": "Phase 4",
       "dependencies": ["ISSUE-007", "ISSUE-008", "ISSUE-011", "ISSUE-012", "ISSUE-013"],
       "summary": "Add a local replay execution loop that connects strategies, risk approval, OMS transitions, simulated broker submission, conservative fills, and reconciliation reports.",
@@ -256,6 +256,36 @@
       "gates": ["Python Unit Tests", "Fixture Tests", "Documentation Localization", "Markdown Links/Style", "Secret Scan", "Task Catalog Generation"],
       "changed_assets": ["src/autotrade/execution/replay.py", "src/autotrade/execution/simulated_broker.py", "tests/test_replay_execution.py", "docs/replay-execution.md"],
       "rollback": "Revert the replay execution engine branch; no live broker side effects exist in this change."
+    },
+    {
+      "id": "ISSUE-016",
+      "title": "Address replay execution review findings",
+      "status": "in-progress",
+      "phase": "Phase 4",
+      "dependencies": ["ISSUE-014"],
+      "summary": "Harden replay execution after review by making duplicate order handling idempotent, cancelling unfilled simulated orders, failing fast on critical reconciliation discrepancies, isolating default run results, sharing the market calendar protocol, and validating snapshot dates.",
+      "acceptance_criteria": [
+        "Duplicate client_order_id values within a replay run do not trigger invalid OMS transitions.",
+        "Unfilled simulated replay orders are cancelled before reconciliation.",
+        "Critical reconciliation discrepancies raise a replay execution error instead of silently pausing risk for the rest of the run.",
+        "Default replay runs return isolated OMS and broker state objects.",
+        "Replay and backtest share the same MarketCalendar protocol definition.",
+        "Replay rejects snapshots whose calendar date does not match the supplied trading_date."
+      ],
+      "gates": ["Python Unit Tests", "Fixture Tests", "Documentation Localization", "Markdown Links/Style", "Secret Scan", "Task Catalog Generation"],
+      "changed_assets": [
+        "src/autotrade/calendar/protocols.py",
+        "src/autotrade/backtest/engine.py",
+        "src/autotrade/execution/replay.py",
+        "tests/test_replay_execution.py",
+        "docs/replay-execution.md",
+        "docs/operations.md",
+        "docs/limitations.md",
+        "docs/locales/en/overview.md",
+        "docs/locales/ja/overview.md",
+        "docs/locales/zh-CN/overview.md"
+      ],
+      "rollback": "Revert the replay hardening branch to restore ISSUE-014 replay behavior; no live broker side effects exist in this change."
     }
   ]
 }

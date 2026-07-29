@@ -26,6 +26,8 @@
 
 当前执行层已有本地回放执行循环，可连接策略、风控、OMS、模拟券商成交和对账。
 
+回放执行现在会跳过同一次运行内重复的客户端订单ID，在严重对账差异时快速失败，隔离默认运行结果，并拒绝与指定交易日不一致的快照。
+
 仓库 CI 会在 PR 和推送到 `main` 时运行 Python 单元测试、Task Catalog 漂移检查、Markdown 链接/样式检查和基础密钥扫描。
 
 请阅读 `docs/roadmap.md`、`docs/task-catalog.md`、`docs/scope.md`、`docs/risk-policy.md`、`docs/broker-decision.md`、`docs/implementation-plan.md`、`docs/market-calendar.md`、`docs/order-book-intelligence.md`、`docs/backtest-fill-cost.md`、`docs/strategy-market-quality.md`、`docs/oms.md`、`docs/execution-ledger.md`、`docs/risk-paused-state.md`、`docs/reconciliation.md`、`docs/simulated-broker.md`、`docs/replay-execution.md`、`docs/operations.md`、`docs/limitations.md` 和 `docs/rollback.md`。

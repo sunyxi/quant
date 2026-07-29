@@ -38,6 +38,8 @@ Use `state_snapshot()` when reconciliation fixtures need broker-shaped open orde
 
 Use replay execution only with local market snapshots and simulated broker state. Replay results are for fixture validation and must not be treated as live execution evidence.
 
+Critical reconciliation discrepancies during replay should fail fast and be investigated from the replay fixture, OMS records, simulated broker state, and local ledger before the fixture is trusted.
+
 ## Issue Workflow
 
 1. Select the first ready task from `docs/task-catalog.md`.
