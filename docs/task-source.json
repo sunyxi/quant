@@ -592,6 +592,38 @@
         "docs/locales/zh-CN/overview.md"
       ],
       "rollback": "Revert the Shadow Mode readiness gate branch; no live broker API calls or persistent broker side effects exist in this change."
+    },
+    {
+      "id": "ISSUE-026",
+      "title": "Add local Shadow Mode run summary",
+      "status": "complete",
+      "phase": "Phase 4",
+      "dependencies": ["ISSUE-025"],
+      "summary": "Add a local-only Shadow Mode run summary that captures trading date, readiness status, blocking reasons, and readiness metrics from an existing readiness decision for audit-friendly fixture review.",
+      "acceptance_criteria": [
+        "A passing readiness decision produces a passing Shadow Mode run summary.",
+        "A blocked readiness decision produces a blocked Shadow Mode run summary with blocking reasons preserved.",
+        "The summary records the supplied trading date.",
+        "The summary stores a stable copy of readiness metrics.",
+        "The summary exposes a JSON-compatible dictionary representation.",
+        "Mutating the source decision metrics after summary creation does not change the summary.",
+        "The summary builder remains local-only and does not run strategies, connect to market data, query brokers, submit orders, or cancel orders."
+      ],
+      "gates": ["Python Unit Tests", "Fixture Tests", "Documentation Localization", "Markdown Links/Style", "Secret Scan", "Task Catalog Generation"],
+      "changed_assets": [
+        "src/autotrade/execution/shadow_mode.py",
+        "tests/test_shadow_mode.py",
+        "tests/test_documentation_catalog.py",
+        "docs/replay-execution.md",
+        "docs/cli-usage.md",
+        "docs/operations.md",
+        "docs/limitations.md",
+        "docs/rollback.md",
+        "docs/locales/en/overview.md",
+        "docs/locales/ja/overview.md",
+        "docs/locales/zh-CN/overview.md"
+      ],
+      "rollback": "Revert the Shadow Mode run summary branch; no live broker API calls or persistent broker side effects exist in this change."
     }
   ]
 }

@@ -59,6 +59,21 @@ The gate passes only when reconciliation evidence exists, no critical reconcilia
 
 The gate does not run strategies, read market data, query brokers, submit orders, cancel orders, or persist operational state.
 
+## Shadow Mode Run Summary
+
+ISSUE-026 adds `ShadowModeRunSummary`, a local audit-friendly summary built from an existing readiness decision.
+
+The summary records:
+
+- trading date;
+- readiness status;
+- blocking reasons;
+- readiness metrics.
+
+It exposes a JSON-compatible dictionary representation and copies reasons and metrics at creation time so later mutation of the source decision does not change the summary.
+
+The summary builder does not run replay, read market data, query brokers, submit orders, cancel orders, or persist operational state.
+
 ## Limitations
 
 This is not a production execution loop. It does not yet include:

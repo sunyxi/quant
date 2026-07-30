@@ -24,6 +24,36 @@ class ShadowModeReadinessDecision:
 
 
 @dataclass(frozen=True)
+class ShadowModeRunSummary:
+    trading_date: str
+    status: ShadowModeReadinessStatus
+    reasons: list[str] = field(default_factory=list)
+    metrics: dict[str, int] = field(default_factory=dict)
+
+    @classmethod
+    def from_readiness_decision(
+        cls,
+        *,
+        trading_date: str,
+        decision: ShadowModeReadinessDecision,
+    ) -> ShadowModeRunSummary:
+        return cls(
+            trading_date=trading_date,
+            status=decision.status,
+            reasons=list(decision.reasons),
+            metrics=dict(decision.metrics),
+        )
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "trading_date": self.trading_date,
+            "status": self.status.value,
+            "reasons": list(self.reasons),
+            "metrics": dict(self.metrics),
+        }
+
+
+@dataclass(frozen=True)
 class ShadowModeReadinessGate:
     require_reconciliation_evidence: bool = True
     require_no_open_orders: bool = True

@@ -28,6 +28,8 @@
 
 当前执行层也有本地 Shadow Mode readiness gate，可在不连接真实券商的情况下评估回放结果、对账证据、未平模拟订单和风控暂停状态。
 
+Shadow Mode readiness decision 可以转换成本地 run summary，记录交易日、状态、阻断原因和指标，用于 fixture 审阅。
+
 仓库 Agent 工作规则记录在 `AGENT.md`。
 
 回放执行现在会跳过同一次运行内重复的客户端订单ID，在严重对账差异时快速失败，隔离默认运行结果，并拒绝与指定交易日不一致的快照。

@@ -14,6 +14,7 @@ from autotrade.execution.replay import ReplayExecutionResult
 from autotrade.execution.shadow_mode import (
     ShadowModeReadinessGate,
     ShadowModeReadinessStatus,
+    ShadowModeRunSummary,
 )
 from autotrade.execution.simulated_broker import SimulatedBrokerAdapter
 from autotrade.risk.manager import RiskConfig, RiskManager
@@ -128,6 +129,58 @@ class ShadowModeReadinessGateTests(unittest.TestCase):
         self.assertEqual(decision.status, ShadowModeReadinessStatus.BLOCKED)
         self.assertIn("open simulated broker orders remain", decision.reasons)
         self.assertEqual(decision.metrics["open_orders"], 1)
+
+    def test_passing_readiness_decision_builds_passing_run_summary(self) -> None:
+        decision = ShadowModeReadinessGate().evaluate(_clean_result())
+
+        summary = ShadowModeRunSummary.from_readiness_decision(
+            trading_date="2026-07-28",
+            decision=decision,
+        )
+
+        self.assertEqual(summary.trading_date, "2026-07-28")
+        self.assertEqual(summary.status, ShadowModeReadinessStatus.PASSED)
+        self.assertEqual(summary.reasons, [])
+        self.assertEqual(summary.metrics["intents"], 1)
+        self.assertEqual(
+            summary.to_dict(),
+            {
+                "trading_date": "2026-07-28",
+                "status": "PASSED",
+                "reasons": [],
+                "metrics": {
+                    "intents": 1,
+                    "fills": 1,
+                    "reconciliation_reports": 1,
+                    "critical_reports": 0,
+                    "open_orders": 0,
+                },
+            },
+        )
+
+    def test_blocked_readiness_decision_builds_blocked_run_summary(self) -> None:
+        result = _clean_result()
+        result.reconciliation_reports = []
+        decision = ShadowModeReadinessGate().evaluate(result)
+
+        summary = ShadowModeRunSummary.from_readiness_decision(
+            trading_date="2026-07-28",
+            decision=decision,
+        )
+
+        self.assertEqual(summary.status, ShadowModeReadinessStatus.BLOCKED)
+        self.assertEqual(summary.reasons, ["missing reconciliation evidence"])
+
+    def test_run_summary_copies_readiness_metrics(self) -> None:
+        decision = ShadowModeReadinessGate().evaluate(_clean_result())
+        summary = ShadowModeRunSummary.from_readiness_decision(
+            trading_date="2026-07-28",
+            decision=decision,
+        )
+
+        decision.metrics["intents"] = 99
+
+        self.assertEqual(summary.metrics["intents"], 1)
 
 
 if __name__ == "__main__":

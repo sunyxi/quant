@@ -44,6 +44,8 @@ Critical reconciliation discrepancies during replay should fail fast and be inve
 
 Use `ShadowModeReadinessGate` only on local replay results. A blocked decision means the replay evidence is not operationally clean enough for later Shadow Mode review; inspect critical reconciliation reports, risk pause state, missing reconciliation evidence, and remaining simulated broker open orders before proceeding.
 
+Use `ShadowModeRunSummary` when a local readiness decision needs an audit-friendly summary of trading date, status, reasons, and metrics. Treat it as local review output only; it is not persistence and does not authorize live trading.
+
 ## kabu Station Mapper Handling
 
 Use the kabu Station mapper only for local adapter-boundary tests. It must not be treated as a live broker client, and its payload shape must stay behind the broker adapter boundary until a later reviewed issue approves real API calls.

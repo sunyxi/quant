@@ -50,6 +50,10 @@ The replay execution loop has no live broker side effects. Revert the ISSUE-014 
 
 The Shadow Mode readiness gate has no live broker side effects. Revert the ISSUE-025 branch if local readiness decisions need to be removed from replay review.
 
+## Shadow Mode Run Summary Rollback
+
+The Shadow Mode run summary has no live broker side effects. Revert the ISSUE-026 branch if local readiness summary output needs to be removed.
+
 ## kabu Station Mapper Rollback
 
 The kabu Station mapper has no live broker side effects. Revert the ISSUE-017 branch if adapter-boundary payload mapping needs to be removed.
