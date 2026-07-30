@@ -64,6 +64,14 @@ PYTHONPATH=src python3 -m unittest tests.test_simulated_broker
 PYTHONPATH=src python3 -m unittest tests.test_replay_execution
 ```
 
+## Shadow Mode Readiness Gate Tests
+
+```bash
+PYTHONPATH=src python3 -m unittest tests.test_shadow_mode
+```
+
+These tests evaluate local replay result fixtures only. They do not connect to market data, connect to brokers, submit orders, or cancel orders.
+
 ## kabu Station Mapper Tests
 
 ```bash

@@ -43,6 +43,22 @@ ISSUE-016 hardens replay behavior based on review findings:
 - replay validates that every snapshot calendar date matches the supplied `trading_date`;
 - replay and backtest share `MarketCalendar` from `autotrade.calendar.protocols`.
 
+## Shadow Mode Readiness Gate
+
+ISSUE-025 adds a local readiness gate for replay results that may later feed Shadow Mode review.
+
+`ShadowModeReadinessGate` evaluates an existing `ReplayExecutionResult` and returns a decision with stable metrics:
+
+- intents;
+- fills;
+- reconciliation reports;
+- critical reconciliation reports;
+- remaining open simulated broker orders.
+
+The gate passes only when reconciliation evidence exists, no critical reconciliation report exists, no simulated broker open orders remain, and any supplied `RiskManager` is not paused.
+
+The gate does not run strategies, read market data, query brokers, submit orders, cancel orders, or persist operational state.
+
 ## Limitations
 
 This is not a production execution loop. It does not yet include:

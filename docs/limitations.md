@@ -15,6 +15,7 @@
 - Simulated broker state snapshots include order existence and position quantity only; they do not include cash, buying power, fees, or broker-native statuses.
 - `AGENT.md` captures workflow rules only; it does not replace human review or branch protection.
 - Replay execution now supports configurable cancellation policy, but does not yet model broker errors, submit timeouts, restart recovery, or cost attribution in replay results.
+- The Shadow Mode readiness gate evaluates local replay result evidence only; it does not ingest live market data, query real broker state, persist decisions, or authorize live trading.
 - The kabu Station mapper, official request contract helpers, fake-transport token client, fake-transport sendorder client, fake-transport cancelorder client, fake-transport read-only client, snapshot mapper, and read-only reconciler are local-only and do not perform real authentication, send real HTTP requests, cancel orders, query real order status, query real positions, reconcile a real account, or place live orders.
 - Machine learning, meta-labeling, model registry, and degradation monitoring are out of scope for the current code.
 - US market execution through IBKR is future work.
