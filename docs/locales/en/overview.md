@@ -32,6 +32,8 @@ Shadow Mode readiness decisions can be converted into local run summaries with t
 
 Shadow Mode run summaries can be written as local deterministic JSON files for fixture review.
 
+Shadow Mode run summary JSON files can be read back with local schema validation.
+
 Repository agent rules are captured in `AGENT.md`.
 
 Replay execution now skips duplicate client order IDs within a run, fails fast on critical reconciliation discrepancies, isolates default run results, and rejects snapshots that do not match the supplied trading date.

@@ -15,6 +15,8 @@ from autotrade.execution.reconciliation import (
 )
 from autotrade.execution.replay import ReplayExecutionResult
 from autotrade.execution.shadow_mode import (
+    ShadowModeSummaryError,
+    ShadowModeSummaryReader,
     ShadowModeReadinessGate,
     ShadowModeReadinessStatus,
     ShadowModeSummaryWriter,
@@ -216,6 +218,72 @@ class ShadowModeReadinessGateTests(unittest.TestCase):
                 ShadowModeSummaryWriter().write(summary, output_path)
 
             self.assertEqual(output_path.read_text(encoding="utf-8"), "existing\n")
+
+    def test_summary_reader_loads_writer_output(self) -> None:
+        summary = ShadowModeRunSummary.from_readiness_decision(
+            trading_date="2026-07-28",
+            decision=ShadowModeReadinessGate().evaluate(_clean_result()),
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_path = Path(tmpdir) / "summary.json"
+            ShadowModeSummaryWriter().write(summary, output_path)
+
+            loaded = ShadowModeSummaryReader().read(output_path)
+
+            self.assertEqual(loaded, summary)
+
+    def test_summary_reader_rejects_missing_required_field(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_path = Path(tmpdir) / "summary.json"
+            output_path.write_text(
+                json.dumps({"status": "PASSED", "reasons": [], "metrics": {}}),
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(ShadowModeSummaryError, "trading_date"):
+                ShadowModeSummaryReader().read(output_path)
+
+    def test_summary_reader_rejects_unknown_status(self) -> None:
+        payload = {
+            "trading_date": "2026-07-28",
+            "status": "UNKNOWN",
+            "reasons": [],
+            "metrics": {},
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_path = Path(tmpdir) / "summary.json"
+            output_path.write_text(json.dumps(payload), encoding="utf-8")
+
+            with self.assertRaisesRegex(ShadowModeSummaryError, "status"):
+                ShadowModeSummaryReader().read(output_path)
+
+    def test_summary_reader_rejects_non_list_reasons(self) -> None:
+        payload = {
+            "trading_date": "2026-07-28",
+            "status": "PASSED",
+            "reasons": "none",
+            "metrics": {},
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_path = Path(tmpdir) / "summary.json"
+            output_path.write_text(json.dumps(payload), encoding="utf-8")
+
+            with self.assertRaisesRegex(ShadowModeSummaryError, "reasons"):
+                ShadowModeSummaryReader().read(output_path)
+
+    def test_summary_reader_rejects_non_integer_metrics(self) -> None:
+        payload = {
+            "trading_date": "2026-07-28",
+            "status": "PASSED",
+            "reasons": [],
+            "metrics": {"intents": "1"},
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_path = Path(tmpdir) / "summary.json"
+            output_path.write_text(json.dumps(payload), encoding="utf-8")
+
+            with self.assertRaisesRegex(ShadowModeSummaryError, "metrics"):
+                ShadowModeSummaryReader().read(output_path)
 
 
 if __name__ == "__main__":

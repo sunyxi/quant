@@ -14,6 +14,10 @@ class ShadowModeReadinessStatus(StrEnum):
     BLOCKED = "BLOCKED"
 
 
+class ShadowModeSummaryError(ValueError):
+    pass
+
+
 @dataclass(frozen=True)
 class ShadowModeReadinessDecision:
     status: ShadowModeReadinessStatus
@@ -64,6 +68,48 @@ class ShadowModeSummaryWriter:
         payload = json.dumps(summary.to_dict(), sort_keys=True)
         path.write_text(f"{payload}\n", encoding="utf-8")
         return path
+
+
+@dataclass(frozen=True)
+class ShadowModeSummaryReader:
+    def read(self, path: Path) -> ShadowModeRunSummary:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(payload, dict):
+            raise ShadowModeSummaryError("summary payload must be an object")
+
+        trading_date = payload.get("trading_date")
+        if not isinstance(trading_date, str) or not trading_date:
+            raise ShadowModeSummaryError("summary payload missing trading_date")
+
+        status_value = payload.get("status")
+        if not isinstance(status_value, str):
+            raise ShadowModeSummaryError("summary payload missing status")
+        try:
+            status = ShadowModeReadinessStatus(status_value)
+        except ValueError as exc:
+            raise ShadowModeSummaryError(
+                f"unknown Shadow Mode readiness status: {status_value}"
+            ) from exc
+
+        reasons = payload.get("reasons")
+        if not isinstance(reasons, list) or not all(
+            isinstance(reason, str) for reason in reasons
+        ):
+            raise ShadowModeSummaryError("summary payload reasons must be a string list")
+
+        metrics = payload.get("metrics")
+        if not isinstance(metrics, dict) or not all(
+            isinstance(key, str) and isinstance(value, int)
+            for key, value in metrics.items()
+        ):
+            raise ShadowModeSummaryError("summary payload metrics must be integer values")
+
+        return ShadowModeRunSummary(
+            trading_date=trading_date,
+            status=status,
+            reasons=list(reasons),
+            metrics=dict(metrics),
+        )
 
 
 @dataclass(frozen=True)
