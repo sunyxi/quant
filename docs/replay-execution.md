@@ -90,6 +90,12 @@ The reader validates required fields, known readiness status values, string-list
 
 The reader does not run replay, read market data, query brokers, submit orders, or cancel orders.
 
+## Shadow Mode Summary Schema
+
+ISSUE-029 adds `schema_version` to Shadow Mode run summaries. The current local JSON schema version is `1`.
+
+Writers include `schema_version` in summary JSON. Readers require version `1` and reject missing or unsupported versions before using a summary as fixture review evidence.
+
 ## Limitations
 
 This is not a production execution loop. It does not yet include:

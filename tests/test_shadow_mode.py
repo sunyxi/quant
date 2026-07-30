@@ -145,12 +145,14 @@ class ShadowModeReadinessGateTests(unittest.TestCase):
         )
 
         self.assertEqual(summary.trading_date, "2026-07-28")
+        self.assertEqual(summary.schema_version, 1)
         self.assertEqual(summary.status, ShadowModeReadinessStatus.PASSED)
         self.assertEqual(summary.reasons, [])
         self.assertEqual(summary.metrics["intents"], 1)
         self.assertEqual(
             summary.to_dict(),
             {
+                "schema_version": 1,
                 "trading_date": "2026-07-28",
                 "status": "PASSED",
                 "reasons": [],
@@ -236,15 +238,52 @@ class ShadowModeReadinessGateTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             output_path = Path(tmpdir) / "summary.json"
             output_path.write_text(
-                json.dumps({"status": "PASSED", "reasons": [], "metrics": {}}),
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "status": "PASSED",
+                        "reasons": [],
+                        "metrics": {},
+                    }
+                ),
                 encoding="utf-8",
             )
 
             with self.assertRaisesRegex(ShadowModeSummaryError, "trading_date"):
                 ShadowModeSummaryReader().read(output_path)
 
+    def test_summary_reader_rejects_missing_schema_version(self) -> None:
+        payload = {
+            "trading_date": "2026-07-28",
+            "status": "PASSED",
+            "reasons": [],
+            "metrics": {},
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_path = Path(tmpdir) / "summary.json"
+            output_path.write_text(json.dumps(payload), encoding="utf-8")
+
+            with self.assertRaisesRegex(ShadowModeSummaryError, "schema_version"):
+                ShadowModeSummaryReader().read(output_path)
+
+    def test_summary_reader_rejects_unsupported_schema_version(self) -> None:
+        payload = {
+            "schema_version": 2,
+            "trading_date": "2026-07-28",
+            "status": "PASSED",
+            "reasons": [],
+            "metrics": {},
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_path = Path(tmpdir) / "summary.json"
+            output_path.write_text(json.dumps(payload), encoding="utf-8")
+
+            with self.assertRaisesRegex(ShadowModeSummaryError, "schema_version"):
+                ShadowModeSummaryReader().read(output_path)
+
     def test_summary_reader_rejects_unknown_status(self) -> None:
         payload = {
+            "schema_version": 1,
             "trading_date": "2026-07-28",
             "status": "UNKNOWN",
             "reasons": [],
@@ -259,6 +298,7 @@ class ShadowModeReadinessGateTests(unittest.TestCase):
 
     def test_summary_reader_rejects_non_list_reasons(self) -> None:
         payload = {
+            "schema_version": 1,
             "trading_date": "2026-07-28",
             "status": "PASSED",
             "reasons": "none",
@@ -273,6 +313,7 @@ class ShadowModeReadinessGateTests(unittest.TestCase):
 
     def test_summary_reader_rejects_non_integer_metrics(self) -> None:
         payload = {
+            "schema_version": 1,
             "trading_date": "2026-07-28",
             "status": "PASSED",
             "reasons": [],

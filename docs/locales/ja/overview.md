@@ -34,6 +34,8 @@ Shadow Mode run summary は、fixture レビュー向けに決定的なローカ
 
 Shadow Mode run summary の JSON ファイルは、ローカルのスキーマ検証付きで読み戻せます。
 
+Shadow Mode run summary JSON は、互換性チェック向けにローカル `schema_version` 1 を持ちます。
+
 リポジトリのエージェント規則は `AGENT.md` に記録されています。
 
 リプレイ実行は、1回の実行内の重複したクライアント注文IDをスキップし、重大な照合差異で即時失敗し、標準実行結果を分離し、指定された取引日と一致しないスナップショットを拒否します。
