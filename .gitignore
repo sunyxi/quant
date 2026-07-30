@@ -12,3 +12,5 @@ dist/
 build/
 *.egg-info/
 .DS_Store
+kabu-probe-reports/
+*kabu-readonly-probe-report*.json

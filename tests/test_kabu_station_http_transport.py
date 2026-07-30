@@ -1,77 +1,110 @@
 from __future__ import annotations
 
 import json
-import threading
+import socket
 import unittest
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
+from urllib.error import HTTPError
+from urllib.error import URLError
+from urllib.response import addinfourl
 
 from autotrade.execution.kabu_station import (
     KabuStationClientError,
     KabuStationLocalhostHttpTransport,
+    KabuStationTransportConnectionError,
+    KabuStationTransportTimeoutError,
 )
 
 
-class RecordingHandler(BaseHTTPRequestHandler):
-    requests: list[dict[str, Any]] = []
-    response_status = 200
-    response_payload: dict[str, Any] | list[dict[str, Any]] | None = {"ok": True}
+class FakeResponse:
+    def __init__(self, status: int, body: bytes) -> None:
+        self.status = status
+        self._body = body
 
-    def do_POST(self) -> None:
-        self._record_with_body()
+    def __enter__(self) -> FakeResponse:
+        return self
 
-    def do_PUT(self) -> None:
-        self._record_with_body()
+    def __exit__(self, *args: Any) -> None:
+        return None
 
-    def do_GET(self) -> None:
-        self._record(None)
+    def read(self) -> bytes:
+        return self._body
 
-    def log_message(self, format: str, *args: Any) -> None:
-        return
+    def getcode(self) -> int:
+        return self.status
 
-    def _record_with_body(self) -> None:
-        length = int(self.headers.get("Content-Length", "0"))
-        body = self.rfile.read(length) if length else b""
-        payload = json.loads(body.decode("utf-8")) if body else None
-        self._record(payload)
 
-    def _record(self, payload: dict[str, Any] | None) -> None:
-        type(self).requests.append(
+class FakeOpener:
+    def __init__(
+        self,
+        payload: Any = {"ok": True},
+        *,
+        status: int = 200,
+        raw_body: bytes | None = None,
+        error: Exception | None = None,
+    ) -> None:
+        self.payload = payload
+        self.status = status
+        self.raw_body = raw_body
+        self.error = error
+        self.requests: list[dict[str, Any]] = []
+
+    def open(self, request: Any, timeout: float) -> FakeResponse:
+        body = request.data
+        self.requests.append(
             {
-                "method": self.command,
-                "path": self.path,
-                "api_key": self.headers.get("X-API-KEY"),
-                "content_type": self.headers.get("Content-Type"),
-                "payload": payload,
+                "method": request.get_method(),
+                "url": request.full_url,
+                "api_key": request.get_header("X-api-key"),
+                "content_type": request.get_header("Content-type"),
+                "payload": json.loads(body.decode("utf-8")) if body else None,
+                "timeout": timeout,
             }
         )
-        self.send_response(type(self).response_status)
-        self.send_header("Content-Type", "application/json")
-        self.end_headers()
-        if type(self).response_payload is not None:
-            self.wfile.write(
-                json.dumps(type(self).response_payload).encode("utf-8")
+        if self.error is not None:
+            raise self.error
+        response_body = (
+            self.raw_body
+            if self.raw_body is not None
+            else json.dumps(self.payload).encode("utf-8")
+        )
+        if self.status >= 400:
+            raise HTTPError(
+                request.full_url,
+                self.status,
+                "error",
+                hdrs=None,
+                fp=addinfourl(
+                    fp=BytesReader(response_body),
+                    headers={},
+                    url=request.full_url,
+                    code=self.status,
+                ),
             )
+        return FakeResponse(self.status, response_body)
+
+
+class BytesReader:
+    def __init__(self, body: bytes) -> None:
+        self.body = body
+
+    def read(self, *args: Any) -> bytes:
+        return self.body
+
+    def close(self) -> None:
+        return None
 
 
 class KabuStationLocalhostHttpTransportTests(unittest.TestCase):
     def setUp(self) -> None:
-        RecordingHandler.requests = []
-        RecordingHandler.response_status = 200
-        RecordingHandler.response_payload = {"ok": True}
-        self.server = ThreadingHTTPServer(("127.0.0.1", 0), RecordingHandler)
-        self.thread = threading.Thread(target=self.server.serve_forever)
-        self.thread.start()
-        host, port = self.server.server_address
-        self.base_url = f"http://{host}:{port}"
+        self.base_url = "http://localhost:18081"
 
     def tearDown(self) -> None:
-        self.server.shutdown()
-        self.server.server_close()
-        self.thread.join(timeout=2)
+        return None
 
     def test_post_json_sends_payload_and_headers_to_localhost(self) -> None:
-        transport = KabuStationLocalhostHttpTransport()
+        opener = FakeOpener()
+        transport = KabuStationLocalhostHttpTransport(opener=opener)
 
         response = transport.post_json(
             f"{self.base_url}/kabusapi/token",
@@ -82,36 +115,40 @@ class KabuStationLocalhostHttpTransportTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.payload, {"ok": True})
         self.assertEqual(
-            RecordingHandler.requests,
+            opener.requests,
             [
                 {
                     "method": "POST",
-                    "path": "/kabusapi/token",
+                    "url": "http://localhost:18081/kabusapi/token",
                     "api_key": "token-123",
                     "content_type": "application/json",
                     "payload": {"APIPassword": "test-password"},
+                    "timeout": 5.0,
                 }
             ],
         )
 
     def test_put_json_sends_payload_to_localhost(self) -> None:
-        transport = KabuStationLocalhostHttpTransport()
+        opener = FakeOpener()
+        transport = KabuStationLocalhostHttpTransport(
+            opener=opener, policy=lambda method, url: None
+        )
 
         response = transport.put_json(
-            f"{self.base_url}/kabusapi/cancelorder",
+            f"{self.base_url}/kabusapi/custom-put-contract",
             {"OrderId": "order-1"},
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(RecordingHandler.requests[0]["method"], "PUT")
+        self.assertEqual(opener.requests[0]["method"], "PUT")
         self.assertEqual(
-            RecordingHandler.requests[0]["payload"],
+            opener.requests[0]["payload"],
             {"OrderId": "order-1"},
         )
 
     def test_get_json_encodes_query_and_headers_to_localhost(self) -> None:
-        RecordingHandler.response_payload = [{"ID": "order-1"}]
-        transport = KabuStationLocalhostHttpTransport()
+        opener = FakeOpener(payload=[{"ID": "order-1"}])
+        transport = KabuStationLocalhostHttpTransport(opener=opener)
 
         response = transport.get_json(
             f"{self.base_url}/kabusapi/orders",
@@ -121,35 +158,124 @@ class KabuStationLocalhostHttpTransportTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.payload, [{"ID": "order-1"}])
-        self.assertEqual(RecordingHandler.requests[0]["method"], "GET")
+        self.assertEqual(opener.requests[0]["method"], "GET")
         self.assertEqual(
-            RecordingHandler.requests[0]["path"],
-            "/kabusapi/orders?product=1&symbol=7203",
+            opener.requests[0]["url"],
+            "http://localhost:18081/kabusapi/orders?product=1&symbol=7203",
         )
-        self.assertEqual(RecordingHandler.requests[0]["api_key"], "token-123")
+        self.assertEqual(opener.requests[0]["api_key"], "token-123")
 
-    def test_empty_body_returns_empty_payload(self) -> None:
-        RecordingHandler.response_payload = None
-        transport = KabuStationLocalhostHttpTransport()
+    def test_empty_body_raises_client_error(self) -> None:
+        transport = KabuStationLocalhostHttpTransport(opener=FakeOpener(raw_body=b""))
+
+        with self.assertRaises(KabuStationClientError):
+            transport.get_json(f"{self.base_url}/kabusapi/orders")
+
+    def test_non_json_response_raises_client_error(self) -> None:
+        transport = KabuStationLocalhostHttpTransport(
+            opener=FakeOpener(raw_body=b"not-json")
+        )
+
+        with self.assertRaises(KabuStationClientError):
+            transport.get_json(f"{self.base_url}/kabusapi/orders")
+
+    def test_http_error_preserves_status_and_payload(self) -> None:
+        transport = KabuStationLocalhostHttpTransport(
+            opener=FakeOpener(status=400, payload={"Code": 4001001})
+        )
 
         response = transport.get_json(f"{self.base_url}/kabusapi/orders")
 
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.payload, {})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.payload, {"Code": 4001001})
 
     def test_rejects_non_localhost_url_before_request(self) -> None:
-        transport = KabuStationLocalhostHttpTransport()
+        opener = FakeOpener()
+        transport = KabuStationLocalhostHttpTransport(opener=opener)
 
         with self.assertRaises(KabuStationClientError):
             transport.get_json("https://example.com/kabusapi/orders")
 
-        self.assertEqual(RecordingHandler.requests, [])
+        self.assertEqual(opener.requests, [])
 
-    def test_transport_errors_raise_client_error(self) -> None:
-        transport = KabuStationLocalhostHttpTransport(timeout_seconds=0.1)
+    def test_rejects_remote_redirect(self) -> None:
+        opener = FakeOpener(
+            error=HTTPError(
+                f"{self.base_url}/kabusapi/orders",
+                302,
+                "Found",
+                hdrs={"Location": "http://example.com/kabusapi/orders"},
+                fp=None,
+            )
+        )
+        transport = KabuStationLocalhostHttpTransport(opener=opener)
 
         with self.assertRaises(KabuStationClientError):
+            transport.get_json(f"{self.base_url}/kabusapi/orders")
+
+    def test_rejects_userinfo_url_before_request(self) -> None:
+        transport = KabuStationLocalhostHttpTransport()
+
+        with self.assertRaises(KabuStationClientError):
+            transport.get_json("http://user:pass@localhost:18081/kabusapi/orders")
+
+    def test_default_policy_rejects_mutating_broker_endpoints(self) -> None:
+        opener = FakeOpener()
+        transport = KabuStationLocalhostHttpTransport(opener=opener)
+
+        with self.assertRaises(KabuStationClientError):
+            transport.post_json(f"{self.base_url}/kabusapi/sendorder", {})
+        with self.assertRaises(KabuStationClientError):
+            transport.put_json(f"{self.base_url}/kabusapi/cancelorder", {})
+
+        self.assertEqual(opener.requests, [])
+
+    def test_connection_refused_raises_sanitized_connection_error(self) -> None:
+        transport = KabuStationLocalhostHttpTransport(
+            opener=FakeOpener(error=URLError(ConnectionRefusedError())),
+            timeout_seconds=0.1,
+        )
+
+        with self.assertRaises(KabuStationTransportConnectionError):
             transport.get_json("http://localhost:1/kabusapi/orders")
+
+    def test_timeout_raises_sanitized_timeout_error(self) -> None:
+        class TimeoutOpener:
+            def open(self, request: Any, timeout: float) -> Any:
+                raise socket.timeout("secret-token-123")
+
+        transport = KabuStationLocalhostHttpTransport(
+            opener=TimeoutOpener(),
+            timeout_seconds=0.1,
+        )
+
+        with self.assertRaises(KabuStationTransportTimeoutError) as context:
+            transport.get_json(
+                f"{self.base_url}/kabusapi/orders",
+                headers={"X-API-KEY": "secret-token-123"},
+            )
+
+        self.assertNotIn("secret-token-123", str(context.exception))
+
+    def test_opener_error_does_not_leak_password_or_token(self) -> None:
+        class FailingOpener:
+            def open(self, request: Any, timeout: float) -> Any:
+                raise URLError("bad-password token-123")
+
+        transport = KabuStationLocalhostHttpTransport(
+            opener=FailingOpener(),
+            timeout_seconds=0.1,
+        )
+
+        with self.assertRaises(KabuStationTransportConnectionError) as context:
+            transport.post_json(
+                f"{self.base_url}/kabusapi/token",
+                {"APIPassword": "bad-password"},
+                headers={"X-API-KEY": "token-123"},
+            )
+
+        self.assertNotIn("bad-password", str(context.exception))
+        self.assertNotIn("token-123", str(context.exception))
 
 
 if __name__ == "__main__":
