@@ -1443,7 +1443,6 @@ Rollback: Revert the kabu Station localhost boundary branch; clients will contin
 - Redirect targets are validated against both loopback URL and read-only endpoint policy before they are followed.
 - Percent-encoded endpoint paths cannot bypass the read-only policy.
 - Empty or non-JSON HTTP error bodies preserve status-based typed client errors.
-- Empty or non-JSON successful HTTP response bodies retain a response-failure category instead of being reported as authentication failures.
 - Connection and timeout failures during orders or positions reads retain transport failure categories without erasing successful authentication evidence.
 - Policy and operating-system failures retain configuration and system categories during every probe stage.
 - Pre-connection validation failures do not report a successful connection.

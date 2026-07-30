@@ -55,10 +55,6 @@ class KabuStationTransportSystemError(KabuStationClientError):
     pass
 
 
-class KabuStationTransportResponseError(KabuStationClientError):
-    pass
-
-
 class KabuStationMappingError(ValueError):
     pass
 
@@ -310,7 +306,7 @@ class KabuStationLocalhostHttpTransport:
             body = exc.read()
             try:
                 payload = self._parse_json_response(body) if body else {}
-            except KabuStationTransportResponseError:
+            except KabuStationClientError:
                 payload = {}
             return KabuStationJsonResponse(
                 status_code=exc.code,
@@ -334,8 +330,8 @@ class KabuStationLocalhostHttpTransport:
                 raise KabuStationTransportSystemError(
                     "kabu Station localhost HTTP transport encountered an operating system error"
                 ) from exc
-            raise KabuStationTransportSystemError(
-                "kabu Station localhost HTTP transport encountered a transport error"
+            raise KabuStationTransportConnectionError(
+                "kabu Station localhost HTTP transport could not connect"
             ) from exc
         except OSError as exc:
             if not isinstance(exc, ConnectionError):
@@ -373,13 +369,13 @@ class KabuStationLocalhostHttpTransport:
     @staticmethod
     def _parse_json_response(body: bytes) -> Any:
         if not body:
-            raise KabuStationTransportResponseError(
+            raise KabuStationClientError(
                 "kabu Station localhost HTTP response body was empty"
             )
         try:
             return json.loads(body.decode("utf-8"))
         except json.JSONDecodeError as exc:
-            raise KabuStationTransportResponseError(
+            raise KabuStationClientError(
                 "kabu Station localhost HTTP response was not valid JSON"
             ) from exc
 
@@ -492,21 +488,6 @@ class KabuStationReadOnlyProbe:
             connection_status = "not-run"
             authentication_status = "not-run"
             failure_category = "system"
-            return self._result(
-                timestamp,
-                connection_status,
-                authentication_status,
-                orders_payload_status,
-                positions_payload_status,
-                snapshot_mapping_status,
-                order_count,
-                position_count,
-                failure_category,
-            )
-        except KabuStationTransportResponseError:
-            connection_status = "ok"
-            authentication_status = "not-run"
-            failure_category = "response"
             return self._result(
                 timestamp,
                 connection_status,
@@ -745,23 +726,18 @@ class KabuStationProbeReportWriter:
     ) -> Path:
         output_path = Path(path)
         try:
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-            mode = "w" if overwrite else "x"
-            with output_path.open(mode, encoding="utf-8") as handle:
-                handle.write(
-                    json.dumps(
-                        result.to_dict(), ensure_ascii=False, indent=2, sort_keys=True
-                    )
-                    + "\n"
-                )
-        except FileExistsError as exc:
-            if output_path.exists():
+            if output_path.exists() and not overwrite:
                 raise KabuStationClientError(
                     "kabu Station probe report already exists"
-                ) from exc
-            raise KabuStationClientError(
-                "could not write kabu Station probe report"
-            ) from exc
+                )
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            output_path.write_text(
+                json.dumps(
+                    result.to_dict(), ensure_ascii=False, indent=2, sort_keys=True
+                )
+                + "\n",
+                encoding="utf-8",
+            )
         except KabuStationClientError:
             raise
         except OSError as exc:

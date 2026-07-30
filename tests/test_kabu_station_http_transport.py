@@ -19,8 +19,6 @@ from autotrade.execution.kabu_station import (
     KabuStationServerError,
     KabuStationTokenClient,
     KabuStationTransportConnectionError,
-    KabuStationTransportResponseError,
-    KabuStationTransportSystemError,
     KabuStationTransportTimeoutError,
     _LoopbackRedirectHandler,
 )
@@ -178,7 +176,7 @@ class KabuStationLocalhostHttpTransportTests(unittest.TestCase):
     def test_empty_body_raises_client_error(self) -> None:
         transport = KabuStationLocalhostHttpTransport(opener=FakeOpener(raw_body=b""))
 
-        with self.assertRaises(KabuStationTransportResponseError):
+        with self.assertRaises(KabuStationClientError):
             transport.get_json(f"{self.base_url}/kabusapi/orders")
 
     def test_non_json_response_raises_client_error(self) -> None:
@@ -186,7 +184,7 @@ class KabuStationLocalhostHttpTransportTests(unittest.TestCase):
             opener=FakeOpener(raw_body=b"not-json")
         )
 
-        with self.assertRaises(KabuStationTransportResponseError):
+        with self.assertRaises(KabuStationClientError):
             transport.get_json(f"{self.base_url}/kabusapi/orders")
 
     def test_http_error_preserves_status_and_payload(self) -> None:
@@ -347,9 +345,7 @@ class KabuStationLocalhostHttpTransportTests(unittest.TestCase):
 
         self.assertNotIn("secret-token-123", str(context.exception))
 
-    def test_opener_string_reason_is_not_misclassified_as_connection_failure(
-        self,
-    ) -> None:
+    def test_opener_error_does_not_leak_password_or_token(self) -> None:
         class FailingOpener:
             def open(self, request: Any, timeout: float) -> Any:
                 raise URLError("bad-password token-123")
@@ -359,7 +355,7 @@ class KabuStationLocalhostHttpTransportTests(unittest.TestCase):
             timeout_seconds=0.1,
         )
 
-        with self.assertRaises(KabuStationTransportSystemError) as context:
+        with self.assertRaises(KabuStationTransportConnectionError) as context:
             transport.post_json(
                 f"{self.base_url}/kabusapi/token",
                 {"APIPassword": "bad-password"},

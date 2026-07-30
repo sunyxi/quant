@@ -17,7 +17,6 @@ from autotrade.execution.kabu_station import (
     KabuStationLocalhostHttpTransport,
     KabuStationTransportConnectionError,
     KabuStationTransportPolicyError,
-    KabuStationTransportResponseError,
     KabuStationTransportSystemError,
     KabuStationTransportTimeoutError,
 )
@@ -190,24 +189,6 @@ class KabuStationReadOnlyProbeTests(unittest.TestCase):
         self.assertEqual(payload["authentication_status"], "not-run")
         self.assertEqual(payload["sanitized_failure_category"], "configuration")
 
-    def test_token_response_error_is_not_reported_as_authentication_failure(
-        self,
-    ) -> None:
-        probe = KabuStationReadOnlyProbe(
-            environment_name="test",
-            environment=KabuStationEnvironment.test(),
-            token_client=FakeTokenClient(
-                error=KabuStationTransportResponseError("not JSON")
-            ),
-            readonly_client=FakeReadOnlyClient(),
-        )
-
-        payload = probe.run(api_password="secret-password").to_dict()
-
-        self.assertEqual(payload["connection_status"], "ok")
-        self.assertEqual(payload["authentication_status"], "not-run")
-        self.assertEqual(payload["sanitized_failure_category"], "response")
-
     def test_read_policy_errors_are_reported_as_configuration_failures(self) -> None:
         cases = (
             (
@@ -307,23 +288,6 @@ class KabuStationReadOnlyProbeTests(unittest.TestCase):
             path.write_text(json.dumps(raw), encoding="utf-8")
             with self.assertRaises(KabuStationClientError):
                 KabuStationProbeReportReader().read(path)
-
-    def test_probe_report_writer_rejects_existing_file_without_overwrite(self) -> None:
-        result = KabuStationReadOnlyProbe(
-            environment_name="test",
-            environment=KabuStationEnvironment.test(),
-            token_client=FakeTokenClient(),
-            readonly_client=FakeReadOnlyClient(),
-        ).run(api_password="secret-password")
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            path = Path(tmpdir) / "probe-report.json"
-            path.write_text("existing", encoding="utf-8")
-
-            with self.assertRaisesRegex(KabuStationClientError, "already exists"):
-                KabuStationProbeReportWriter().write(path, result)
-
-            self.assertEqual(path.read_text(encoding="utf-8"), "existing")
 
     def test_probe_report_writer_wraps_filesystem_error(self) -> None:
         result = KabuStationReadOnlyProbe(
