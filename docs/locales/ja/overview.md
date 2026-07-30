@@ -38,6 +38,8 @@ Shadow Mode run summary JSON は、互換性チェック向けにローカル `s
 
 Shadow Mode run summary は、fixture 実行の passed と blocked の件数レビュー向けにローカル集計できます。
 
+Shadow Mode summary review は、fixture レビュー向けに決定的なローカル JSON ファイルとして書き出せます。
+
 リポジトリのエージェント規則は `AGENT.md` に記録されています。
 
 リプレイ実行は、1回の実行内の重複したクライアント注文IDをスキップし、重大な照合差異で即時失敗し、標準実行結果を分離し、指定された取引日と一致しないスナップショットを拒否します。

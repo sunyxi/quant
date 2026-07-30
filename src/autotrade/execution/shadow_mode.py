@@ -114,6 +114,17 @@ class ShadowModeSummaryReview:
 
 
 @dataclass(frozen=True)
+class ShadowModeReviewWriter:
+    def write(self, review: ShadowModeSummaryReview, path: Path) -> Path:
+        if path.exists():
+            raise FileExistsError(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        payload = json.dumps(review.to_dict(), sort_keys=True)
+        path.write_text(f"{payload}\n", encoding="utf-8")
+        return path
+
+
+@dataclass(frozen=True)
 class ShadowModeSummaryWriter:
     def write(self, summary: ShadowModeRunSummary, path: Path) -> Path:
         if path.exists():

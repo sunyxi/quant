@@ -104,6 +104,14 @@ The review reports total, passed, and blocked run counts, sorted trading dates, 
 
 The review does not read files, run replay, read market data, query brokers, submit orders, or cancel orders.
 
+## Shadow Mode Review Writer
+
+ISSUE-031 adds `ShadowModeReviewWriter`, a local JSON writer for existing summary review aggregates.
+
+The writer creates missing parent directories, rejects overwriting an existing file by default, writes deterministic JSON with sorted keys and a trailing newline, and returns the output path.
+
+The writer does not discover files, run replay, read market data, query brokers, submit orders, or cancel orders.
+
 ## Limitations
 
 This is not a production execution loop. It does not yet include:

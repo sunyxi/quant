@@ -38,6 +38,8 @@ Shadow Mode run summary JSON 现在带有本地 `schema_version` 1，用于兼�
 
 Shadow Mode run summary 可以在本地聚合为 passed 和 blocked fixture run 的审阅计数。
 
+Shadow Mode summary review 可以写成本地确定性 JSON 文件，用于 fixture 审阅。
+
 仓库 Agent 工作规则记录在 `AGENT.md`。
 
 回放执行现在会跳过同一次运行内重复的客户端订单ID，在严重对账差异时快速失败，隔离默认运行结果，并拒绝与指定交易日不一致的快照。
