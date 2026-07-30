@@ -58,6 +58,10 @@ The Shadow Mode run summary has no live broker side effects. Revert the ISSUE-02
 
 The Shadow Mode summary writer has no live broker side effects. Revert the ISSUE-027 branch if local summary JSON output needs to be removed.
 
+## Shadow Mode Summary Reader Rollback
+
+The Shadow Mode summary reader has no live broker side effects. Revert the ISSUE-028 branch if local summary JSON loading needs to be removed.
+
 ## kabu Station Mapper Rollback
 
 The kabu Station mapper has no live broker side effects. Revert the ISSUE-017 branch if adapter-boundary payload mapping needs to be removed.

@@ -1179,3 +1179,52 @@ Rollback: Revert the Shadow Mode run summary branch; no live broker API calls or
 - Refactor: optional, but must keep gates accurate.
 
 Rollback: Revert the Shadow Mode summary writer branch; no live broker API calls or broker side effects exist in this change.
+
+## ISSUE-028: Add local Shadow Mode summary reader
+
+- Status: `complete`
+- Phase: `Phase 4`
+- Dependencies: ISSUE-027
+- Roadmap: see `docs/roadmap.md#phase-4`
+- Summary: Add a local-only Shadow Mode summary reader that loads deterministic summary JSON back into a run summary with validation for fixture review.
+
+### Acceptance Criteria
+
+- The reader loads a Shadow Mode run summary from JSON written by the summary writer.
+- The reader rejects payloads missing trading date, status, reasons, or metrics.
+- The reader rejects unknown readiness status values.
+- The reader rejects non-list reasons.
+- The reader rejects metrics that are not integer values.
+- The reader returns a ShadowModeRunSummary with copied reasons and metrics.
+- The reader remains local-only and does not run strategies, connect to market data, query brokers, submit orders, or cancel orders.
+
+### Gates
+
+- Python Unit Tests
+- Fixture Tests
+- Documentation Localization
+- Markdown Links/Style
+- Secret Scan
+- Task Catalog Generation
+
+### Changed Assets
+
+- `src/autotrade/execution/shadow_mode.py`
+- `tests/test_shadow_mode.py`
+- `tests/test_documentation_catalog.py`
+- `docs/replay-execution.md`
+- `docs/cli-usage.md`
+- `docs/operations.md`
+- `docs/limitations.md`
+- `docs/rollback.md`
+- `docs/locales/en/overview.md`
+- `docs/locales/ja/overview.md`
+- `docs/locales/zh-CN/overview.md`
+
+### Test-first Evidence
+
+- Red: required before implementation starts.
+- Green: required after implementation.
+- Refactor: optional, but must keep gates accurate.
+
+Rollback: Revert the Shadow Mode summary reader branch; no live broker API calls or broker side effects exist in this change.

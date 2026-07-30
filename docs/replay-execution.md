@@ -82,6 +82,14 @@ The writer creates missing parent directories, rejects overwriting an existing f
 
 The writer does not run replay, read market data, query brokers, submit orders, or cancel orders.
 
+## Shadow Mode Summary Reader
+
+ISSUE-028 adds `ShadowModeSummaryReader`, a local JSON reader for summary files written by `ShadowModeSummaryWriter`.
+
+The reader validates required fields, known readiness status values, string-list reasons, and integer-valued metrics before returning a `ShadowModeRunSummary`.
+
+The reader does not run replay, read market data, query brokers, submit orders, or cancel orders.
+
 ## Limitations
 
 This is not a production execution loop. It does not yet include:

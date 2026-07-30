@@ -48,6 +48,8 @@ Use `ShadowModeRunSummary` when a local readiness decision needs an audit-friend
 
 Use `ShadowModeSummaryWriter` when a run summary needs a local JSON artifact for fixture review. Do not overwrite an existing summary file unless a later reviewed change adds explicit replacement semantics.
 
+Use `ShadowModeSummaryReader` only for local summary JSON artifacts. A reader validation error means the summary file is not usable as review evidence until the file source and schema are inspected.
+
 ## kabu Station Mapper Handling
 
 Use the kabu Station mapper only for local adapter-boundary tests. It must not be treated as a live broker client, and its payload shape must stay behind the broker adapter boundary until a later reviewed issue approves real API calls.
