@@ -52,6 +52,8 @@ The kabu Station token client can be tested with a fake transport and maps authe
 
 The kabu Station localhost HTTP transport can be explicitly constructed for localhost-only JSON transport tests and the Windows read-only probe. Its default policy allows token authentication plus read-only orders and positions queries only; real sendorder and cancelorder remain blocked.
 
+The localhost boundary now reapplies loopback and read-only policy checks to redirects, rejects encoded endpoint paths, preserves typed status errors for empty or non-JSON HTTP error bodies, and distinguishes configuration, connection, timeout, and operating-system failures while retaining confirmed authentication evidence.
+
 The kabu Station read-only probe and report writer produce sanitized schema-versioned JSON evidence with statuses and counts only. Mac-side tests use fake transports/openers; real authentication and response compatibility still require Windows with kabu Station running.
 
 The kabu Station sendorder client can also be tested with a fake transport and does not place live orders.

@@ -52,6 +52,8 @@ kabu Station トークンクライアントは fake transport でテストでき
 
 kabu Station localhost HTTP transport は、localhost 専用の JSON transport テストと Windows の参照専用 probe 向けに明示的に構築できます。標準ポリシーはトークン認証と参照専用の注文・建玉照会だけを許可し、実際の sendorder と cancelorder は引き続きブロックします。
 
+localhost 境界は、リダイレクトにも loopback と参照専用ポリシーを再適用し、エンコードされた endpoint path を拒否します。空または JSON でない HTTP エラー本文でも status 別エラーを保持し、configuration、connection、timeout、OS エラーを区別しながら、成功した認証の証跡を保持します。
+
 kabu Station 参照専用 probe と report writer は、状態と件数だけを含むサニタイズ済みの schema version 付き JSON 証跡を出力します。Mac 側テストは fake transport/opener のみを使います。実認証と実レスポンス互換性の確認には、kabu Station を起動した Windows がまだ必要です。
 
 kabu Station 発注クライアントも fake transport でテストでき、実注文は発注しません。

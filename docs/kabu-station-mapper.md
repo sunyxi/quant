@@ -99,6 +99,8 @@ The transport only accepts `http://localhost`, `http://127.0.0.1`, or `http://[:
 
 Tests exercise the transport with an injected fake opener only. They do not connect to real kabu Station, require Windows, authenticate with real credentials, query a real account, submit orders, or cancel orders.
 
+ISSUE-033 hardens this boundary after post-merge review. Redirect targets are rechecked against both the loopback restriction and read-only endpoint policy before they can be followed. Percent-encoded endpoint paths are rejected explicitly, and the default opener is built once for each transport instance. Empty or non-JSON HTTP error bodies preserve their status so clients can still classify authentication, rate-limit, and server failures. Operating-system errors such as denied socket access use a separate sanitized system category instead of being labeled as ordinary connection failures.
+
 ## Read-only Probe and Report
 
 ISSUE-032 also adds a Windows-ready read-only probe boundary for the next real kabu Station validation step. The probe chains the token client, read-only orders client, read-only positions client, and snapshot mapper. It returns only sanitized status evidence:
@@ -111,6 +113,8 @@ ISSUE-032 also adds a Windows-ready read-only probe boundary for the next real k
 - sanitized failure category.
 
 The probe result and deterministic JSON report do not include the API password, API token, request headers, complete authentication response, raw order payloads, raw position payloads, or account identifiers. Report reader schema validation accepts schema version `1` only.
+
+The probe reports connection drops and timeouts during orders or positions reads as transport failures while preserving the earlier successful authentication evidence in `connection_status`. Local URL or policy rejection is reported as configuration failure, including redirects rejected during orders or positions reads. Operating-system failures use the system category. Report file conflicts and filesystem failures return a clean CLI error and stable non-zero exit code.
 
 Mac-side tests use fake token/read-only clients and fake payload fixtures. Real validation still requires Windows because kabu Station is a localhost Windows runtime. After Windows setup, run the CLI in explicit connect mode and stop if any status fails:
 

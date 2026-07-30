@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import io
+import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
+from pathlib import Path
 from unittest.mock import patch
 
 from autotrade.cli import main
+from autotrade.execution.kabu_station import KabuStationClientError
 
 
 class KabuStationCliTests(unittest.TestCase):
@@ -40,6 +43,64 @@ class KabuStationCliTests(unittest.TestCase):
 
         self.assertEqual(exit_code, 2)
         self.assertIn("environment", stderr.getvalue().lower())
+
+    def test_report_write_failure_returns_clean_error_without_traceback(self) -> None:
+        stderr = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            report_path = Path(tmpdir) / "probe.json"
+            with patch.dict(
+                "os.environ",
+                {"KABU_STATION_API_PASSWORD": "secret-password"},
+                clear=True,
+            ), patch(
+                "autotrade.cli.KabuStationReadOnlyProbe.run",
+            ), patch(
+                "autotrade.cli.KabuStationProbeReportWriter.write",
+                side_effect=KabuStationClientError(
+                    "kabu Station probe report already exists"
+                ),
+            ), redirect_stderr(stderr):
+                exit_code = main(
+                    [
+                        "kabu-readonly-probe",
+                        "--environment",
+                        "test",
+                        "--connect",
+                        "--report-output",
+                        str(report_path),
+                    ]
+                )
+
+        self.assertEqual(exit_code, 2)
+        self.assertIn("already exists", stderr.getvalue())
+        self.assertNotIn("Traceback", stderr.getvalue())
+
+    def test_report_filesystem_failure_returns_clean_error_without_traceback(self) -> None:
+        stderr = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            parent_file = Path(tmpdir) / "not-a-directory"
+            parent_file.write_text("occupied", encoding="utf-8")
+            with patch.dict(
+                "os.environ",
+                {"KABU_STATION_API_PASSWORD": "secret-password"},
+                clear=True,
+            ), patch(
+                "autotrade.cli.KabuStationReadOnlyProbe.run",
+            ), redirect_stderr(stderr):
+                exit_code = main(
+                    [
+                        "kabu-readonly-probe",
+                        "--environment",
+                        "test",
+                        "--connect",
+                        "--report-output",
+                        str(parent_file / "probe.json"),
+                    ]
+                )
+
+        self.assertEqual(exit_code, 2)
+        self.assertIn("could not write", stderr.getvalue())
+        self.assertNotIn("Traceback", stderr.getvalue())
 
 
 if __name__ == "__main__":
