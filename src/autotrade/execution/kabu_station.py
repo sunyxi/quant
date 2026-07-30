@@ -4,11 +4,16 @@ from dataclasses import dataclass
 from typing import Any, Protocol
 
 from autotrade.core.models import Market, OrderIntent, OrderStyle, Side
+from autotrade.execution.ledger import LocalExecutionLedger
+from autotrade.execution.oms import OrderStateMachine
 from autotrade.execution.reconciliation import (
     BrokerOrderSnapshot,
     BrokerPositionSnapshot,
     BrokerStateSnapshot,
+    ReconciliationEngine,
+    ReconciliationReport,
 )
+from autotrade.risk.manager import RiskManager
 
 
 class KabuStationClientError(RuntimeError):
@@ -63,6 +68,25 @@ class JsonGetTransport(Protocol):
         query: dict[str, str] | None = None,
         headers: dict[str, str] | None = None,
     ) -> JsonPostResponse:
+        ...
+
+
+class KabuStationReadOnlySource(Protocol):
+    def get_orders(
+        self,
+        api_token: str,
+        product: str | None = None,
+        symbol: str | None = None,
+        details: bool | None = None,
+    ) -> list[dict[str, Any]]:
+        ...
+
+    def get_positions(
+        self,
+        api_token: str,
+        product: str | None = None,
+        symbol: str | None = None,
+    ) -> list[dict[str, Any]]:
         ...
 
 
@@ -303,6 +327,46 @@ class KabuStationSnapshotMapper:
                 f"kabu Station snapshot payload did not include integer {field_name}"
             )
         return value
+
+
+@dataclass(frozen=True)
+class KabuStationReadOnlyReconciler:
+    client: KabuStationReadOnlySource
+    mapper: KabuStationSnapshotMapper | None = None
+    reconciliation: ReconciliationEngine | None = None
+
+    def reconcile(
+        self,
+        *,
+        api_token: str,
+        oms: OrderStateMachine,
+        ledger: LocalExecutionLedger,
+        risk_manager: RiskManager | None = None,
+        product: str | None = None,
+        symbol: str | None = None,
+        details: bool | None = None,
+    ) -> ReconciliationReport:
+        orders = self.client.get_orders(
+            api_token=api_token,
+            product=product,
+            symbol=symbol,
+            details=details,
+        )
+        positions = self.client.get_positions(
+            api_token=api_token,
+            product=product,
+            symbol=symbol,
+        )
+        broker = (self.mapper or KabuStationSnapshotMapper()).to_broker_state_snapshot(
+            orders=orders,
+            positions=positions,
+        )
+        return (self.reconciliation or ReconciliationEngine()).check(
+            oms=oms,
+            ledger=ledger,
+            broker=broker,
+            risk_manager=risk_manager,
+        )
 
 
 def raise_for_kabu_station_status(status_code: int, operation: str) -> None:

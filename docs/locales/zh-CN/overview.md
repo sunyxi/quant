@@ -44,6 +44,8 @@ kabu Station read-only client 也可以使用 fake transport 测试，不会查�
 
 kabu Station snapshot mapper 会把本地只读 payload fixture 转成对账测试用的券商快照，不会查询真实账户。
 
+kabu Station read-only reconciler 可以基于注入的只读 client 数据、OMS 状态和账本状态运行本地对账，不创建真实 transport，也不产生券商副作用。
+
 仓库 CI 会在 PR 和推送到 `main` 时运行 Python 单元测试、Task Catalog 漂移检查、Markdown 链接/样式检查和基础密钥扫描。
 
 请阅读 `docs/roadmap.md`、`docs/task-catalog.md`、`docs/scope.md`、`docs/risk-policy.md`、`docs/broker-decision.md`、`docs/implementation-plan.md`、`docs/market-calendar.md`、`docs/order-book-intelligence.md`、`docs/backtest-fill-cost.md`、`docs/strategy-market-quality.md`、`docs/oms.md`、`docs/execution-ledger.md`、`docs/risk-paused-state.md`、`docs/reconciliation.md`、`docs/simulated-broker.md`、`docs/replay-execution.md`、`docs/kabu-station-mapper.md`、`docs/operations.md`、`docs/limitations.md` 和 `docs/rollback.md`。

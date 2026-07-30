@@ -112,6 +112,14 @@ PYTHONPATH=src python3 -m unittest tests.test_kabu_station_snapshot_mapper
 
 These tests use local fixture payloads only. They do not connect to kabu Station, require Windows, or reconcile a real account.
 
+## kabu Station Read-only Reconciler Tests
+
+```bash
+PYTHONPATH=src python3 -m unittest tests.test_kabu_station_readonly_reconciler
+```
+
+These tests use injected fake clients only. They do not create a real transport, connect to kabu Station, call `sendorder`, call `cancelorder`, or reconcile a real account.
+
 ## Governance Documentation Tests
 
 ```bash
