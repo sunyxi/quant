@@ -9,6 +9,9 @@ from autotrade.execution.replay import ReplayExecutionResult
 from autotrade.risk.manager import RiskManager
 
 
+SHADOW_MODE_SUMMARY_SCHEMA_VERSION = 1
+
+
 class ShadowModeReadinessStatus(StrEnum):
     PASSED = "PASSED"
     BLOCKED = "BLOCKED"
@@ -35,6 +38,7 @@ class ShadowModeRunSummary:
     status: ShadowModeReadinessStatus
     reasons: list[str] = field(default_factory=list)
     metrics: dict[str, int] = field(default_factory=dict)
+    schema_version: int = SHADOW_MODE_SUMMARY_SCHEMA_VERSION
 
     @classmethod
     def from_readiness_decision(
@@ -52,6 +56,7 @@ class ShadowModeRunSummary:
 
     def to_dict(self) -> dict[str, object]:
         return {
+            "schema_version": self.schema_version,
             "trading_date": self.trading_date,
             "status": self.status.value,
             "reasons": list(self.reasons),
@@ -76,6 +81,12 @@ class ShadowModeSummaryReader:
         payload = json.loads(path.read_text(encoding="utf-8"))
         if not isinstance(payload, dict):
             raise ShadowModeSummaryError("summary payload must be an object")
+
+        schema_version = payload.get("schema_version")
+        if schema_version != SHADOW_MODE_SUMMARY_SCHEMA_VERSION:
+            raise ShadowModeSummaryError(
+                "summary payload schema_version must be 1"
+            )
 
         trading_date = payload.get("trading_date")
         if not isinstance(trading_date, str) or not trading_date:
@@ -109,6 +120,7 @@ class ShadowModeSummaryReader:
             status=status,
             reasons=list(reasons),
             metrics=dict(metrics),
+            schema_version=schema_version,
         )
 
 
