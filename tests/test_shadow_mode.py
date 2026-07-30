@@ -19,6 +19,7 @@ from autotrade.execution.shadow_mode import (
     ShadowModeSummaryReader,
     ShadowModeReadinessGate,
     ShadowModeReadinessStatus,
+    ShadowModeSummaryReview,
     ShadowModeSummaryWriter,
     ShadowModeRunSummary,
 )
@@ -64,6 +65,25 @@ def _clean_result() -> ReplayExecutionResult:
         fills=[fill],
         broker=broker,
         reconciliation_reports=[ReconciliationReport()],
+    )
+
+
+def _summary(
+    trading_date: str = "2026-07-28",
+    status: ShadowModeReadinessStatus = ShadowModeReadinessStatus.PASSED,
+    reasons: list[str] | None = None,
+) -> ShadowModeRunSummary:
+    return ShadowModeRunSummary(
+        trading_date=trading_date,
+        status=status,
+        reasons=[] if reasons is None else reasons,
+        metrics={
+            "intents": 1,
+            "fills": 1,
+            "reconciliation_reports": 1,
+            "critical_reports": 0,
+            "open_orders": 0,
+        },
     )
 
 
@@ -325,6 +345,68 @@ class ShadowModeReadinessGateTests(unittest.TestCase):
 
             with self.assertRaisesRegex(ShadowModeSummaryError, "metrics"):
                 ShadowModeSummaryReader().read(output_path)
+
+    def test_summary_review_rejects_empty_summary_list(self) -> None:
+        with self.assertRaisesRegex(ShadowModeSummaryError, "empty"):
+            ShadowModeSummaryReview.from_summaries([])
+
+    def test_summary_review_counts_statuses_and_reasons(self) -> None:
+        review = ShadowModeSummaryReview.from_summaries(
+            [
+                _summary("2026-07-29"),
+                _summary(
+                    "2026-07-28",
+                    status=ShadowModeReadinessStatus.BLOCKED,
+                    reasons=[
+                        "missing reconciliation evidence",
+                        "risk paused: manual review",
+                    ],
+                ),
+                _summary(
+                    "2026-07-30",
+                    status=ShadowModeReadinessStatus.BLOCKED,
+                    reasons=["missing reconciliation evidence"],
+                ),
+            ]
+        )
+
+        self.assertEqual(review.total_runs, 3)
+        self.assertEqual(review.passed_runs, 1)
+        self.assertEqual(review.blocked_runs, 2)
+        self.assertEqual(
+            review.trading_dates,
+            ["2026-07-28", "2026-07-29", "2026-07-30"],
+        )
+        self.assertEqual(
+            review.blocking_reasons,
+            {
+                "missing reconciliation evidence": 2,
+                "risk paused: manual review": 1,
+            },
+        )
+        self.assertEqual(
+            review.to_dict(),
+            {
+                "total_runs": 3,
+                "passed_runs": 1,
+                "blocked_runs": 2,
+                "trading_dates": ["2026-07-28", "2026-07-29", "2026-07-30"],
+                "blocking_reasons": {
+                    "missing reconciliation evidence": 2,
+                    "risk paused: manual review": 1,
+                },
+            },
+        )
+
+    def test_summary_review_has_no_blocking_reasons_when_all_pass(self) -> None:
+        review = ShadowModeSummaryReview.from_summaries(
+            [_summary("2026-07-29"), _summary("2026-07-28")]
+        )
+
+        self.assertEqual(review.total_runs, 2)
+        self.assertEqual(review.passed_runs, 2)
+        self.assertEqual(review.blocked_runs, 0)
+        self.assertEqual(review.blocking_reasons, {})
 
 
 if __name__ == "__main__":

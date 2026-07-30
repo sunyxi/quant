@@ -96,6 +96,14 @@ ISSUE-029 adds `schema_version` to Shadow Mode run summaries. The current local 
 
 Writers include `schema_version` in summary JSON. Readers require version `1` and reject missing or unsupported versions before using a summary as fixture review evidence.
 
+## Shadow Mode Summary Review
+
+ISSUE-030 adds `ShadowModeSummaryReview`, a local aggregate over existing run summaries.
+
+The review reports total, passed, and blocked run counts, sorted trading dates, and blocking reason counts across blocked summaries.
+
+The review does not read files, run replay, read market data, query brokers, submit orders, or cancel orders.
+
 ## Limitations
 
 This is not a production execution loop. It does not yet include:

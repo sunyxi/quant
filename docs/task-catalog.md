@@ -1277,3 +1277,52 @@ Rollback: Revert the Shadow Mode summary reader branch; no live broker API calls
 - Refactor: optional, but must keep gates accurate.
 
 Rollback: Revert the Shadow Mode summary schema version branch; no live broker API calls or broker side effects exist in this change.
+
+## ISSUE-030: Add local Shadow Mode summary review aggregation
+
+- Status: `complete`
+- Phase: `Phase 4`
+- Dependencies: ISSUE-029
+- Roadmap: see `docs/roadmap.md#phase-4`
+- Summary: Add a local-only Shadow Mode summary review aggregate that counts passing and blocked run summaries plus blocking reasons for fixture review.
+
+### Acceptance Criteria
+
+- The review aggregate rejects empty summary lists.
+- The review aggregate reports total, passed, and blocked summary counts.
+- The review aggregate reports sorted trading dates.
+- The review aggregate counts blocking reasons across blocked summaries.
+- The review aggregate exposes a JSON-compatible dictionary representation.
+- Passing-only summary lists have no blocking reasons.
+- The review aggregate remains local-only and does not run strategies, connect to market data, query brokers, submit orders, or cancel orders.
+
+### Gates
+
+- Python Unit Tests
+- Fixture Tests
+- Documentation Localization
+- Markdown Links/Style
+- Secret Scan
+- Task Catalog Generation
+
+### Changed Assets
+
+- `src/autotrade/execution/shadow_mode.py`
+- `tests/test_shadow_mode.py`
+- `tests/test_documentation_catalog.py`
+- `docs/replay-execution.md`
+- `docs/cli-usage.md`
+- `docs/operations.md`
+- `docs/limitations.md`
+- `docs/rollback.md`
+- `docs/locales/en/overview.md`
+- `docs/locales/ja/overview.md`
+- `docs/locales/zh-CN/overview.md`
+
+### Test-first Evidence
+
+- Red: required before implementation starts.
+- Green: required after implementation.
+- Refactor: optional, but must keep gates accurate.
+
+Rollback: Revert the Shadow Mode summary review aggregation branch; no live broker API calls or broker side effects exist in this change.

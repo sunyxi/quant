@@ -16,6 +16,7 @@
 - `AGENT.md` captures workflow rules only; it does not replace human review or branch protection.
 - Replay execution now supports configurable cancellation policy, but does not yet model broker errors, submit timeouts, restart recovery, or cost attribution in replay results.
 - The Shadow Mode readiness gate evaluates local replay result evidence only; it does not ingest live market data, query real broker state, persist decisions, or authorize live trading.
+- The Shadow Mode summary review aggregate counts already-loaded local summaries only; it does not discover files, persist reports, or define promotion thresholds.
 - The Shadow Mode run summary reader and writer handle local schema version 1 JSON files for fixture review only; they do not upload reports, manage retention, migrate old schemas, or trigger operational state changes.
 - The kabu Station mapper, official request contract helpers, fake-transport token client, fake-transport sendorder client, fake-transport cancelorder client, fake-transport read-only client, snapshot mapper, and read-only reconciler are local-only and do not perform real authentication, send real HTTP requests, cancel orders, query real order status, query real positions, reconcile a real account, or place live orders.
 - Machine learning, meta-labeling, model registry, and degradation monitoring are out of scope for the current code.
