@@ -120,6 +120,8 @@ KABU_STATION_API_PASSWORD="..." PYTHONPATH=src python3 -m autotrade.cli kabu-rea
 
 Do not pass the password as a command-line argument. The CLI does not expose sendorder or cancelorder commands. Probe output is read-only and sanitized: it contains statuses, counts, endpoint, timestamp, schema version, and a failure category only; it must not contain the password, token, request headers, order payloads, position payloads, or account identifiers.
 
+The report writer does not overwrite an existing file. Reusing an existing `--report-output` path prints a sanitized error and returns exit code `2` without a Python traceback. Choose a new report path or review and remove the old local artifact before retrying.
+
 ## kabu Station Sendorder Client Tests
 
 ```bash

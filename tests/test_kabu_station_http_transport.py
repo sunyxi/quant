@@ -4,15 +4,23 @@ import json
 import socket
 import unittest
 from typing import Any
+from unittest.mock import patch
 from urllib.error import HTTPError
 from urllib.error import URLError
+from urllib.request import Request
 from urllib.response import addinfourl
 
 from autotrade.execution.kabu_station import (
+    KabuStationAuthError,
     KabuStationClientError,
+    KabuStationEnvironment,
     KabuStationLocalhostHttpTransport,
+    KabuStationRateLimitError,
+    KabuStationServerError,
+    KabuStationTokenClient,
     KabuStationTransportConnectionError,
     KabuStationTransportTimeoutError,
+    _LoopbackRedirectHandler,
 )
 
 
@@ -229,6 +237,67 @@ class KabuStationLocalhostHttpTransportTests(unittest.TestCase):
             transport.put_json(f"{self.base_url}/kabusapi/cancelorder", {})
 
         self.assertEqual(opener.requests, [])
+
+    def test_default_policy_rejects_percent_encoded_mutating_path(self) -> None:
+        opener = FakeOpener()
+        transport = KabuStationLocalhostHttpTransport(opener=opener)
+
+        with self.assertRaises(KabuStationClientError):
+            transport.post_json(
+                f"{self.base_url}/%2Fkabusapi%2Fsendorder",
+                {},
+            )
+
+        self.assertEqual(opener.requests, [])
+
+    def test_redirect_handler_reapplies_readonly_policy(self) -> None:
+        handler = _LoopbackRedirectHandler()
+        request = Request(
+            f"{self.base_url}/kabusapi/token",
+            data=b"{}",
+            method="POST",
+        )
+
+        with self.assertRaises(KabuStationClientError):
+            handler.redirect_request(
+                request,
+                None,
+                302,
+                "Found",
+                {},
+                f"{self.base_url}/kabusapi/sendorder",
+            )
+
+    def test_empty_http_error_body_preserves_status_typed_error(self) -> None:
+        cases = (
+            (401, KabuStationAuthError),
+            (429, KabuStationRateLimitError),
+            (500, KabuStationServerError),
+        )
+        for status, expected_error in cases:
+            with self.subTest(status=status):
+                transport = KabuStationLocalhostHttpTransport(
+                    opener=FakeOpener(status=status, raw_body=b"")
+                )
+                client = KabuStationTokenClient(
+                    environment=KabuStationEnvironment.test(),
+                    transport=transport,
+                )
+
+                with self.assertRaises(expected_error):
+                    client.fetch_token("test-password")
+
+    def test_default_opener_is_built_once_per_transport(self) -> None:
+        opener = FakeOpener()
+        with patch(
+            "autotrade.execution.kabu_station.build_opener",
+            return_value=opener,
+        ) as build:
+            transport = KabuStationLocalhostHttpTransport()
+            transport.get_json(f"{self.base_url}/kabusapi/orders")
+            transport.get_json(f"{self.base_url}/kabusapi/positions")
+
+        build.assert_called_once()
 
     def test_connection_refused_raises_sanitized_connection_error(self) -> None:
         transport = KabuStationLocalhostHttpTransport(

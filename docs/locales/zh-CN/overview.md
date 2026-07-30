@@ -52,6 +52,8 @@ kabu Station token client 可使用 fake transport 测试，并在不连接 kabu
 
 kabu Station localhost HTTP transport 可以被显式构造，用于 localhost-only JSON transport 测试和 Windows 只读 probe。默认策略只允许 token 认证以及只读 orders/positions 查询；真实 sendorder 和 cancelorder 仍被阻断。
 
+localhost 边界现在会对重定向目标重新执行 loopback 和只读策略检查，并拒绝编码后的 endpoint path。空 HTTP 错误体仍保留按状态分类的错误，configuration、connection 和 timeout 也不会被误报为连接成功。
+
 kabu Station 只读 probe 和 report writer 会生成带 schema version 的脱敏 JSON 证据，只包含状态和计数。Mac 侧测试只使用 fake transport/opener；真实认证和真实响应兼容性仍需要在运行 kabu Station 的 Windows 上验证。
 
 kabu Station sendorder client 也可以使用 fake transport 测试，不会发送真实订单。

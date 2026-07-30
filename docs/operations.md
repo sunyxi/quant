@@ -68,9 +68,13 @@ The kabu Station token client must use an injected transport in tests and must n
 
 The default localhost transport policy allows only POST `/kabusapi/token` for authentication and GET `/kabusapi/orders` plus GET `/kabusapi/positions` for read-only checks. It rejects `sendorder`, `cancelorder`, remote hosts, remote redirects, userinfo URLs, non-HTTP schemes, empty responses, invalid JSON responses, connection failures, and timeouts as local domain errors. Real sendorder and cancelorder remain prohibited and require a later independent issue plus Human Code Owner approval.
 
+Redirected requests must pass the same loopback and read-only endpoint policy as their original request. Percent-encoded endpoint paths are invalid. Treat `configuration` as a pre-connection failure, and treat `connection` or `timeout` during any token, orders, or positions request as a failed transport rather than a payload-format failure.
+
 Use `python -m autotrade.cli kabu-readonly-probe --environment test` for validate-only mode. This mode must not construct a runtime transport or connect to localhost. After kabu Station is available on Windows, use `--connect` with `KABU_STATION_API_PASSWORD` or `--prompt-password` to run only the read-only probe. A failed probe means Shadow Mode or live trading must not continue.
 
 Probe reports are deterministic JSON evidence files with schema version 1. Store them outside Git, for example under `kabu-probe-reports/`. Before sharing a report, confirm it contains only statuses, counts, timestamp, localhost endpoint, environment, schema version, and sanitized failure category.
+
+Probe report files are create-only. If the requested path exists, review the existing artifact and select a new path or remove it intentionally; the CLI returns exit code `2` and does not overwrite it.
 
 The kabu Station sendorder client must use an injected transport in tests. Treat it as contract plumbing only; no real order submission is approved by this issue.
 

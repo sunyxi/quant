@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import json
 import socket
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Callable, Protocol
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode, urlparse, urlunparse
+from urllib.parse import unquote, urlencode, urlparse, urlunparse
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from autotrade.core.models import Market, OrderIntent, OrderStyle, Side
@@ -44,6 +44,10 @@ class KabuStationTransportConnectionError(KabuStationClientError):
 
 
 class KabuStationTransportTimeoutError(KabuStationClientError):
+    pass
+
+
+class KabuStationTransportPolicyError(KabuStationClientError):
     pass
 
 
@@ -171,22 +175,33 @@ class KabuStationReadOnlyHttpPolicy:
 
     def __call__(self, method: str, url: str) -> None:
         parsed = urlparse(url)
+        if unquote(parsed.path) != parsed.path:
+            raise KabuStationTransportPolicyError(
+                "kabu Station localhost read-only policy rejects percent-encoded endpoint paths"
+            )
         path = parsed.path.rstrip("/") or "/"
         normalized_method = method.upper()
         if path in self.forbidden_mutating_paths:
-            raise KabuStationClientError(
+            raise KabuStationTransportPolicyError(
                 "kabu Station localhost read-only policy rejects mutating broker endpoints"
             )
         if path == self.token_path and normalized_method == "POST":
             return
         if path in self.allowed_readonly_paths and normalized_method == "GET":
             return
-        raise KabuStationClientError(
+        raise KabuStationTransportPolicyError(
             "kabu Station localhost read-only policy only allows token authentication and read-only orders/positions requests"
         )
 
 
 class _LoopbackRedirectHandler(HTTPRedirectHandler):
+    def __init__(
+        self,
+        policy: Callable[[str, str], None] = KabuStationReadOnlyHttpPolicy(),
+    ) -> None:
+        super().__init__()
+        self.policy = policy
+
     def redirect_request(
         self,
         req: Request,
@@ -197,7 +212,10 @@ class _LoopbackRedirectHandler(HTTPRedirectHandler):
         newurl: str,
     ) -> Request | None:
         KabuStationLocalhostHttpTransport.validate_localhost_url(newurl)
-        return super().redirect_request(req, fp, code, msg, headers, newurl)
+        redirected = super().redirect_request(req, fp, code, msg, headers, newurl)
+        if redirected is not None:
+            self.policy(redirected.get_method(), redirected.full_url)
+        return redirected
 
 
 @dataclass(frozen=True)
@@ -205,6 +223,11 @@ class KabuStationLocalhostHttpTransport:
     timeout_seconds: float = 5.0
     opener: Any | None = None
     policy: Callable[[str, str], None] = KabuStationReadOnlyHttpPolicy()
+    _effective_opener: Any = field(init=False, repr=False, compare=False)
+
+    def __post_init__(self) -> None:
+        opener = self.opener or build_opener(_LoopbackRedirectHandler(self.policy))
+        object.__setattr__(self, "_effective_opener", opener)
 
     def post_json(
         self,
@@ -263,9 +286,10 @@ class KabuStationLocalhostHttpTransport:
             request_headers.setdefault("Content-Type", "application/json")
 
         request = Request(url, data=data, headers=request_headers, method=method)
-        opener = self.opener or build_opener(_LoopbackRedirectHandler)
         try:
-            with opener.open(request, timeout=self.timeout_seconds) as response:
+            with self._effective_opener.open(
+                request, timeout=self.timeout_seconds
+            ) as response:
                 return KabuStationJsonResponse(
                     status_code=getattr(response, "status", response.getcode()),
                     payload=self._parse_json_response(response.read()),
@@ -275,15 +299,16 @@ class KabuStationLocalhostHttpTransport:
                 raise KabuStationClientError(
                     "kabu Station localhost HTTP redirect was rejected"
                 ) from exc
+            body = exc.read()
             return KabuStationJsonResponse(
                 status_code=exc.code,
-                payload=self._parse_json_response(exc.read()),
+                payload=self._parse_json_response(body) if body else {},
             )
         except socket.timeout as exc:
             raise KabuStationTransportTimeoutError(
                 "kabu Station localhost HTTP transport timed out"
             ) from exc
-        except (TimeoutError, URLError) as exc:
+        except URLError as exc:
             reason = getattr(exc, "reason", None)
             if isinstance(reason, socket.timeout):
                 raise KabuStationTransportTimeoutError(
@@ -309,15 +334,15 @@ class KabuStationLocalhostHttpTransport:
     def validate_localhost_url(url: str) -> None:
         parsed = urlparse(url)
         if parsed.scheme != "http":
-            raise KabuStationClientError(
+            raise KabuStationTransportPolicyError(
                 "kabu Station localhost HTTP transport only supports http URLs"
             )
         if parsed.username is not None or parsed.password is not None:
-            raise KabuStationClientError(
+            raise KabuStationTransportPolicyError(
                 "kabu Station localhost HTTP transport rejects userinfo URLs"
             )
         if parsed.hostname not in {"localhost", "127.0.0.1", "::1"}:
-            raise KabuStationClientError(
+            raise KabuStationTransportPolicyError(
                 "kabu Station localhost HTTP transport only supports localhost URLs"
             )
 
@@ -424,6 +449,21 @@ class KabuStationReadOnlyProbe:
                 position_count,
                 failure_category,
             )
+        except KabuStationTransportPolicyError:
+            connection_status = "not-run"
+            authentication_status = "not-run"
+            failure_category = "configuration"
+            return self._result(
+                timestamp,
+                connection_status,
+                authentication_status,
+                orders_payload_status,
+                positions_payload_status,
+                snapshot_mapping_status,
+                order_count,
+                position_count,
+                failure_category,
+            )
         except KabuStationClientError:
             connection_status = "ok"
             authentication_status = "failed"
@@ -444,6 +484,36 @@ class KabuStationReadOnlyProbe:
             orders = self.readonly_client.get_orders(api_token=api_token)
             order_count = len(orders)
             orders_payload_status = "ok"
+        except KabuStationTransportConnectionError:
+            connection_status = "failed"
+            orders_payload_status = "failed"
+            failure_category = "connection"
+            return self._result(
+                timestamp,
+                connection_status,
+                authentication_status,
+                orders_payload_status,
+                positions_payload_status,
+                snapshot_mapping_status,
+                order_count,
+                position_count,
+                failure_category,
+            )
+        except KabuStationTransportTimeoutError:
+            connection_status = "failed"
+            orders_payload_status = "failed"
+            failure_category = "timeout"
+            return self._result(
+                timestamp,
+                connection_status,
+                authentication_status,
+                orders_payload_status,
+                positions_payload_status,
+                snapshot_mapping_status,
+                order_count,
+                position_count,
+                failure_category,
+            )
         except KabuStationClientError:
             orders_payload_status = "failed"
             failure_category = "orders"
@@ -463,6 +533,36 @@ class KabuStationReadOnlyProbe:
             positions = self.readonly_client.get_positions(api_token=api_token)
             position_count = len(positions)
             positions_payload_status = "ok"
+        except KabuStationTransportConnectionError:
+            connection_status = "failed"
+            positions_payload_status = "failed"
+            failure_category = "connection"
+            return self._result(
+                timestamp,
+                connection_status,
+                authentication_status,
+                orders_payload_status,
+                positions_payload_status,
+                snapshot_mapping_status,
+                order_count,
+                position_count,
+                failure_category,
+            )
+        except KabuStationTransportTimeoutError:
+            connection_status = "failed"
+            positions_payload_status = "failed"
+            failure_category = "timeout"
+            return self._result(
+                timestamp,
+                connection_status,
+                authentication_status,
+                orders_payload_status,
+                positions_payload_status,
+                snapshot_mapping_status,
+                order_count,
+                position_count,
+                failure_category,
+            )
         except KabuStationClientError:
             positions_payload_status = "failed"
             failure_category = "positions"

@@ -1429,3 +1429,56 @@ Rollback: Revert the Shadow Mode review writer branch; no live broker API calls 
 - Refactor: optional, but must keep gates accurate.
 
 Rollback: Revert the kabu Station localhost boundary branch; clients will continue using injected fake transports, generated probe reports can be deleted, and no live order side effects exist in this change.
+
+## ISSUE-033: Harden the kabu Station localhost read-only boundary
+
+- Status: `complete`
+- Phase: `Phase 5`
+- Dependencies: ISSUE-032
+- Roadmap: see `docs/roadmap.md#phase-5`
+- Summary: Address post-merge review findings in the localhost transport, read-only probe, and CLI so redirects and encoded paths cannot bypass policy and operational failures retain accurate sanitized classifications.
+
+### Acceptance Criteria
+
+- Redirect targets are validated against both loopback URL and read-only endpoint policy before they are followed.
+- Percent-encoded endpoint paths cannot bypass the read-only policy.
+- Empty HTTP error bodies preserve status-based typed client errors.
+- Connection and timeout failures during orders or positions reads retain transport failure categories.
+- Pre-connection validation failures do not report a successful connection.
+- Probe report write failures produce a clean CLI error without a traceback.
+- The default HTTP opener is constructed once per transport instance.
+- Task Catalog output is regenerated only from docs/task-source.json.
+
+### Gates
+
+- Python Unit Tests
+- Fixture Tests
+- Documentation Localization
+- Markdown Links/Style
+- Secret Scan
+- Task Catalog Generation
+
+### Changed Assets
+
+- `src/autotrade/cli.py`
+- `src/autotrade/execution/kabu_station.py`
+- `tests/test_cli.py`
+- `tests/test_kabu_station_http_transport.py`
+- `tests/test_kabu_station_readonly_probe.py`
+- `tests/test_documentation_catalog.py`
+- `docs/kabu-station-mapper.md`
+- `docs/cli-usage.md`
+- `docs/operations.md`
+- `docs/limitations.md`
+- `docs/rollback.md`
+- `docs/locales/en/overview.md`
+- `docs/locales/ja/overview.md`
+- `docs/locales/zh-CN/overview.md`
+
+### Test-first Evidence
+
+- Red: required before implementation starts.
+- Green: required after implementation.
+- Refactor: optional, but must keep gates accurate.
+
+Rollback: Revert the ISSUE-033 hardening branch to restore the ISSUE-032 localhost boundary; no live broker order or cancellation side effects exist in this change.

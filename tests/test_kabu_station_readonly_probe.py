@@ -13,6 +13,10 @@ from autotrade.execution.kabu_station import (
     KabuStationProbeReportReader,
     KabuStationProbeReportWriter,
     KabuStationReadOnlyProbe,
+    KabuStationTokenClient,
+    KabuStationLocalhostHttpTransport,
+    KabuStationTransportConnectionError,
+    KabuStationTransportTimeoutError,
 )
 
 
@@ -131,6 +135,57 @@ class KabuStationReadOnlyProbeTests(unittest.TestCase):
         self.assertEqual(payload["positions_payload_status"], "not-run")
         self.assertEqual(payload["sanitized_failure_category"], "orders")
         self.assertNotIn("token-123", json.dumps(payload))
+
+    def test_orders_connection_drop_is_reported_as_connection_failure(self) -> None:
+        probe = KabuStationReadOnlyProbe(
+            environment_name="test",
+            environment=KabuStationEnvironment.test(),
+            token_client=FakeTokenClient(),
+            readonly_client=FakeReadOnlyClient(
+                orders_error=KabuStationTransportConnectionError("connection lost")
+            ),
+        )
+
+        payload = probe.run(api_password="secret-password").to_dict()
+
+        self.assertEqual(payload["connection_status"], "failed")
+        self.assertEqual(payload["orders_payload_status"], "failed")
+        self.assertEqual(payload["sanitized_failure_category"], "connection")
+
+    def test_positions_timeout_is_reported_as_timeout_failure(self) -> None:
+        probe = KabuStationReadOnlyProbe(
+            environment_name="test",
+            environment=KabuStationEnvironment.test(),
+            token_client=FakeTokenClient(),
+            readonly_client=FakeReadOnlyClient(
+                positions_error=KabuStationTransportTimeoutError("timed out")
+            ),
+        )
+
+        payload = probe.run(api_password="secret-password").to_dict()
+
+        self.assertEqual(payload["connection_status"], "failed")
+        self.assertEqual(payload["positions_payload_status"], "failed")
+        self.assertEqual(payload["sanitized_failure_category"], "timeout")
+
+    def test_preconnection_policy_error_does_not_claim_connection_success(self) -> None:
+        environment = KabuStationEnvironment(base_url="http://example.com:18081")
+        transport = KabuStationLocalhostHttpTransport()
+        probe = KabuStationReadOnlyProbe(
+            environment_name="test",
+            environment=environment,
+            token_client=KabuStationTokenClient(
+                environment=environment,
+                transport=transport,
+            ),
+            readonly_client=FakeReadOnlyClient(),
+        )
+
+        payload = probe.run(api_password="secret-password").to_dict()
+
+        self.assertEqual(payload["connection_status"], "not-run")
+        self.assertEqual(payload["authentication_status"], "not-run")
+        self.assertEqual(payload["sanitized_failure_category"], "configuration")
 
     def test_snapshot_mapping_error_is_reported_without_raw_payload(self) -> None:
         probe = KabuStationReadOnlyProbe(

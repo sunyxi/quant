@@ -116,7 +116,11 @@ def _run_kabu_readonly_probe(
     )
     result = probe.run(api_password=api_password)
     if args.report_output is not None:
-        KabuStationProbeReportWriter().write(args.report_output, result)
+        try:
+            KabuStationProbeReportWriter().write(args.report_output, result)
+        except KabuStationClientError as exc:
+            print(f"error: {exc}", file=stderr)
+            return 2
     print(json.dumps(result.to_dict(), sort_keys=True), file=stdout)
     return 0 if result.sanitized_failure_category is None else 1
 
