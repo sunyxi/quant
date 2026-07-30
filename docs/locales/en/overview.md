@@ -50,6 +50,8 @@ The mapper also has local official request-contract helpers for token and cash s
 
 The kabu Station token client can be tested with a fake transport and maps authentication, rate-limit, and server failures without connecting to kabu Station.
 
+The kabu Station localhost HTTP transport can be explicitly constructed for localhost-only JSON transport tests, but clients still do not create it by default.
+
 The kabu Station sendorder client can also be tested with a fake transport and does not place live orders.
 
 The kabu Station cancelorder client can also be tested with a fake transport and does not cancel live orders.

@@ -79,6 +79,24 @@ The token client maps common HTTP statuses into local errors:
 
 The token client does not store API passwords and does not construct a real HTTP transport. A later issue must explicitly approve any real localhost probe.
 
+## Localhost HTTP Transport
+
+ISSUE-032 adds `KabuStationLocalhostHttpTransport`, an explicitly constructed HTTP JSON transport for kabu Station localhost adapter tests.
+
+The transport supports:
+
+- JSON `POST` requests with optional headers;
+- JSON `PUT` requests with optional headers;
+- JSON `GET` requests with optional query parameters and headers;
+- parsed JSON response payloads with the raw HTTP status code;
+- empty response bodies as `{}`;
+- local client errors for transport failures or invalid JSON response bodies;
+- preflight rejection for non-localhost URLs.
+
+The transport only accepts `http://localhost`, `http://127.0.0.1`, or `http://[::1]` URLs. Existing kabu Station clients still require an injected transport and do not create this transport by default.
+
+Tests exercise the transport against a local fake HTTP server only. They do not connect to real kabu Station, require Windows, authenticate with real credentials, query a real account, submit orders, or cancel orders.
+
 ## Sendorder Client
 
 ISSUE-020 adds a fake-transport-testable sendorder client. It posts the official cash order payload to the configured localhost sendorder endpoint through an injected transport, sets the `X-API-KEY` header, and returns the `OrderId` field from a successful response.

@@ -50,6 +50,8 @@ Shadow Mode summary review は、fixture レビュー向けに決定的なロー
 
 kabu Station トークンクライアントは fake transport でテストでき、kabu Station に接続せずに認証、流量制限、サーバー失敗をローカルエラーへ変換します。
 
+kabu Station localhost HTTP transport は、localhost 専用の JSON transport テスト向けに明示的に構築できますが、各クライアントは標準ではこれを作成しません。
+
 kabu Station 発注クライアントも fake transport でテストでき、実注文は発注しません。
 
 kabu Station 取消クライアントも fake transport でテストでき、実注文は取消しません。
