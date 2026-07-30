@@ -86,6 +86,10 @@ The kabu Station official request contract helpers have no live broker side effe
 
 The kabu Station fake-transport token client has no live broker side effects. Revert the ISSUE-019 branch if token response handling needs to be removed.
 
+## kabu Station Localhost HTTP Transport Rollback
+
+The kabu Station localhost HTTP transport has no default client wiring and no live broker side effects in tests. Revert the ISSUE-032 branch if explicit localhost HTTP transport support needs to be removed.
+
 ## kabu Station Sendorder Client Rollback
 
 The kabu Station fake-transport sendorder client has no live broker side effects. Revert the ISSUE-020 branch if sendorder response handling needs to be removed.

@@ -1375,3 +1375,53 @@ Rollback: Revert the Shadow Mode summary review aggregation branch; no live brok
 - Refactor: optional, but must keep gates accurate.
 
 Rollback: Revert the Shadow Mode review writer branch; no live broker API calls or broker side effects exist in this change.
+
+## ISSUE-032: Add kabu Station localhost HTTP transport
+
+- Status: `complete`
+- Phase: `Phase 5`
+- Dependencies: ISSUE-024, ISSUE-031
+- Roadmap: see `docs/roadmap.md#phase-5`
+- Summary: Add an explicitly constructed, localhost-only kabu Station HTTP JSON transport that can be tested against local fake servers without changing default fake-transport client behavior or approving live trading.
+
+### Acceptance Criteria
+
+- The transport supports JSON POST, PUT, and GET requests with optional headers.
+- GET requests encode query parameters in the URL.
+- Successful JSON responses expose status code and parsed payload.
+- Empty response bodies are represented as an empty JSON object payload.
+- Transport-level failures raise local kabu Station client errors.
+- The transport rejects non-localhost URLs before opening a connection.
+- Existing kabu Station clients still require an injected transport and do not create this transport by default.
+- The change does not call real kabu Station, require Windows, call sendorder or cancelorder in tests, place orders, cancel orders, or query a real account.
+
+### Gates
+
+- Python Unit Tests
+- Fixture Tests
+- Documentation Localization
+- Markdown Links/Style
+- Secret Scan
+- Task Catalog Generation
+
+### Changed Assets
+
+- `src/autotrade/execution/kabu_station.py`
+- `tests/test_kabu_station_http_transport.py`
+- `tests/test_documentation_catalog.py`
+- `docs/kabu-station-mapper.md`
+- `docs/cli-usage.md`
+- `docs/operations.md`
+- `docs/limitations.md`
+- `docs/rollback.md`
+- `docs/locales/en/overview.md`
+- `docs/locales/ja/overview.md`
+- `docs/locales/zh-CN/overview.md`
+
+### Test-first Evidence
+
+- Red: required before implementation starts.
+- Green: required after implementation.
+- Refactor: optional, but must keep gates accurate.
+
+Rollback: Revert the kabu Station localhost HTTP transport branch; clients will continue using injected fake transports and no live broker side effects exist in this change.

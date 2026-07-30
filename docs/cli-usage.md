@@ -88,6 +88,14 @@ PYTHONPATH=src python3 -m unittest tests.test_kabu_station_token_client
 
 These tests use a fake transport only. They do not connect to kabu Station or require Windows.
 
+## kabu Station Localhost HTTP Transport Tests
+
+```bash
+PYTHONPATH=src python3 -m unittest tests.test_kabu_station_http_transport
+```
+
+These tests start a local fake HTTP server and exercise the explicit localhost-only transport. They do not connect to real kabu Station, require Windows, authenticate with real credentials, query a real account, submit orders, or cancel orders.
+
 ## kabu Station Sendorder Client Tests
 
 ```bash

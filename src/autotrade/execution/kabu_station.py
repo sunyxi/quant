@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from typing import Any, Protocol
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode, urlparse, urlunparse
+from urllib.request import Request, urlopen
 
 from autotrade.core.models import Market, OrderIntent, OrderStyle, Side
 from autotrade.execution.ledger import LocalExecutionLedger
@@ -34,6 +38,12 @@ class KabuStationServerError(KabuStationClientError):
 
 class KabuStationMappingError(ValueError):
     pass
+
+
+@dataclass(frozen=True)
+class KabuStationJsonResponse:
+    status_code: int
+    payload: Any
 
 
 class JsonPostResponse(Protocol):
@@ -121,6 +131,114 @@ class KabuStationEnvironment:
     @property
     def positions_url(self) -> str:
         return f"{self.base_url}/kabusapi/positions"
+
+
+@dataclass(frozen=True)
+class KabuStationLocalhostHttpTransport:
+    timeout_seconds: float = 5.0
+
+    def post_json(
+        self,
+        url: str,
+        payload: dict[str, Any],
+        headers: dict[str, str] | None = None,
+    ) -> KabuStationJsonResponse:
+        return self._request_json(
+            method="POST",
+            url=url,
+            payload=payload,
+            headers=headers,
+        )
+
+    def put_json(
+        self,
+        url: str,
+        payload: dict[str, Any],
+        headers: dict[str, str] | None = None,
+    ) -> KabuStationJsonResponse:
+        return self._request_json(
+            method="PUT",
+            url=url,
+            payload=payload,
+            headers=headers,
+        )
+
+    def get_json(
+        self,
+        url: str,
+        query: dict[str, str] | None = None,
+        headers: dict[str, str] | None = None,
+    ) -> KabuStationJsonResponse:
+        request_url = self._url_with_query(url, query)
+        return self._request_json(
+            method="GET",
+            url=request_url,
+            payload=None,
+            headers=headers,
+        )
+
+    def _request_json(
+        self,
+        *,
+        method: str,
+        url: str,
+        payload: dict[str, Any] | None,
+        headers: dict[str, str] | None,
+    ) -> KabuStationJsonResponse:
+        self._validate_localhost_url(url)
+        request_headers = dict(headers or {})
+        data: bytes | None = None
+        if payload is not None:
+            data = json.dumps(payload).encode("utf-8")
+            request_headers.setdefault("Content-Type", "application/json")
+
+        request = Request(url, data=data, headers=request_headers, method=method)
+        try:
+            with urlopen(request, timeout=self.timeout_seconds) as response:
+                return KabuStationJsonResponse(
+                    status_code=response.status,
+                    payload=self._parse_json_response(response.read()),
+                )
+        except HTTPError as exc:
+            return KabuStationJsonResponse(
+                status_code=exc.code,
+                payload=self._parse_json_response(exc.read()),
+            )
+        except (OSError, URLError) as exc:
+            raise KabuStationClientError(
+                f"kabu Station localhost HTTP transport failed: {exc}"
+            ) from exc
+
+    @staticmethod
+    def _url_with_query(url: str, query: dict[str, str] | None) -> str:
+        if not query:
+            return url
+        parsed = urlparse(url)
+        encoded_query = urlencode(query)
+        return urlunparse(parsed._replace(query=encoded_query))
+
+    @staticmethod
+    def _validate_localhost_url(url: str) -> None:
+        parsed = urlparse(url)
+        if parsed.scheme != "http":
+            raise KabuStationClientError(
+                "kabu Station localhost HTTP transport only supports http URLs"
+            )
+        if parsed.hostname not in {"localhost", "127.0.0.1", "::1"}:
+            raise KabuStationClientError(
+                "kabu Station localhost HTTP transport only supports localhost URLs"
+            )
+
+    @staticmethod
+    def _parse_json_response(body: bytes) -> Any:
+        if not body:
+            return {}
+        try:
+            return json.loads(body.decode("utf-8"))
+        except json.JSONDecodeError as exc:
+            raise KabuStationClientError(
+                "kabu Station localhost HTTP response was not valid JSON"
+            ) from exc
 
 
 @dataclass(frozen=True)

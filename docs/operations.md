@@ -64,6 +64,8 @@ Official kabu Station contract helpers may construct token and sendorder payload
 
 The kabu Station token client must use an injected transport in tests and must not create a real HTTP client until a later localhost probe issue explicitly approves that boundary.
 
+`KabuStationLocalhostHttpTransport` may be explicitly constructed for localhost-only adapter tests. Use it only with `http://localhost`, `http://127.0.0.1`, or `http://[::1]` URLs, and prefer local fake servers until a later issue approves a real kabu Station probe. Existing clients must still receive a transport through dependency injection.
+
 The kabu Station sendorder client must use an injected transport in tests. Treat it as contract plumbing only; no real order submission is approved by this issue.
 
 The kabu Station cancelorder client must use an injected transport in tests. Treat it as contract plumbing only; no real order cancellation is approved by this issue.
