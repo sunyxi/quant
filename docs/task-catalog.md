@@ -1326,3 +1326,52 @@ Rollback: Revert the Shadow Mode summary schema version branch; no live broker A
 - Refactor: optional, but must keep gates accurate.
 
 Rollback: Revert the Shadow Mode summary review aggregation branch; no live broker API calls or broker side effects exist in this change.
+
+## ISSUE-031: Add local Shadow Mode review writer
+
+- Status: `complete`
+- Phase: `Phase 4`
+- Dependencies: ISSUE-030
+- Roadmap: see `docs/roadmap.md#phase-4`
+- Summary: Add a local-only Shadow Mode review writer that persists an existing summary review aggregate as deterministic JSON for fixture review.
+
+### Acceptance Criteria
+
+- The writer stores an existing Shadow Mode summary review as JSON.
+- The writer creates missing parent directories.
+- The writer rejects overwriting an existing review file by default.
+- The written JSON includes total, passed, blocked, trading dates, and blocking reasons.
+- The written JSON uses stable key ordering and a trailing newline.
+- The writer returns the output path.
+- The writer remains local-only and does not discover files, run strategies, connect to market data, query brokers, submit orders, or cancel orders.
+
+### Gates
+
+- Python Unit Tests
+- Fixture Tests
+- Documentation Localization
+- Markdown Links/Style
+- Secret Scan
+- Task Catalog Generation
+
+### Changed Assets
+
+- `src/autotrade/execution/shadow_mode.py`
+- `tests/test_shadow_mode.py`
+- `tests/test_documentation_catalog.py`
+- `docs/replay-execution.md`
+- `docs/cli-usage.md`
+- `docs/operations.md`
+- `docs/limitations.md`
+- `docs/rollback.md`
+- `docs/locales/en/overview.md`
+- `docs/locales/ja/overview.md`
+- `docs/locales/zh-CN/overview.md`
+
+### Test-first Evidence
+
+- Red: required before implementation starts.
+- Green: required after implementation.
+- Refactor: optional, but must keep gates accurate.
+
+Rollback: Revert the Shadow Mode review writer branch; no live broker API calls or broker side effects exist in this change.

@@ -70,6 +70,10 @@ The Shadow Mode summary schema version has no live broker side effects. Revert t
 
 The Shadow Mode summary review aggregate has no live broker side effects. Revert the ISSUE-030 branch if local summary review counts need to be removed.
 
+## Shadow Mode Review Writer Rollback
+
+The Shadow Mode review writer has no live broker side effects. Revert the ISSUE-031 branch if local summary review JSON output needs to be removed.
+
 ## kabu Station Mapper Rollback
 
 The kabu Station mapper has no live broker side effects. Revert the ISSUE-017 branch if adapter-boundary payload mapping needs to be removed.

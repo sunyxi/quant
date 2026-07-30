@@ -54,6 +54,8 @@ Treat `schema_version` as part of the local summary review contract. A summary w
 
 Use `ShadowModeSummaryReview` to aggregate already-loaded local run summaries for fixture review. Empty review inputs are invalid because they provide no operational evidence.
 
+Use `ShadowModeReviewWriter` when a summary review needs a local JSON artifact. Do not overwrite an existing review file unless a later reviewed change adds explicit replacement semantics.
+
 ## kabu Station Mapper Handling
 
 Use the kabu Station mapper only for local adapter-boundary tests. It must not be treated as a live broker client, and its payload shape must stay behind the broker adapter boundary until a later reviewed issue approves real API calls.

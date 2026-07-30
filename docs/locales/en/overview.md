@@ -38,6 +38,8 @@ Shadow Mode run summary JSON now carries local `schema_version` 1 for compatibil
 
 Shadow Mode run summaries can be aggregated locally into review counts for passed and blocked fixture runs.
 
+Shadow Mode summary reviews can be written as local deterministic JSON files for fixture review.
+
 Repository agent rules are captured in `AGENT.md`.
 
 Replay execution now skips duplicate client order IDs within a run, fails fast on critical reconciliation discrepancies, isolates default run results, and rejects snapshots that do not match the supplied trading date.

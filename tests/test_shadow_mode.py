@@ -20,6 +20,7 @@ from autotrade.execution.shadow_mode import (
     ShadowModeReadinessGate,
     ShadowModeReadinessStatus,
     ShadowModeSummaryReview,
+    ShadowModeReviewWriter,
     ShadowModeSummaryWriter,
     ShadowModeRunSummary,
 )
@@ -407,6 +408,40 @@ class ShadowModeReadinessGateTests(unittest.TestCase):
         self.assertEqual(review.passed_runs, 2)
         self.assertEqual(review.blocked_runs, 0)
         self.assertEqual(review.blocking_reasons, {})
+
+    def test_review_writer_stores_json_and_returns_path(self) -> None:
+        review = ShadowModeSummaryReview.from_summaries(
+            [
+                _summary("2026-07-29"),
+                _summary(
+                    "2026-07-28",
+                    status=ShadowModeReadinessStatus.BLOCKED,
+                    reasons=["missing reconciliation evidence"],
+                ),
+            ]
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_path = Path(tmpdir) / "shadow" / "review.json"
+
+            written_path = ShadowModeReviewWriter().write(review, output_path)
+
+            self.assertEqual(written_path, output_path)
+            self.assertEqual(
+                json.loads(output_path.read_text(encoding="utf-8")),
+                review.to_dict(),
+            )
+            self.assertTrue(output_path.read_text(encoding="utf-8").endswith("\n"))
+
+    def test_review_writer_rejects_existing_file_by_default(self) -> None:
+        review = ShadowModeSummaryReview.from_summaries([_summary()])
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_path = Path(tmpdir) / "review.json"
+            output_path.write_text("existing\n", encoding="utf-8")
+
+            with self.assertRaises(FileExistsError):
+                ShadowModeReviewWriter().write(review, output_path)
+
+            self.assertEqual(output_path.read_text(encoding="utf-8"), "existing\n")
 
 
 if __name__ == "__main__":
