@@ -46,6 +46,10 @@ The simulated broker snapshots have no live broker side effects. Revert the ISSU
 
 The replay execution loop has no live broker side effects. Revert the ISSUE-014 branch if replay orchestration needs to return to the previous execution skeleton.
 
+## Shadow Mode Readiness Gate Rollback
+
+The Shadow Mode readiness gate has no live broker side effects. Revert the ISSUE-025 branch if local readiness decisions need to be removed from replay review.
+
 ## kabu Station Mapper Rollback
 
 The kabu Station mapper has no live broker side effects. Revert the ISSUE-017 branch if adapter-boundary payload mapping needs to be removed.

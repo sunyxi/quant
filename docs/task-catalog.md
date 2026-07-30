@@ -1032,3 +1032,52 @@ Rollback: Revert the kabu Station snapshot mapper branch; no live broker API cal
 - Refactor: optional, but must keep gates accurate.
 
 Rollback: Revert the kabu Station read-only reconciler branch; no live broker API calls or persistent broker side effects exist in this change.
+
+## ISSUE-025: Add local Shadow Mode readiness gate
+
+- Status: `complete`
+- Phase: `Phase 4`
+- Dependencies: ISSUE-014, ISSUE-024
+- Roadmap: see `docs/roadmap.md#phase-4`
+- Summary: Add a local-only Shadow Mode readiness gate that evaluates replay execution results, reconciliation reports, open orders, and risk pause state before a shadow run is treated as operationally acceptable.
+
+### Acceptance Criteria
+
+- Clean replay results with reconciliation evidence return a passing readiness decision.
+- Any critical reconciliation report blocks readiness.
+- A paused RiskManager blocks readiness and reports the pause reason.
+- Missing reconciliation evidence blocks readiness.
+- Remaining open simulated broker orders block readiness.
+- The readiness decision reports stable metrics for intents, fills, reconciliation reports, critical reports, and open orders.
+- The gate remains local-only and does not connect to market data, query brokers, submit orders, or cancel orders.
+
+### Gates
+
+- Python Unit Tests
+- Fixture Tests
+- Documentation Localization
+- Markdown Links/Style
+- Secret Scan
+- Task Catalog Generation
+
+### Changed Assets
+
+- `src/autotrade/execution/shadow_mode.py`
+- `tests/test_shadow_mode.py`
+- `tests/test_documentation_catalog.py`
+- `docs/replay-execution.md`
+- `docs/cli-usage.md`
+- `docs/operations.md`
+- `docs/limitations.md`
+- `docs/rollback.md`
+- `docs/locales/en/overview.md`
+- `docs/locales/ja/overview.md`
+- `docs/locales/zh-CN/overview.md`
+
+### Test-first Evidence
+
+- Red: required before implementation starts.
+- Green: required after implementation.
+- Refactor: optional, but must keep gates accurate.
+
+Rollback: Revert the Shadow Mode readiness gate branch; no live broker API calls or persistent broker side effects exist in this change.
