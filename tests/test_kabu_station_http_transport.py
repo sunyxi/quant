@@ -287,6 +287,25 @@ class KabuStationLocalhostHttpTransportTests(unittest.TestCase):
                 with self.assertRaises(expected_error):
                     client.fetch_token("test-password")
 
+    def test_non_json_http_error_body_preserves_status_typed_error(self) -> None:
+        cases = (
+            (401, KabuStationAuthError),
+            (429, KabuStationRateLimitError),
+            (503, KabuStationServerError),
+        )
+        for status, expected_error in cases:
+            with self.subTest(status=status):
+                transport = KabuStationLocalhostHttpTransport(
+                    opener=FakeOpener(status=status, raw_body=b"<html>down</html>")
+                )
+                client = KabuStationTokenClient(
+                    environment=KabuStationEnvironment.test(),
+                    transport=transport,
+                )
+
+                with self.assertRaises(expected_error):
+                    client.fetch_token("test-password")
+
     def test_default_opener_is_built_once_per_transport(self) -> None:
         opener = FakeOpener()
         with patch(
@@ -345,6 +364,23 @@ class KabuStationLocalhostHttpTransportTests(unittest.TestCase):
 
         self.assertNotIn("bad-password", str(context.exception))
         self.assertNotIn("token-123", str(context.exception))
+
+    def test_permission_error_is_not_misclassified_as_connection_failure(self) -> None:
+        transport = KabuStationLocalhostHttpTransport(
+            opener=FakeOpener(
+                error=URLError(PermissionError("socket denied secret-token-123"))
+            )
+        )
+
+        with self.assertRaises(KabuStationClientError) as context:
+            transport.get_json(f"{self.base_url}/kabusapi/orders")
+
+        self.assertNotIsInstance(
+            context.exception,
+            KabuStationTransportConnectionError,
+        )
+        self.assertIn("operating system", str(context.exception))
+        self.assertNotIn("secret-token-123", str(context.exception))
 
 
 if __name__ == "__main__":

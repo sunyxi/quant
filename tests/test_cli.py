@@ -75,6 +75,33 @@ class KabuStationCliTests(unittest.TestCase):
         self.assertIn("already exists", stderr.getvalue())
         self.assertNotIn("Traceback", stderr.getvalue())
 
+    def test_report_filesystem_failure_returns_clean_error_without_traceback(self) -> None:
+        stderr = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            parent_file = Path(tmpdir) / "not-a-directory"
+            parent_file.write_text("occupied", encoding="utf-8")
+            with patch.dict(
+                "os.environ",
+                {"KABU_STATION_API_PASSWORD": "secret-password"},
+                clear=True,
+            ), patch(
+                "autotrade.cli.KabuStationReadOnlyProbe.run",
+            ), redirect_stderr(stderr):
+                exit_code = main(
+                    [
+                        "kabu-readonly-probe",
+                        "--environment",
+                        "test",
+                        "--connect",
+                        "--report-output",
+                        str(parent_file / "probe.json"),
+                    ]
+                )
+
+        self.assertEqual(exit_code, 2)
+        self.assertIn("could not write", stderr.getvalue())
+        self.assertNotIn("Traceback", stderr.getvalue())
+
 
 if __name__ == "__main__":
     unittest.main()

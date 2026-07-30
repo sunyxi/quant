@@ -16,6 +16,8 @@ from autotrade.execution.kabu_station import (
     KabuStationTokenClient,
     KabuStationLocalhostHttpTransport,
     KabuStationTransportConnectionError,
+    KabuStationTransportPolicyError,
+    KabuStationTransportSystemError,
     KabuStationTransportTimeoutError,
 )
 
@@ -148,7 +150,7 @@ class KabuStationReadOnlyProbeTests(unittest.TestCase):
 
         payload = probe.run(api_password="secret-password").to_dict()
 
-        self.assertEqual(payload["connection_status"], "failed")
+        self.assertEqual(payload["connection_status"], "ok")
         self.assertEqual(payload["orders_payload_status"], "failed")
         self.assertEqual(payload["sanitized_failure_category"], "connection")
 
@@ -164,7 +166,7 @@ class KabuStationReadOnlyProbeTests(unittest.TestCase):
 
         payload = probe.run(api_password="secret-password").to_dict()
 
-        self.assertEqual(payload["connection_status"], "failed")
+        self.assertEqual(payload["connection_status"], "ok")
         self.assertEqual(payload["positions_payload_status"], "failed")
         self.assertEqual(payload["sanitized_failure_category"], "timeout")
 
@@ -186,6 +188,67 @@ class KabuStationReadOnlyProbeTests(unittest.TestCase):
         self.assertEqual(payload["connection_status"], "not-run")
         self.assertEqual(payload["authentication_status"], "not-run")
         self.assertEqual(payload["sanitized_failure_category"], "configuration")
+
+    def test_read_policy_errors_are_reported_as_configuration_failures(self) -> None:
+        cases = (
+            (
+                FakeReadOnlyClient(
+                    orders_error=KabuStationTransportPolicyError("redirect rejected")
+                ),
+                "orders_payload_status",
+            ),
+            (
+                FakeReadOnlyClient(
+                    positions_error=KabuStationTransportPolicyError(
+                        "redirect rejected"
+                    )
+                ),
+                "positions_payload_status",
+            ),
+        )
+        for readonly_client, failed_status in cases:
+            with self.subTest(status=failed_status):
+                probe = KabuStationReadOnlyProbe(
+                    environment_name="test",
+                    environment=KabuStationEnvironment.test(),
+                    token_client=FakeTokenClient(),
+                    readonly_client=readonly_client,
+                )
+
+                payload = probe.run(api_password="secret-password").to_dict()
+
+                self.assertEqual(payload["connection_status"], "ok")
+                self.assertEqual(payload[failed_status], "failed")
+                self.assertEqual(
+                    payload["sanitized_failure_category"],
+                    "configuration",
+                )
+
+    def test_system_errors_preserve_probe_stage_evidence(self) -> None:
+        token_failure = KabuStationReadOnlyProbe(
+            environment_name="test",
+            environment=KabuStationEnvironment.test(),
+            token_client=FakeTokenClient(
+                error=KabuStationTransportSystemError("socket denied")
+            ),
+            readonly_client=FakeReadOnlyClient(),
+        ).run(api_password="secret-password")
+        orders_failure = KabuStationReadOnlyProbe(
+            environment_name="test",
+            environment=KabuStationEnvironment.test(),
+            token_client=FakeTokenClient(),
+            readonly_client=FakeReadOnlyClient(
+                orders_error=KabuStationTransportSystemError("socket denied")
+            ),
+        ).run(api_password="secret-password")
+
+        self.assertEqual(token_failure.connection_status, "not-run")
+        self.assertEqual(token_failure.authentication_status, "not-run")
+        self.assertEqual(token_failure.sanitized_failure_category, "system")
+        self.assertEqual(orders_failure.connection_status, "ok")
+        self.assertEqual(orders_failure.authentication_status, "ok")
+        self.assertEqual(orders_failure.orders_payload_status, "failed")
+        self.assertEqual(orders_failure.sanitized_failure_category, "system")
 
     def test_snapshot_mapping_error_is_reported_without_raw_payload(self) -> None:
         probe = KabuStationReadOnlyProbe(
@@ -225,6 +288,26 @@ class KabuStationReadOnlyProbeTests(unittest.TestCase):
             path.write_text(json.dumps(raw), encoding="utf-8")
             with self.assertRaises(KabuStationClientError):
                 KabuStationProbeReportReader().read(path)
+
+    def test_probe_report_writer_wraps_filesystem_error(self) -> None:
+        result = KabuStationReadOnlyProbe(
+            environment_name="test",
+            environment=KabuStationEnvironment.test(),
+            token_client=FakeTokenClient(),
+            readonly_client=FakeReadOnlyClient(),
+        ).run(api_password="secret-password")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            parent_file = Path(tmpdir) / "not-a-directory"
+            parent_file.write_text("occupied", encoding="utf-8")
+            with self.assertRaises(KabuStationClientError) as context:
+                KabuStationProbeReportWriter().write(
+                    parent_file / "probe.json",
+                    result,
+                )
+
+        self.assertIn("could not write", str(context.exception))
+        self.assertNotIn(str(parent_file), str(context.exception))
 
 
 if __name__ == "__main__":
