@@ -1081,3 +1081,52 @@ Rollback: Revert the kabu Station read-only reconciler branch; no live broker AP
 - Refactor: optional, but must keep gates accurate.
 
 Rollback: Revert the Shadow Mode readiness gate branch; no live broker API calls or persistent broker side effects exist in this change.
+
+## ISSUE-026: Add local Shadow Mode run summary
+
+- Status: `complete`
+- Phase: `Phase 4`
+- Dependencies: ISSUE-025
+- Roadmap: see `docs/roadmap.md#phase-4`
+- Summary: Add a local-only Shadow Mode run summary that captures trading date, readiness status, blocking reasons, and readiness metrics from an existing readiness decision for audit-friendly fixture review.
+
+### Acceptance Criteria
+
+- A passing readiness decision produces a passing Shadow Mode run summary.
+- A blocked readiness decision produces a blocked Shadow Mode run summary with blocking reasons preserved.
+- The summary records the supplied trading date.
+- The summary stores a stable copy of readiness metrics.
+- The summary exposes a JSON-compatible dictionary representation.
+- Mutating the source decision metrics after summary creation does not change the summary.
+- The summary builder remains local-only and does not run strategies, connect to market data, query brokers, submit orders, or cancel orders.
+
+### Gates
+
+- Python Unit Tests
+- Fixture Tests
+- Documentation Localization
+- Markdown Links/Style
+- Secret Scan
+- Task Catalog Generation
+
+### Changed Assets
+
+- `src/autotrade/execution/shadow_mode.py`
+- `tests/test_shadow_mode.py`
+- `tests/test_documentation_catalog.py`
+- `docs/replay-execution.md`
+- `docs/cli-usage.md`
+- `docs/operations.md`
+- `docs/limitations.md`
+- `docs/rollback.md`
+- `docs/locales/en/overview.md`
+- `docs/locales/ja/overview.md`
+- `docs/locales/zh-CN/overview.md`
+
+### Test-first Evidence
+
+- Red: required before implementation starts.
+- Green: required after implementation.
+- Refactor: optional, but must keep gates accurate.
+
+Rollback: Revert the Shadow Mode run summary branch; no live broker API calls or persistent broker side effects exist in this change.
