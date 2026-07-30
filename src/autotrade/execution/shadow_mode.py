@@ -65,6 +65,55 @@ class ShadowModeRunSummary:
 
 
 @dataclass(frozen=True)
+class ShadowModeSummaryReview:
+    total_runs: int
+    passed_runs: int
+    blocked_runs: int
+    trading_dates: list[str] = field(default_factory=list)
+    blocking_reasons: dict[str, int] = field(default_factory=dict)
+
+    @classmethod
+    def from_summaries(
+        cls,
+        summaries: list[ShadowModeRunSummary],
+    ) -> ShadowModeSummaryReview:
+        if not summaries:
+            raise ShadowModeSummaryError("empty Shadow Mode summary review")
+
+        passed_runs = sum(
+            1 for summary in summaries if summary.status == ShadowModeReadinessStatus.PASSED
+        )
+        blocked_runs = sum(
+            1
+            for summary in summaries
+            if summary.status == ShadowModeReadinessStatus.BLOCKED
+        )
+        blocking_reasons: dict[str, int] = {}
+        for summary in summaries:
+            if summary.status != ShadowModeReadinessStatus.BLOCKED:
+                continue
+            for reason in summary.reasons:
+                blocking_reasons[reason] = blocking_reasons.get(reason, 0) + 1
+
+        return cls(
+            total_runs=len(summaries),
+            passed_runs=passed_runs,
+            blocked_runs=blocked_runs,
+            trading_dates=sorted({summary.trading_date for summary in summaries}),
+            blocking_reasons=dict(sorted(blocking_reasons.items())),
+        )
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "total_runs": self.total_runs,
+            "passed_runs": self.passed_runs,
+            "blocked_runs": self.blocked_runs,
+            "trading_dates": list(self.trading_dates),
+            "blocking_reasons": dict(self.blocking_reasons),
+        }
+
+
+@dataclass(frozen=True)
 class ShadowModeSummaryWriter:
     def write(self, summary: ShadowModeRunSummary, path: Path) -> Path:
         if path.exists():
