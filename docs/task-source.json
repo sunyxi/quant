@@ -624,6 +624,38 @@
         "docs/locales/zh-CN/overview.md"
       ],
       "rollback": "Revert the Shadow Mode run summary branch; no live broker API calls or persistent broker side effects exist in this change."
+    },
+    {
+      "id": "ISSUE-027",
+      "title": "Add local Shadow Mode summary writer",
+      "status": "complete",
+      "phase": "Phase 4",
+      "dependencies": ["ISSUE-026"],
+      "summary": "Add a local-only Shadow Mode summary writer that persists an existing run summary as deterministic JSON for fixture review without running replay or touching broker boundaries.",
+      "acceptance_criteria": [
+        "The writer stores an existing Shadow Mode run summary as JSON.",
+        "The writer creates missing parent directories.",
+        "The writer rejects overwriting an existing summary file by default.",
+        "The written JSON includes trading date, status, reasons, and metrics.",
+        "The written JSON uses stable key ordering and a trailing newline.",
+        "The writer returns the output path.",
+        "The writer remains local-only and does not run strategies, connect to market data, query brokers, submit orders, or cancel orders."
+      ],
+      "gates": ["Python Unit Tests", "Fixture Tests", "Documentation Localization", "Markdown Links/Style", "Secret Scan", "Task Catalog Generation"],
+      "changed_assets": [
+        "src/autotrade/execution/shadow_mode.py",
+        "tests/test_shadow_mode.py",
+        "tests/test_documentation_catalog.py",
+        "docs/replay-execution.md",
+        "docs/cli-usage.md",
+        "docs/operations.md",
+        "docs/limitations.md",
+        "docs/rollback.md",
+        "docs/locales/en/overview.md",
+        "docs/locales/ja/overview.md",
+        "docs/locales/zh-CN/overview.md"
+      ],
+      "rollback": "Revert the Shadow Mode summary writer branch; no live broker API calls or broker side effects exist in this change."
     }
   ]
 }

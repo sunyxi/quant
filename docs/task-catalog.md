@@ -1130,3 +1130,52 @@ Rollback: Revert the Shadow Mode readiness gate branch; no live broker API calls
 - Refactor: optional, but must keep gates accurate.
 
 Rollback: Revert the Shadow Mode run summary branch; no live broker API calls or persistent broker side effects exist in this change.
+
+## ISSUE-027: Add local Shadow Mode summary writer
+
+- Status: `complete`
+- Phase: `Phase 4`
+- Dependencies: ISSUE-026
+- Roadmap: see `docs/roadmap.md#phase-4`
+- Summary: Add a local-only Shadow Mode summary writer that persists an existing run summary as deterministic JSON for fixture review without running replay or touching broker boundaries.
+
+### Acceptance Criteria
+
+- The writer stores an existing Shadow Mode run summary as JSON.
+- The writer creates missing parent directories.
+- The writer rejects overwriting an existing summary file by default.
+- The written JSON includes trading date, status, reasons, and metrics.
+- The written JSON uses stable key ordering and a trailing newline.
+- The writer returns the output path.
+- The writer remains local-only and does not run strategies, connect to market data, query brokers, submit orders, or cancel orders.
+
+### Gates
+
+- Python Unit Tests
+- Fixture Tests
+- Documentation Localization
+- Markdown Links/Style
+- Secret Scan
+- Task Catalog Generation
+
+### Changed Assets
+
+- `src/autotrade/execution/shadow_mode.py`
+- `tests/test_shadow_mode.py`
+- `tests/test_documentation_catalog.py`
+- `docs/replay-execution.md`
+- `docs/cli-usage.md`
+- `docs/operations.md`
+- `docs/limitations.md`
+- `docs/rollback.md`
+- `docs/locales/en/overview.md`
+- `docs/locales/ja/overview.md`
+- `docs/locales/zh-CN/overview.md`
+
+### Test-first Evidence
+
+- Red: required before implementation starts.
+- Green: required after implementation.
+- Refactor: optional, but must keep gates accurate.
+
+Rollback: Revert the Shadow Mode summary writer branch; no live broker API calls or broker side effects exist in this change.

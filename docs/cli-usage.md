@@ -70,7 +70,7 @@ PYTHONPATH=src python3 -m unittest tests.test_replay_execution
 PYTHONPATH=src python3 -m unittest tests.test_shadow_mode
 ```
 
-These tests evaluate local replay result fixtures and run summaries only. They do not connect to market data, connect to brokers, submit orders, or cancel orders.
+These tests evaluate local replay result fixtures, run summaries, and local summary JSON writing only. They do not connect to market data, connect to brokers, submit orders, or cancel orders.
 
 ## kabu Station Mapper Tests
 

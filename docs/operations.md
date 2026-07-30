@@ -46,6 +46,8 @@ Use `ShadowModeReadinessGate` only on local replay results. A blocked decision m
 
 Use `ShadowModeRunSummary` when a local readiness decision needs an audit-friendly summary of trading date, status, reasons, and metrics. Treat it as local review output only; it is not persistence and does not authorize live trading.
 
+Use `ShadowModeSummaryWriter` when a run summary needs a local JSON artifact for fixture review. Do not overwrite an existing summary file unless a later reviewed change adds explicit replacement semantics.
+
 ## kabu Station Mapper Handling
 
 Use the kabu Station mapper only for local adapter-boundary tests. It must not be treated as a live broker client, and its payload shape must stay behind the broker adapter boundary until a later reviewed issue approves real API calls.

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from enum import StrEnum
+from pathlib import Path
 
 from autotrade.execution.replay import ReplayExecutionResult
 from autotrade.risk.manager import RiskManager
@@ -51,6 +53,17 @@ class ShadowModeRunSummary:
             "reasons": list(self.reasons),
             "metrics": dict(self.metrics),
         }
+
+
+@dataclass(frozen=True)
+class ShadowModeSummaryWriter:
+    def write(self, summary: ShadowModeRunSummary, path: Path) -> Path:
+        if path.exists():
+            raise FileExistsError(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        payload = json.dumps(summary.to_dict(), sort_keys=True)
+        path.write_text(f"{payload}\n", encoding="utf-8")
+        return path
 
 
 @dataclass(frozen=True)

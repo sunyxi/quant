@@ -74,6 +74,14 @@ It exposes a JSON-compatible dictionary representation and copies reasons and me
 
 The summary builder does not run replay, read market data, query brokers, submit orders, cancel orders, or persist operational state.
 
+## Shadow Mode Summary Writer
+
+ISSUE-027 adds `ShadowModeSummaryWriter`, a local JSON writer for existing run summaries.
+
+The writer creates missing parent directories, rejects overwriting an existing file by default, writes deterministic JSON with sorted keys and a trailing newline, and returns the output path.
+
+The writer does not run replay, read market data, query brokers, submit orders, or cancel orders.
+
 ## Limitations
 
 This is not a production execution loop. It does not yet include:

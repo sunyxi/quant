@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import unittest
+import json
+import tempfile
 from datetime import datetime
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from autotrade.core.models import Fill, Market, OrderIntent, OrderStyle, Side
@@ -14,6 +17,7 @@ from autotrade.execution.replay import ReplayExecutionResult
 from autotrade.execution.shadow_mode import (
     ShadowModeReadinessGate,
     ShadowModeReadinessStatus,
+    ShadowModeSummaryWriter,
     ShadowModeRunSummary,
 )
 from autotrade.execution.simulated_broker import SimulatedBrokerAdapter
@@ -181,6 +185,37 @@ class ShadowModeReadinessGateTests(unittest.TestCase):
         decision.metrics["intents"] = 99
 
         self.assertEqual(summary.metrics["intents"], 1)
+
+    def test_summary_writer_stores_json_and_returns_path(self) -> None:
+        summary = ShadowModeRunSummary.from_readiness_decision(
+            trading_date="2026-07-28",
+            decision=ShadowModeReadinessGate().evaluate(_clean_result()),
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_path = Path(tmpdir) / "shadow" / "summary.json"
+
+            written_path = ShadowModeSummaryWriter().write(summary, output_path)
+
+            self.assertEqual(written_path, output_path)
+            self.assertEqual(
+                json.loads(output_path.read_text(encoding="utf-8")),
+                summary.to_dict(),
+            )
+            self.assertTrue(output_path.read_text(encoding="utf-8").endswith("\n"))
+
+    def test_summary_writer_rejects_existing_file_by_default(self) -> None:
+        summary = ShadowModeRunSummary.from_readiness_decision(
+            trading_date="2026-07-28",
+            decision=ShadowModeReadinessGate().evaluate(_clean_result()),
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_path = Path(tmpdir) / "summary.json"
+            output_path.write_text("existing\n", encoding="utf-8")
+
+            with self.assertRaises(FileExistsError):
+                ShadowModeSummaryWriter().write(summary, output_path)
+
+            self.assertEqual(output_path.read_text(encoding="utf-8"), "existing\n")
 
 
 if __name__ == "__main__":
