@@ -90,6 +90,10 @@ The kabu Station fake-transport token client has no live broker side effects. Re
 
 The kabu Station localhost HTTP transport has no default client wiring and no live broker side effects in tests. Revert the ISSUE-032 branch if explicit localhost HTTP transport support needs to be removed.
 
+## kabu Station Read-only Probe Rollback
+
+The kabu Station read-only probe, CLI, and report reader/writer have no live order side effects and are limited to token authentication plus read-only orders and positions queries. Revert the ISSUE-032 localhost boundary branch if the runtime probe path needs to be removed. Delete any local `kabu-probe-reports/` files after confirming they contain no credentials or raw account data.
+
 ## kabu Station Sendorder Client Rollback
 
 The kabu Station fake-transport sendorder client has no live broker side effects. Revert the ISSUE-020 branch if sendorder response handling needs to be removed.

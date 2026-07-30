@@ -1376,24 +1376,24 @@ Rollback: Revert the Shadow Mode summary review aggregation branch; no live brok
 
 Rollback: Revert the Shadow Mode review writer branch; no live broker API calls or broker side effects exist in this change.
 
-## ISSUE-032: Add kabu Station localhost HTTP transport
+## ISSUE-032: Complete the Mac-side kabu Station localhost integration boundary
 
 - Status: `complete`
 - Phase: `Phase 5`
 - Dependencies: ISSUE-024, ISSUE-031
 - Roadmap: see `docs/roadmap.md#phase-5`
-- Summary: Add an explicitly constructed, localhost-only kabu Station HTTP JSON transport that can be tested against local fake servers without changing default fake-transport client behavior or approving live trading.
+- Summary: Complete the localhost-only kabu Station authentication and read-only query boundary that can be built and tested on Mac before Windows kabu Station runtime validation.
 
 ### Acceptance Criteria
 
-- The transport supports JSON POST, PUT, and GET requests with optional headers.
-- GET requests encode query parameters in the URL.
-- Successful JSON responses expose status code and parsed payload.
-- Empty response bodies are represented as an empty JSON object payload.
-- Transport-level failures raise local kabu Station client errors.
-- The transport rejects non-localhost URLs before opening a connection.
-- Existing kabu Station clients still require an injected transport and do not create this transport by default.
-- The change does not call real kabu Station, require Windows, call sendorder or cancelorder in tests, place orders, cancel orders, or query a real account.
+- The concrete JSON HTTP transport supports GET, POST, and PUT, accepts an injected opener for tests, preserves HTTP status and parsed payload, and maps connection failures, timeouts, invalid JSON, and empty responses into local domain errors.
+- The transport accepts only loopback HTTP URLs, rejects userinfo URLs, remote hosts, non-HTTP schemes, and remote redirects, and does not leak API passwords, API tokens, request headers, or authentication payloads in errors.
+- The default localhost policy allows only token authentication and read-only orders/positions queries while rejecting sendorder and cancelorder endpoints.
+- The read-only probe chains the token client, orders client, positions client, and snapshot mapper, then returns sanitized statuses, counts, timestamp, endpoint, environment, and failure category only.
+- The CLI defaults to validate-only mode, requires an explicit connect flag for localhost probing, accepts the API password only from an environment variable or secure prompt, and exposes no sendorder/cancelorder commands.
+- The probe report writer/reader use deterministic schema-versioned JSON, exclude secrets and raw account data, and reject unknown schemas.
+- Tests use fake transports/openers only and do not depend on Windows, real kabu Station, real accounts, or external network access.
+- Documentation explains Mac-side completion, fake-only tests, Windows-only real validation, sanitized output review, credential exposure handling, rollback, and the continued prohibition on real sendorder/cancelorder.
 
 ### Gates
 
@@ -1406,8 +1406,12 @@ Rollback: Revert the Shadow Mode review writer branch; no live broker API calls 
 
 ### Changed Assets
 
+- `.gitignore`
+- `src/autotrade/cli.py`
 - `src/autotrade/execution/kabu_station.py`
+- `tests/test_cli.py`
 - `tests/test_kabu_station_http_transport.py`
+- `tests/test_kabu_station_readonly_probe.py`
 - `tests/test_documentation_catalog.py`
 - `docs/kabu-station-mapper.md`
 - `docs/cli-usage.md`
@@ -1424,4 +1428,4 @@ Rollback: Revert the Shadow Mode review writer branch; no live broker API calls 
 - Green: required after implementation.
 - Refactor: optional, but must keep gates accurate.
 
-Rollback: Revert the kabu Station localhost HTTP transport branch; clients will continue using injected fake transports and no live broker side effects exist in this change.
+Rollback: Revert the kabu Station localhost boundary branch; clients will continue using injected fake transports, generated probe reports can be deleted, and no live order side effects exist in this change.

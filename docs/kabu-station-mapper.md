@@ -81,21 +81,42 @@ The token client does not store API passwords and does not construct a real HTTP
 
 ## Localhost HTTP Transport
 
-ISSUE-032 adds `KabuStationLocalhostHttpTransport`, an explicitly constructed HTTP JSON transport for kabu Station localhost adapter tests.
+ISSUE-032 adds `KabuStationLocalhostHttpTransport`, an explicitly constructed HTTP JSON transport for the kabu Station localhost boundary.
 
 The transport supports:
 
 - JSON `POST` requests with optional headers;
 - JSON `PUT` requests with optional headers;
 - JSON `GET` requests with optional query parameters and headers;
+- injected openers for tests so unit tests do not access the network;
+- explicit connection/read timeout configuration;
 - parsed JSON response payloads with the raw HTTP status code;
-- empty response bodies as `{}`;
-- local client errors for transport failures or invalid JSON response bodies;
-- preflight rejection for non-localhost URLs.
+- local client errors for connection failures, timeouts, invalid JSON, and empty response bodies;
+- preflight rejection for non-localhost URLs, non-HTTP schemes, userinfo URLs, and remote redirects;
+- a default read-only policy that allows POST `/kabusapi/token` and GET `/kabusapi/orders` plus GET `/kabusapi/positions` only.
 
-The transport only accepts `http://localhost`, `http://127.0.0.1`, or `http://[::1]` URLs. Existing kabu Station clients still require an injected transport and do not create this transport by default.
+The transport only accepts `http://localhost`, `http://127.0.0.1`, or `http://[::1]` URLs. Existing kabu Station clients still require an injected transport and do not create this transport by default. The default runtime boundary rejects `sendorder` and `cancelorder`; future real order support requires a separate issue and Human Code Owner approval.
 
-Tests exercise the transport against a local fake HTTP server only. They do not connect to real kabu Station, require Windows, authenticate with real credentials, query a real account, submit orders, or cancel orders.
+Tests exercise the transport with an injected fake opener only. They do not connect to real kabu Station, require Windows, authenticate with real credentials, query a real account, submit orders, or cancel orders.
+
+## Read-only Probe and Report
+
+ISSUE-032 also adds a Windows-ready read-only probe boundary for the next real kabu Station validation step. The probe chains the token client, read-only orders client, read-only positions client, and snapshot mapper. It returns only sanitized status evidence:
+
+- environment;
+- localhost endpoint;
+- connection, authentication, orders, positions, and snapshot-mapping statuses;
+- order and position counts;
+- timestamp;
+- sanitized failure category.
+
+The probe result and deterministic JSON report do not include the API password, API token, request headers, complete authentication response, raw order payloads, raw position payloads, or account identifiers. Report reader schema validation accepts schema version `1` only.
+
+Mac-side tests use fake token/read-only clients and fake payload fixtures. Real validation still requires Windows because kabu Station is a localhost Windows runtime. After Windows setup, run the CLI in explicit connect mode and stop if any status fails:
+
+```bash
+KABU_STATION_API_PASSWORD="..." PYTHONPATH=src python3 -m autotrade.cli kabu-readonly-probe --environment test --connect --report-output kabu-probe-reports/test-kabu-readonly-probe-report.json
+```
 
 ## Sendorder Client
 

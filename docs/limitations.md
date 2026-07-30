@@ -18,8 +18,10 @@
 - The Shadow Mode readiness gate evaluates local replay result evidence only; it does not ingest live market data, query real broker state, persist decisions, or authorize live trading.
 - The Shadow Mode summary review aggregate and writer handle already-loaded local summaries only; they do not discover files, manage retention, or define promotion thresholds.
 - The Shadow Mode run summary reader and writer handle local schema version 1 JSON files for fixture review only; they do not upload reports, manage retention, migrate old schemas, or trigger operational state changes.
-- The kabu Station mapper, official request contract helpers, fake-transport token client, fake-transport sendorder client, fake-transport cancelorder client, fake-transport read-only client, snapshot mapper, and read-only reconciler are local-only and do not perform real authentication, cancel orders, query real order status, query real positions, reconcile a real account, or place live orders.
-- `KabuStationLocalhostHttpTransport` can send explicit JSON requests to localhost-only URLs, but no production code path creates it by default and the current tests use a local fake HTTP server only. It does not prove Windows kabu Station runtime availability, real authentication, real response compatibility, or live broker reliability.
+- The kabu Station mapper, official request contract helpers, fake-transport sendorder client, fake-transport cancelorder client, snapshot mapper, and read-only reconciler are local-only and do not place or cancel live orders.
+- `KabuStationLocalhostHttpTransport` can send explicit JSON requests to localhost-only URLs and is guarded by a default read-only policy. It allows token authentication and read-only orders/positions queries only; `sendorder` and `cancelorder` remain blocked.
+- The kabu Station read-only probe and CLI can produce sanitized local JSON evidence, but Mac-side tests use fake transports/openers only. They do not prove Windows kabu Station runtime availability, real authentication, real response compatibility, account-level permissions, or live broker reliability.
+- Probe failure is a blocking condition. Do not continue Shadow Mode or live trading after a failed connection, authentication, orders, positions, or snapshot-mapping probe.
 - Machine learning, meta-labeling, model registry, and degradation monitoring are out of scope for the current code.
 - US market execution through IBKR is future work.
 - Nothing in this repository is financial advice or a guarantee of profit.

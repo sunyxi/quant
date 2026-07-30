@@ -50,7 +50,9 @@ Shadow Mode summary review 可以写成本地确定性 JSON 文件，用于 fixt
 
 kabu Station token client 可使用 fake transport 测试，并在不连接 kabu Station 的情况下映射认证、限流和服务器错误。
 
-kabu Station localhost HTTP transport 可以被显式构造，用于 localhost-only JSON transport 测试，但各 client 默认仍不会创建它。
+kabu Station localhost HTTP transport 可以被显式构造，用于 localhost-only JSON transport 测试和 Windows 只读 probe。默认策略只允许 token 认证以及只读 orders/positions 查询；真实 sendorder 和 cancelorder 仍被阻断。
+
+kabu Station 只读 probe 和 report writer 会生成带 schema version 的脱敏 JSON 证据，只包含状态和计数。Mac 侧测试只使用 fake transport/opener；真实认证和真实响应兼容性仍需要在运行 kabu Station 的 Windows 上验证。
 
 kabu Station sendorder client 也可以使用 fake transport 测试，不会发送真实订单。
 

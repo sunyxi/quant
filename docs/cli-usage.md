@@ -94,7 +94,31 @@ These tests use a fake transport only. They do not connect to kabu Station or re
 PYTHONPATH=src python3 -m unittest tests.test_kabu_station_http_transport
 ```
 
-These tests start a local fake HTTP server and exercise the explicit localhost-only transport. They do not connect to real kabu Station, require Windows, authenticate with real credentials, query a real account, submit orders, or cancel orders.
+These tests use an injected fake opener and exercise the explicit localhost-only transport boundary. They do not open network sockets, connect to real kabu Station, require Windows, authenticate with real credentials, query a real account, submit orders, or cancel orders.
+
+## kabu Station Read-only Probe Tests
+
+```bash
+PYTHONPATH=src python3 -m unittest tests.test_kabu_station_readonly_probe
+```
+
+These tests use fake token and read-only clients. They validate sanitized probe results, propagation of orders, positions, and snapshot-mapping failures, deterministic report JSON round trips, and unknown schema rejection without connecting to kabu Station.
+
+## kabu Station Read-only Probe CLI
+
+Default mode validates configuration only and does not connect to localhost:
+
+```bash
+PYTHONPATH=src python3 -m autotrade.cli kabu-readonly-probe --environment test
+```
+
+Windows-only real runtime verification, after kabu Station is installed and running, requires an explicit connection flag and the API password from an environment variable or secure prompt:
+
+```bash
+KABU_STATION_API_PASSWORD="..." PYTHONPATH=src python3 -m autotrade.cli kabu-readonly-probe --environment test --connect --report-output kabu-probe-reports/test-kabu-readonly-probe-report.json
+```
+
+Do not pass the password as a command-line argument. The CLI does not expose sendorder or cancelorder commands. Probe output is read-only and sanitized: it contains statuses, counts, endpoint, timestamp, schema version, and a failure category only; it must not contain the password, token, request headers, order payloads, position payloads, or account identifiers.
 
 ## kabu Station Sendorder Client Tests
 

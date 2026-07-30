@@ -64,7 +64,13 @@ Official kabu Station contract helpers may construct token and sendorder payload
 
 The kabu Station token client must use an injected transport in tests and must not create a real HTTP client until a later localhost probe issue explicitly approves that boundary.
 
-`KabuStationLocalhostHttpTransport` may be explicitly constructed for localhost-only adapter tests. Use it only with `http://localhost`, `http://127.0.0.1`, or `http://[::1]` URLs, and prefer local fake servers until a later issue approves a real kabu Station probe. Existing clients must still receive a transport through dependency injection.
+`KabuStationLocalhostHttpTransport` may be explicitly constructed for localhost-only adapter tests and the Windows read-only probe. Use it only with `http://localhost`, `http://127.0.0.1`, or `http://[::1]` URLs. Unit tests inject fake openers or fake transports and must not access the network. Existing clients must still receive a transport through dependency injection.
+
+The default localhost transport policy allows only POST `/kabusapi/token` for authentication and GET `/kabusapi/orders` plus GET `/kabusapi/positions` for read-only checks. It rejects `sendorder`, `cancelorder`, remote hosts, remote redirects, userinfo URLs, non-HTTP schemes, empty responses, invalid JSON responses, connection failures, and timeouts as local domain errors. Real sendorder and cancelorder remain prohibited and require a later independent issue plus Human Code Owner approval.
+
+Use `python -m autotrade.cli kabu-readonly-probe --environment test` for validate-only mode. This mode must not construct a runtime transport or connect to localhost. After kabu Station is available on Windows, use `--connect` with `KABU_STATION_API_PASSWORD` or `--prompt-password` to run only the read-only probe. A failed probe means Shadow Mode or live trading must not continue.
+
+Probe reports are deterministic JSON evidence files with schema version 1. Store them outside Git, for example under `kabu-probe-reports/`. Before sharing a report, confirm it contains only statuses, counts, timestamp, localhost endpoint, environment, schema version, and sanitized failure category.
 
 The kabu Station sendorder client must use an injected transport in tests. Treat it as contract plumbing only; no real order submission is approved by this issue.
 
@@ -116,3 +122,13 @@ CI results supplement, but do not replace, the PR body validation table. If CI d
 ## Incident Handling
 
 Any live-trading incident must stop new orders first, then reconcile broker state, local orders, fills, positions, cash, and PnL. The system should not resume live trading from a failed state without a written review.
+
+## Credential Exposure Handling
+
+If an API password, API token, complete authentication response, request header, account identifier, order payload, or position payload is exposed in logs, terminal output, reports, commits, screenshots, or chat:
+
+1. Stop the probe and do not continue Shadow Mode or live trading.
+2. Revoke or rotate the kabu Station API password/token using the broker-supported procedure.
+3. Remove the exposed artifact from local report directories and any PR or issue comment.
+4. Run the secret scan and inspect generated probe reports before retrying.
+5. Record the incident and only resume with sanitized evidence.
