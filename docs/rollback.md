@@ -54,6 +54,10 @@ The Shadow Mode readiness gate has no live broker side effects. Revert the ISSUE
 
 The Shadow Mode run summary has no live broker side effects. Revert the ISSUE-026 branch if local readiness summary output needs to be removed.
 
+## Shadow Mode Summary Writer Rollback
+
+The Shadow Mode summary writer has no live broker side effects. Revert the ISSUE-027 branch if local summary JSON output needs to be removed.
+
 ## kabu Station Mapper Rollback
 
 The kabu Station mapper has no live broker side effects. Revert the ISSUE-017 branch if adapter-boundary payload mapping needs to be removed.

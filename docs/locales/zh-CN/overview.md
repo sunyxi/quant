@@ -30,6 +30,8 @@
 
 Shadow Mode readiness decision 可以转换成本地 run summary，记录交易日、状态、阻断原因和指标，用于 fixture 审阅。
 
+Shadow Mode run summary 可以写成本地确定性 JSON 文件，用于 fixture 审阅。
+
 仓库 Agent 工作规则记录在 `AGENT.md`。
 
 回放执行现在会跳过同一次运行内重复的客户端订单ID，在严重对账差异时快速失败，隔离默认运行结果，并拒绝与指定交易日不一致的快照。
