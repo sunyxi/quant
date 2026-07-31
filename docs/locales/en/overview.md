@@ -2,7 +2,9 @@
 
 This repository implements a research-first intraday trading platform skeleton. The initial target is JP equities, with live broker execution explicitly out of scope until risk, order management, reconciliation, and shadow trading gates pass.
 
-The first release scope remains JP equities, long-only, no overnight, and Shadow Mode before live trading. Moomoo OpenAPI on macOS is now the first API proof of concept for sanitized read-only account, US equities, and JP quote-entitlement discovery, with no live orders. JP equity market data is supported when the account has the required quote entitlement, but Moomoo JP does not currently support live JP cash-equity API trading. ISSUE-035 will require OpenD and `moomoo-api` `>=10.4.6408`, keep the dependency isolated, and prohibit `unlock_trade`. kabu Station remains the future JP target and IBKR remains a US fallback.
+The first release scope remains JP equities, long-only, no overnight, and Shadow Mode before live trading. Moomoo OpenAPI on macOS is now the first API proof of concept for sanitized read-only account, US equities, and JP quote-entitlement discovery, with no live orders. JP equity market data is supported when the account has the required quote entitlement, but Moomoo JP does not currently support live JP cash-equity API trading. ISSUE-035 requires OpenD and `moomoo-api` `>=10.4.6408`, keeps the dependency isolated, and prohibits `unlock_trade`. kabu Station remains the future JP target and IBKR remains a US fallback.
+
+ISSUE-035 now implements the optional `moomoo-api` boundary and `moomoo-readonly-discovery` CLI. Validate-only mode imports no SDK and opens no socket; explicit `--connect` reads only OpenD global state, quote-entitlement metadata, and sanitized account-list shape. It exposes no subscriptions, paper orders, live orders, cancellations, or trade unlock.
 
 The current calendar layer covers JP regular sessions, lunch break, weekend rejection, manual holidays, and close-entry cutoff for research filtering.
 
@@ -68,4 +70,4 @@ The kabu Station read-only reconciler can run local reconciliation over injected
 
 Repository CI runs Python unit tests, Task Catalog drift checks, Markdown link/style checks, and a basic secret scan for pull requests and pushes to `main`.
 
-See `docs/roadmap.md`, `docs/task-catalog.md`, `docs/scope.md`, `docs/risk-policy.md`, `docs/broker-decision.md`, `docs/implementation-plan.md`, `docs/market-calendar.md`, `docs/order-book-intelligence.md`, `docs/backtest-fill-cost.md`, `docs/strategy-market-quality.md`, `docs/oms.md`, `docs/execution-ledger.md`, `docs/risk-paused-state.md`, `docs/reconciliation.md`, `docs/simulated-broker.md`, `docs/replay-execution.md`, `docs/kabu-station-mapper.md`, `docs/operations.md`, `docs/limitations.md`, and `docs/rollback.md`.
+See `docs/roadmap.md`, `docs/task-catalog.md`, `docs/scope.md`, `docs/risk-policy.md`, `docs/broker-decision.md`, `docs/implementation-plan.md`, `docs/market-calendar.md`, `docs/order-book-intelligence.md`, `docs/backtest-fill-cost.md`, `docs/strategy-market-quality.md`, `docs/oms.md`, `docs/execution-ledger.md`, `docs/risk-paused-state.md`, `docs/reconciliation.md`, `docs/simulated-broker.md`, `docs/replay-execution.md`, `docs/kabu-station-mapper.md`, `docs/moomoo-openapi.md`, `docs/operations.md`, `docs/limitations.md`, and `docs/rollback.md`.

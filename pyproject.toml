@@ -12,6 +12,9 @@ dependencies = []
 [project.optional-dependencies]
 dev = [
 ]
+moomoo = [
+    "moomoo-api>=10.4.6408",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

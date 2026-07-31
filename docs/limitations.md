@@ -2,10 +2,11 @@
 
 - The current repository is a research skeleton, not a live trading system.
 - No real broker order placement is implemented.
-- Moomoo OpenAPI is prioritized for the next API proof of concept, but ISSUE-034 adds documentation only. There is no Moomoo SDK dependency, OpenD transport, authenticated account query, market-data subscription, paper-order path, or live-order path in the repository yet.
-- ISSUE-035 is limited to sanitized read-only Moomoo OpenD discovery on macOS and must make no live orders. Even successful discovery will not prove paper or live execution reliability.
+- Moomoo OpenAPI is prioritized for the first API proof of concept. ISSUE-035 adds an optional SDK boundary and explicit sanitized read-only OpenD discovery; it does not add market-data subscriptions, paper orders, live orders, cancellations, or trading unlock.
+- ISSUE-035 reads global state, quote-entitlement metadata, and sanitized account-list shape only, with no live orders. Even successful discovery does not prove quote completeness, paper execution, live execution, reconnect behavior, or operational reliability.
 - The Moomoo JP support matrix currently supports API trading for US stocks and ETFs but does not support live JP cash-equity trading. JP equity market data is supported, including snapshots, candlesticks, order books, and tick data, but access remains quote-entitlement-dependent and must not be assumed.
-- ISSUE-035 requires OpenD and `moomoo-api` `>=10.4.6408`. The SDK may require `protobuf==3.*`, so compatibility with unrelated dependencies remains unverified and the dependency must be isolated.
+- ISSUE-035 requires OpenD and `moomoo-api` `>=10.4.6408`. Its transitive `protobuf` compatibility can change between releases, so the SDK is declared as an optional extra and its resolved environment must be verified in isolation.
+- JP quote entitlement is reported as `UNKNOWN` when the SDK does not expose `jp_qot_right`; the discovery does not infer permission by subscribing or requesting paid data.
 - Repository code must not call `unlock_trade` in any environment. Any later real-trading unlock must be performed manually in the OpenD GUI after separate approval.
 - The backtest engine now has conservative limit-order fills and cost attribution, but does not yet model queue position, minute high/low touch logic, or calibrated fill probability.
 - JP regular sessions, lunch break, weekends, manual holidays, and close-entry cutoff are modeled for research filtering.

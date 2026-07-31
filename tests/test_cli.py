@@ -9,6 +9,7 @@ from unittest.mock import patch
 
 from autotrade.cli import main
 from autotrade.execution.kabu_station import KabuStationClientError
+from tests.test_moomoo_discovery import FakeSdk
 
 
 class KabuStationCliTests(unittest.TestCase):
@@ -102,6 +103,73 @@ class KabuStationCliTests(unittest.TestCase):
         self.assertIn("could not write", stderr.getvalue())
         self.assertNotIn("Traceback", stderr.getvalue())
 
+
+class MoomooDiscoveryCliTests(unittest.TestCase):
+    def test_validate_only_does_not_load_sdk_or_connect(self) -> None:
+        stdout = io.StringIO()
+        with patch(
+            "autotrade.cli.MoomooApiSdk.load",
+            side_effect=AssertionError("SDK loaded"),
+        ), redirect_stdout(stdout):
+            exit_code = main(["moomoo-readonly-discovery"])
+
+        self.assertEqual(0, exit_code)
+        self.assertIn("validate-only", stdout.getvalue())
+        self.assertIn("127.0.0.1:11111", stdout.getvalue())
+
+    def test_remote_host_is_rejected_before_sdk_load(self) -> None:
+        stderr = io.StringIO()
+        with patch(
+            "autotrade.cli.MoomooApiSdk.load",
+            side_effect=AssertionError("SDK loaded"),
+        ), redirect_stderr(stderr):
+            exit_code = main(
+                ["moomoo-readonly-discovery", "--host", "192.168.1.20"]
+            )
+
+        self.assertEqual(2, exit_code)
+        self.assertIn("loopback", stderr.getvalue())
+
+    def test_connect_runs_sanitized_read_only_discovery(self) -> None:
+        stdout = io.StringIO()
+        with patch("autotrade.cli.MoomooApiSdk.load", return_value=FakeSdk()), redirect_stdout(stdout):
+            exit_code = main(["moomoo-readonly-discovery", "--connect"])
+
+        self.assertEqual(0, exit_code)
+        output = stdout.getvalue()
+        self.assertIn('"paper_account_available": true', output)
+        self.assertNotIn("sensitive", output)
+
+    def test_cli_exposes_no_trade_unlock_option(self) -> None:
+        stderr = io.StringIO()
+        with redirect_stderr(stderr):
+            exit_code = main(
+                ["moomoo-readonly-discovery", "--unlock-trade"]
+            )
+
+        self.assertEqual(2, exit_code)
+        self.assertIn("unrecognized arguments", stderr.getvalue())
+
+    def test_report_conflict_returns_clean_error(self) -> None:
+        stderr = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            report_path = Path(tmpdir) / "report.json"
+            report_path.write_text("existing", encoding="utf-8")
+            with patch(
+                "autotrade.cli.MoomooApiSdk.load", return_value=FakeSdk()
+            ), redirect_stderr(stderr):
+                exit_code = main(
+                    [
+                        "moomoo-readonly-discovery",
+                        "--connect",
+                        "--report-output",
+                        str(report_path),
+                    ]
+                )
+
+        self.assertEqual(2, exit_code)
+        self.assertIn("already exists", stderr.getvalue())
+        self.assertNotIn("Traceback", stderr.getvalue())
 
 if __name__ == "__main__":
     unittest.main()

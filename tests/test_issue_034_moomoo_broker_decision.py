@@ -18,8 +18,15 @@ class Issue034MoomooBrokerDecisionTests(unittest.TestCase):
                 "docs/operations.md",
                 "docs/limitations.md",
                 "docs/rollback.md",
+                "docs/locales/en/overview.md",
+                "docs/locales/ja/overview.md",
+                "docs/locales/zh-CN/overview.md",
             ]
         }
+        source = json.loads(
+            (REPO_ROOT / "docs/task-source.json").read_text(encoding="utf-8")
+        )
+        cls.tasks = {task["id"]: task for task in source["tasks"]}
 
     def _assert_contains_all(self, content: str, terms: list[str]) -> None:
         missing_terms = [term for term in terms if term not in content]
@@ -71,11 +78,7 @@ class Issue034MoomooBrokerDecisionTests(unittest.TestCase):
                 )
 
     def test_next_issue_records_sdk_and_dependency_compatibility(self) -> None:
-        source = json.loads(
-            (REPO_ROOT / "docs/task-source.json").read_text(encoding="utf-8")
-        )
-        tasks = {task["id"]: task for task in source["tasks"]}
-        criteria = " ".join(tasks["ISSUE-035"]["acceptance_criteria"])
+        criteria = " ".join(self.tasks["ISSUE-035"]["acceptance_criteria"])
 
         required_terms = [
             "moomoo-api",
@@ -109,20 +112,14 @@ class Issue034MoomooBrokerDecisionTests(unittest.TestCase):
 
         for path, terms in expected_terms.items():
             with self.subTest(path=path):
-                content = (REPO_ROOT / path).read_text(encoding="utf-8")
-                self._assert_contains_all(content, terms)
+                self._assert_contains_all(self.operational_docs[path], terms)
 
     def test_task_source_records_decision_and_next_read_only_boundary(self) -> None:
-        source = json.loads(
-            (REPO_ROOT / "docs/task-source.json").read_text(encoding="utf-8")
-        )
-        tasks = {task["id"]: task for task in source["tasks"]}
-
-        self.assertEqual("complete", tasks["ISSUE-034"]["status"])
-        self.assertEqual(["ISSUE-034"], tasks["ISSUE-035"]["dependencies"])
-        self.assertEqual("pending", tasks["ISSUE-035"]["status"])
-        self.assertIn("read-only", tasks["ISSUE-035"]["summary"])
-        self.assertIn("macOS", tasks["ISSUE-035"]["summary"])
+        self.assertEqual("complete", self.tasks["ISSUE-034"]["status"])
+        self.assertEqual(["ISSUE-034"], self.tasks["ISSUE-035"]["dependencies"])
+        self.assertEqual("complete", self.tasks["ISSUE-035"]["status"])
+        self.assertIn("read-only", self.tasks["ISSUE-035"]["summary"])
+        self.assertIn("macOS", self.tasks["ISSUE-035"]["summary"])
 
 
 if __name__ == "__main__":

@@ -17,6 +17,14 @@ from autotrade.execution.kabu_station import (
     KabuStationReadOnlyProbe,
     KabuStationTokenClient,
 )
+from autotrade.execution.moomoo import (
+    MoomooApiSdk,
+    MoomooClientError,
+    MoomooConfigurationError,
+    MoomooDiscoveryReportWriter,
+    MoomooEndpoint,
+    MoomooReadOnlyDiscovery,
+)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -27,6 +35,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         return int(exc.code)
     if args.command == "kabu-readonly-probe":
         return _run_kabu_readonly_probe(args, stdout=sys.stdout, stderr=sys.stderr)
+    if args.command == "moomoo-readonly-discovery":
+        return _run_moomoo_readonly_discovery(
+            args,
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+        )
     parser.error("unknown command")
     return 2
 
@@ -58,6 +72,31 @@ def _build_parser() -> argparse.ArgumentParser:
         "--report-output",
         type=Path,
         help="Optional path for a sanitized deterministic probe report JSON file.",
+    )
+    moomoo = subparsers.add_parser(
+        "moomoo-readonly-discovery",
+        description="Validate or execute sanitized read-only Moomoo OpenD discovery.",
+    )
+    moomoo.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="Loopback Moomoo OpenD host. Defaults to 127.0.0.1.",
+    )
+    moomoo.add_argument(
+        "--port",
+        type=int,
+        default=11111,
+        help="Moomoo OpenD port. Defaults to 11111.",
+    )
+    moomoo.add_argument(
+        "--connect",
+        action="store_true",
+        help="Explicitly load moomoo-api and run read-only discovery.",
+    )
+    moomoo.add_argument(
+        "--report-output",
+        type=Path,
+        help="Optional path for a sanitized create-only discovery report.",
     )
     return parser
 
@@ -131,6 +170,50 @@ def _environment_from_name(name: str) -> KabuStationEnvironment:
     if name == "production":
         return KabuStationEnvironment.production()
     raise KabuStationClientError(f"unsupported kabu Station environment: {name}")
+
+
+def _run_moomoo_readonly_discovery(
+    args: argparse.Namespace,
+    *,
+    stdout: TextIO,
+    stderr: TextIO,
+) -> int:
+    try:
+        endpoint = MoomooEndpoint(host=args.host, port=args.port)
+    except MoomooConfigurationError as exc:
+        print(f"error: {exc}", file=stderr)
+        return 2
+
+    if not args.connect:
+        print(
+            json.dumps(
+                {
+                    "mode": "validate-only",
+                    "probe": "Moomoo OpenAPI read-only discovery",
+                    "localhost_endpoint": endpoint.display,
+                    "connection_status": "not-run",
+                },
+                sort_keys=True,
+            ),
+            file=stdout,
+        )
+        return 0
+
+    try:
+        sdk = MoomooApiSdk.load()
+    except MoomooClientError:
+        print("error: Moomoo discovery failed (dependency)", file=stderr)
+        return 1
+
+    result = MoomooReadOnlyDiscovery(endpoint=endpoint, sdk=sdk).run()
+    if args.report_output is not None:
+        try:
+            MoomooDiscoveryReportWriter().write(args.report_output, result)
+        except MoomooConfigurationError as exc:
+            print(f"error: {exc}", file=stderr)
+            return 2
+    print(json.dumps(result.to_dict(), sort_keys=True), file=stdout)
+    return 0 if result.sanitized_failure_category is None else 1
 
 
 if __name__ == "__main__":
