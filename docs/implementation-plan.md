@@ -83,6 +83,17 @@ Shadow Mode.
 - Log theoretical signals, theoretical orders, theoretical fills, expected slippage, and reconciliation state.
 - Deliverable: 20 or more trading days of shadow evidence before pilot review.
 
+## Iteration 9
+
+Moomoo OpenAPI discovery before Windows-dependent broker work.
+
+- ISSUE-034: record Moomoo OpenAPI as the first API proof of concept while preserving kabu Station for JP cash equities and IBKR as a US fallback.
+- ISSUE-035: add a macOS-capable, read-only Moomoo OpenD discovery boundary with fake-SDK tests and sanitized evidence output.
+- Require OpenD and `moomoo-api` `>=10.4.6408`; keep the SDK in an isolated optional dependency because it may constrain `protobuf` to major version 3.
+- Validate only loopback OpenD reachability at configurable `127.0.0.1:11111`, SDK/API version, account-list shape, US market capability, JP equity market-data entitlement metadata, and paper-account availability.
+- Place no live orders, do not unlock trading, and do not treat discovery output as Shadow Mode approval.
+- Deliverable: an authenticated read-only compatibility report that decides whether a later paper-trading adapter Issue is justified.
+
 ## Initial Epic Map
 
 | Epic | First linked tasks | Exit evidence |
@@ -93,7 +104,7 @@ Shadow Mode.
 | Board Intelligence | ISSUE-004 | Snapshot and feature tests pass |
 | Strategy Research | ISSUE-007 and later strategy Issues | Strategy filters and walk-forward report |
 | Risk and OMS | ISSUE-008, ISSUE-009, ISSUE-010, ISSUE-011, and later execution Issues | Fault fixtures pass |
-| Broker Integration | ISSUE-012, ISSUE-013, ISSUE-014, and later adapter Issues | Contract and shadow tests pass |
+| Broker Integration | ISSUE-012, ISSUE-013, ISSUE-014, ISSUE-034, ISSUE-035, and later adapter Issues | Contract, discovery, and shadow tests pass |
 
 ## Stop Conditions
 

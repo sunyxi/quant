@@ -86,6 +86,14 @@ The kabu Station snapshot mapper may convert fake or read-only payloads into rec
 
 The kabu Station read-only reconciler may orchestrate an injected read-only client, snapshot mapper, OMS, ledger, reconciliation engine, and optional `RiskManager`. Treat its reports as local reconciliation results over supplied fake-client data only; it must not construct a real transport, query a live account, submit orders, or cancel orders.
 
+## Moomoo OpenAPI Discovery Handling
+
+Moomoo OpenAPI is now the first broker API proof of concept because OpenD and the Python SDK can run on macOS. No repository Moomoo command exists in ISSUE-034. ISSUE-035 may add an explicit read-only discovery path using OpenD and `moomoo-api` `>=10.4.6408`, imported as `moomoo`, for configurable loopback reachability at `127.0.0.1:11111`, version, account-list shape, US capability, JP equity market-data entitlement metadata, and paper-account availability.
+
+The discovery path must make no live orders, must not call `unlock_trade`, must not log account identifiers or credentials, and must fail closed when OpenD, authentication, account capability, or response compatibility is unknown. Trading must not be unlocked through SDK code in any environment. Any future real-trading unlock requires a separately approved workflow and manual action in the OpenD GUI. A successful discovery report is compatibility evidence only; it does not authorize Shadow Mode, paper orders, or live orders.
+
+Install the SDK only as an isolated optional dependency or in a dedicated virtual environment. `moomoo-api` may constrain `protobuf` to major version 3, so ISSUE-035 must verify dependency resolution without silently changing unrelated runtime packages.
+
 ## Issue Workflow
 
 0. Read `AGENT.md`.
@@ -132,7 +140,7 @@ Any live-trading incident must stop new orders first, then reconcile broker stat
 If an API password, API token, complete authentication response, request header, account identifier, order payload, or position payload is exposed in logs, terminal output, reports, commits, screenshots, or chat:
 
 1. Stop the probe and do not continue Shadow Mode or live trading.
-2. Revoke or rotate the kabu Station API password/token using the broker-supported procedure.
+2. Revoke or rotate the affected Moomoo or kabu Station credential/token using the broker-supported procedure.
 3. Remove the exposed artifact from local report directories and any PR or issue comment.
 4. Run the secret scan and inspect generated probe reports before retrying.
 5. Record the incident and only resume with sanitized evidence.

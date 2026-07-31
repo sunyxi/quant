@@ -2,7 +2,7 @@
 
 This repository implements a research-first intraday trading platform skeleton. The initial target is JP equities, with live broker execution explicitly out of scope until risk, order management, reconciliation, and shadow trading gates pass.
 
-The first release scope is JP equities, long-only, no overnight, and Shadow Mode before live trading. kabu Station is the future JP broker target; IBKR is reserved for a later US phase.
+The first release scope remains JP equities, long-only, no overnight, and Shadow Mode before live trading. Moomoo OpenAPI on macOS is now the first API proof of concept for sanitized read-only account, US equities, and JP quote-entitlement discovery, with no live orders. JP equity market data is supported when the account has the required quote entitlement, but Moomoo JP does not currently support live JP cash-equity API trading. ISSUE-035 will require OpenD and `moomoo-api` `>=10.4.6408`, keep the dependency isolated, and prohibit `unlock_trade`. kabu Station remains the future JP target and IBKR remains a US fallback.
 
 The current calendar layer covers JP regular sessions, lunch break, weekend rejection, manual holidays, and close-entry cutoff for research filtering.
 

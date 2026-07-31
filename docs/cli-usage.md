@@ -2,6 +2,10 @@
 
 Current commands are local research utilities only. They must not place real broker orders.
 
+## Moomoo OpenAPI Status
+
+Moomoo OpenAPI is the prioritized broker API proof of concept, but this repository does not yet expose a Moomoo CLI command. ISSUE-035 will add only a macOS-capable read-only discovery command using an injected fake SDK in tests. Its implementation baseline is OpenD and `moomoo-api` `>=10.4.6408`, with the package imported as `moomoo` and the loopback endpoint defaulting to `127.0.0.1:11111`. Until that Issue is reviewed and merged, do not install an SDK as an undeclared repository dependency, connect credentials through ad hoc scripts, or place live orders. The planned command must make no live orders and must not call `unlock_trade`.
+
 ## Setup
 
 ```bash

@@ -14,6 +14,10 @@ Generated catalogs must be rebuilt from their Source of Truth. Do not manually e
 python3 scripts/generate_task_catalog.py
 ```
 
+## Moomoo Broker Priority Rollback
+
+ISSUE-034 changes requirements and documentation only. It adds no Moomoo OpenAPI SDK, connection, credential, paper order, `unlock_trade` call, or live order capability. Revert the ISSUE-034 branch through a reviewed PR to restore kabu Station as the next runtime validation target and IBKR as the only planned US adapter. Remove the dependent ISSUE-035 task from the Source of Truth and regenerate the Task Catalog; do not manually edit the generated catalog. There are no live orders to cancel or broker state to reconcile from this decision change.
+
 ## Strategy Filter Rollback
 
 If market quality filters suppress expected research signals, remove `max_spread_bps` and `require_fresh_order_book` from strategy configuration first. If the issue is code-level behavior, revert the ISSUE-007 branch in a new PR.

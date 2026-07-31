@@ -67,6 +67,12 @@ MarketData -> Strategy -> RiskManager -> OMS -> BrokerAdapter
 
 ## 后续接入边界
 
+首个真实 API PoC 改为在 macOS 上通过 Moomoo OpenAPI/OpenD 进行只读账户、权限、美股能力和日股行情能力发现，后续再验证模拟交易。实现基线是 OpenD 和 `moomoo-api` 均不低于 `10.4.6408`，并且仅连接本机 loopback。该 PoC 不允许实盘下单，也不改变日股研究主线。
+
+Moomoo JP 当前不支持日股现货实盘 API 交易，因此 kabu Station 仍保留为后续日股执行通道；IBKR 作为美股备选通道。所有通道都必须复用同一个券商无关边界。
+
+Moomoo 日股行情与日股交易必须分开建模：行情能力受账户权限限制，但日股现货交易通道当前不可用。任何后续实现都不得调用 `unlock_trade`；实盘解锁只能在经单独审批后由人在 OpenD GUI 中操作。
+
 真实券商适配器必须实现：
 
 - 下单
