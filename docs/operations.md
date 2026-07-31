@@ -88,9 +88,11 @@ The kabu Station read-only reconciler may orchestrate an injected read-only clie
 
 ## Moomoo OpenAPI Discovery Handling
 
-Moomoo OpenAPI is now the first broker API proof of concept because OpenD and the Python SDK can run on macOS. No repository Moomoo command exists in ISSUE-034. ISSUE-035 may add an explicit read-only discovery path for local OpenD reachability, version, account-list shape, US capability, entitlement metadata, and paper-account availability.
+Moomoo OpenAPI is now the first broker API proof of concept because OpenD and the Python SDK can run on macOS. No repository Moomoo command exists in ISSUE-034. ISSUE-035 may add an explicit read-only discovery path using OpenD and `moomoo-api` `>=10.4.6408`, imported as `moomoo`, for configurable loopback reachability at `127.0.0.1:11111`, version, account-list shape, US capability, JP equity market-data entitlement metadata, and paper-account availability.
 
-The discovery path must make no live orders, must not unlock trading, must not log account identifiers or credentials, and must fail closed when OpenD, authentication, account capability, or response compatibility is unknown. A successful discovery report is compatibility evidence only; it does not authorize Shadow Mode, paper orders, or live orders.
+The discovery path must make no live orders, must not call `unlock_trade`, must not log account identifiers or credentials, and must fail closed when OpenD, authentication, account capability, or response compatibility is unknown. Trading must not be unlocked through SDK code in any environment. Any future real-trading unlock requires a separately approved workflow and manual action in the OpenD GUI. A successful discovery report is compatibility evidence only; it does not authorize Shadow Mode, paper orders, or live orders.
+
+Install the SDK only as an isolated optional dependency or in a dedicated virtual environment. `moomoo-api` may constrain `protobuf` to major version 3, so ISSUE-035 must verify dependency resolution without silently changing unrelated runtime packages.
 
 ## Issue Workflow
 

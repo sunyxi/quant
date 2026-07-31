@@ -12,11 +12,11 @@ This document records the first broker boundary for implementation. It does not 
 
 ## Rationale
 
-Moomoo OpenAPI is now the first integration candidate because the official Moomoo JP documentation supports OpenD on macOS and provides a Python SDK. This removes the immediate Windows dependency for the first authenticated API experiment. OpenD exposes a local TCP gateway, normally on `127.0.0.1:11111`, and remains an external process rather than an embedded strategy dependency.
+Moomoo OpenAPI is now the first integration candidate because the official Moomoo JP documentation supports OpenD on macOS and provides a Python SDK. This removes the immediate Windows dependency for the first authenticated API experiment. The implementation baseline requires OpenD `>=10.4.6408` and the `moomoo-api` Python distribution `>=10.4.6408`, imported as `moomoo`. OpenD exposes a local TCP gateway, normally on `127.0.0.1:11111`, and remains an external process rather than an embedded strategy dependency.
 
 The first Moomoo OpenAPI experiment is intentionally narrower than a broker adapter. ISSUE-035 may validate gateway reachability, API version, account-list shape, US market capability, and sanitized read-only evidence. It must place no live orders and must not unlock trading.
 
-The official support matrix currently allows Moomoo JP customers to use API trading for US stocks and ETFs, but it marks Japanese stocks, ETFs, and REITs as unsupported for live API trading. Japanese market-data access is entitlement-dependent and must be observed from the account rather than assumed. Therefore this decision does not change the first strategy research universe from JP equities and does not claim that Moomoo can replace the JP execution path.
+The official support matrix currently allows Moomoo JP customers to use API trading for US stocks and ETFs, but it marks Japanese stocks, ETFs, and REITs as unsupported for live API trading. JP equity market data is supported for snapshots, candlesticks, order books, tick data, and related quote functions when the account has the required quote entitlement. Entitlement must be observed from the account rather than assumed. Therefore this decision does not change the first strategy research universe from JP equities and does not claim that Moomoo can replace the JP execution path.
 
 kabu Station remains the practical later JP automation boundary because it provides a documented local API surface for orders, cancels, account state, positions, and streaming market information. Existing kabu Station code and tests remain supported, but Windows runtime validation is no longer the next dependency.
 
@@ -57,6 +57,8 @@ No Moomoo OpenAPI live trading is approved. The Moomoo path cannot progress beyo
 - Shadow Mode evidence.
 
 The kabu Station path remains subject to the same conditions before any JP live pilot.
+
+The repository must never call the SDK `unlock_trade` interface. Any future real-trading unlock must be a deliberate manual action in the OpenD GUI after a separately approved Issue. Paper trading remains the default environment for any later order-capable experiment.
 
 ## Confirmed Capability Sources
 

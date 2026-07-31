@@ -21,7 +21,11 @@ class Issue034MoomooBrokerDecisionTests(unittest.TestCase):
             "first API proof of concept",
             "macOS",
             "US equities",
+            "JP equity market data is supported",
             "does not support live JP cash-equity trading",
+            "moomoo-api",
+            "10.4.6408",
+            "127.0.0.1:11111",
             "kabu Station",
             "IBKR",
         ]
@@ -43,6 +47,35 @@ class Issue034MoomooBrokerDecisionTests(unittest.TestCase):
                 self.assertIn("Moomoo OpenAPI", content)
                 self.assertIn("ISSUE-035", content)
                 self.assertIn("no live orders", content)
+
+    def test_operational_boundary_forbids_sdk_trade_unlock(self) -> None:
+        operations = (REPO_ROOT / "docs/operations.md").read_text(encoding="utf-8")
+        limitations = (REPO_ROOT / "docs/limitations.md").read_text(
+            encoding="utf-8"
+        )
+
+        for content in [operations, limitations]:
+            self.assertIn("unlock_trade", content)
+            self.assertIn("must not", content)
+
+    def test_next_issue_records_sdk_and_dependency_compatibility(self) -> None:
+        source = json.loads(
+            (REPO_ROOT / "docs/task-source.json").read_text(encoding="utf-8")
+        )
+        tasks = {task["id"]: task for task in source["tasks"]}
+        issue_035 = json.dumps(tasks["ISSUE-035"], ensure_ascii=False)
+
+        required_terms = [
+            "moomoo-api",
+            "10.4.6408",
+            "127.0.0.1:11111",
+            "protobuf",
+            "unlock_trade",
+            "JP equity market data",
+        ]
+
+        missing_terms = [term for term in required_terms if term not in issue_035]
+        self.assertEqual([], missing_terms)
 
     def test_localized_overviews_record_moomoo_priority_and_jp_boundary(self) -> None:
         expected_terms = {
