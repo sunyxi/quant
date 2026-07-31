@@ -859,6 +859,95 @@
         "docs/locales/zh-CN/overview.md"
       ],
       "rollback": "Revert the ISSUE-033 hardening branch to restore the ISSUE-032 localhost boundary; no live broker order or cancellation side effects exist in this change."
+    },
+    {
+      "id": "ISSUE-034",
+      "title": "Prioritize Moomoo OpenAPI proof of concept",
+      "status": "complete",
+      "phase": "Phase 4",
+      "dependencies": ["ISSUE-033"],
+      "summary": "Change the broker integration priority so the first real API proof of concept uses Moomoo OpenAPI on macOS for sanitized read-only US capability discovery, while retaining kabu Station for later JP cash-equity execution and IBKR as a US fallback.",
+      "acceptance_criteria": [
+        "The broker decision prioritizes Moomoo OpenAPI as the first API proof of concept on macOS.",
+        "The proof of concept is limited to sanitized read-only US account and market capability discovery, followed only by separately approved paper-trading work.",
+        "Documentation states that Moomoo JP currently supports US stock and ETF API trading but not live JP cash-equity API trading.",
+        "Japanese market-data access is documented as entitlement-dependent and must not be assumed.",
+        "kabu Station remains the later JP execution candidate and existing kabu Station assets are not removed.",
+        "IBKR remains a later US fallback.",
+        "CLI, operations, limitations, rollback, architecture, roadmap, implementation plan, README, and all localized overviews reflect the decision.",
+        "The next implementation task is an explicit macOS-capable read-only Moomoo OpenD discovery boundary with fake-SDK tests and no live orders.",
+        "The Task Catalog is regenerated only from docs/task-source.json."
+      ],
+      "gates": [
+        "Python Unit Tests",
+        "Fixture Tests",
+        "Documentation Localization",
+        "Markdown Links/Style",
+        "Secret Scan",
+        "Task Catalog Generation"
+      ],
+      "changed_assets": [
+        "README.md",
+        "docs/architecture.md",
+        "docs/broker-decision.md",
+        "docs/scope.md",
+        "docs/roadmap.md",
+        "docs/implementation-plan.md",
+        "docs/task-source.json",
+        "docs/task-catalog.md",
+        "docs/cli-usage.md",
+        "docs/operations.md",
+        "docs/limitations.md",
+        "docs/rollback.md",
+        "docs/locales/en/overview.md",
+        "docs/locales/ja/overview.md",
+        "docs/locales/zh-CN/overview.md",
+        "tests/test_issue_034_moomoo_broker_decision.py"
+      ],
+      "rollback": "Revert the ISSUE-034 decision branch, remove dependent ISSUE-035 from the Source of Truth, and regenerate the Task Catalog; no SDK, authenticated connection, paper order, or live order side effects exist."
+    },
+    {
+      "id": "ISSUE-035",
+      "title": "Add Moomoo OpenD read-only discovery boundary",
+      "status": "pending",
+      "phase": "Phase 4",
+      "dependencies": ["ISSUE-034"],
+      "summary": "Add a macOS-capable read-only Moomoo OpenD discovery boundary with an injected fake SDK for tests and sanitized compatibility evidence without placing paper or live orders.",
+      "acceptance_criteria": [
+        "A broker-specific boundary checks local OpenD reachability without coupling strategy code to the Moomoo SDK.",
+        "The discovery boundary reads only API version, account-list shape, US market capability, market-data entitlement metadata, and paper-account availability needed for compatibility decisions.",
+        "The discovery boundary does not unlock trading, place paper orders, place live orders, cancel orders, or subscribe to paid data automatically.",
+        "SDK and OpenD failures map to sanitized domain errors without exposing credentials, account identifiers, tokens, or raw account payloads.",
+        "Unit and fixture tests use an injected fake SDK and do not require OpenD, a Moomoo account, authentication, or external network access.",
+        "An explicit CLI connect flag is required before any localhost OpenD call; validate-only mode creates no SDK context or socket.",
+        "A successful report is documented as compatibility evidence only and cannot authorize Shadow Mode or trading.",
+        "English, Japanese, Simplified Chinese, CLI, operations, limitations, rollback, and generated Task Catalog documentation are synchronized."
+      ],
+      "gates": [
+        "Python Unit Tests",
+        "Fixture Tests",
+        "Documentation Localization",
+        "Markdown Links/Style",
+        "Secret Scan",
+        "Task Catalog Generation"
+      ],
+      "changed_assets": [
+        "pyproject.toml",
+        "src/autotrade/cli.py",
+        "src/autotrade/execution/moomoo.py",
+        "tests/test_moomoo_discovery.py",
+        "tests/test_cli.py",
+        "tests/test_documentation_catalog.py",
+        "docs/moomoo-openapi.md",
+        "docs/cli-usage.md",
+        "docs/operations.md",
+        "docs/limitations.md",
+        "docs/rollback.md",
+        "docs/locales/en/overview.md",
+        "docs/locales/ja/overview.md",
+        "docs/locales/zh-CN/overview.md"
+      ],
+      "rollback": "Revert the ISSUE-035 branch, remove the optional Moomoo SDK dependency if introduced, and delete sanitized local discovery reports after review; no paper or live order side effects are allowed."
     }
   ]
 }

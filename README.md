@@ -12,7 +12,7 @@
 - 订单簿快照、价差、深度、OBI、microprice 和 stale book health。
 - 保守成交模型与手续费、价差、滑点、冲击成本归因。
 - 简化事件驱动回测引擎。
-- 面向 kabu Station / IBKR 的执行适配器边界。
+- 优先评估 Mac 上的 Moomoo OpenAPI 美股只读/模拟边界，保留 kabu Station 日股执行边界和 IBKR 美股备选。
 
 ## 快速开始
 

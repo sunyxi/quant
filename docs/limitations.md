@@ -2,6 +2,9 @@
 
 - The current repository is a research skeleton, not a live trading system.
 - No real broker order placement is implemented.
+- Moomoo OpenAPI is prioritized for the next API proof of concept, but ISSUE-034 adds documentation only. There is no Moomoo SDK dependency, OpenD transport, authenticated account query, market-data subscription, paper-order path, or live-order path in the repository yet.
+- ISSUE-035 is limited to sanitized read-only Moomoo OpenD discovery on macOS and must make no live orders. Even successful discovery will not prove paper or live execution reliability.
+- The Moomoo JP support matrix currently supports API trading for US stocks and ETFs but does not support live JP cash-equity trading. Japanese market-data access is entitlement-dependent and must not be assumed.
 - The backtest engine now has conservative limit-order fills and cost attribution, but does not yet model queue position, minute high/low touch logic, or calibrated fill probability.
 - JP regular sessions, lunch break, weekends, manual holidays, and close-entry cutoff are modeled for research filtering.
 - Official JP holiday source integration, special quotes, halts, and limit-up or limit-down states are not fully modeled.
@@ -24,5 +27,5 @@
 - The kabu Station read-only probe and CLI can produce sanitized local JSON evidence, but Mac-side tests use fake transports/openers only. They do not prove Windows kabu Station runtime availability, real authentication, real response compatibility, account-level permissions, or live broker reliability.
 - Probe failure is a blocking condition. Do not continue Shadow Mode or live trading after a failed connection, authentication, orders, positions, or snapshot-mapping probe.
 - Machine learning, meta-labeling, model registry, and degradation monitoring are out of scope for the current code.
-- US market execution through IBKR is future work.
+- US market execution is future work. Moomoo OpenAPI is evaluated first and IBKR remains a fallback.
 - Nothing in this repository is financial advice or a guarantee of profit.

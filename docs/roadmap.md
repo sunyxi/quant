@@ -53,6 +53,7 @@ Replay, simulation, and Shadow Mode.
 
 - Run historical replay with deterministic event order.
 - Connect live market data to simulated orders.
+- Prioritize a Moomoo OpenAPI proof of concept on macOS: first sanitized read-only US account/market capability discovery, then paper trading only through separately approved Issues.
 - Run Shadow Mode against real broker state without placing orders.
 - Exit when shadow results, slippage, and operational health match acceptance thresholds.
 
@@ -60,6 +61,7 @@ Replay, simulation, and Shadow Mode.
 
 Minimum live JP pilot.
 
+- Keep kabu Station as the JP cash-equity execution candidate because Moomoo JP does not currently support live JP cash-equity API trading.
 - Enable one strategy, limited symbols, lowest practical order size, strict daily stop, and no overnight exposure.
 - Use board information only for filtering and execution optimization.
 - Roll back to Shadow Mode on unexplained PnL, position mismatch, repeated order anomalies, or abnormal slippage.
@@ -76,5 +78,6 @@ Platform hardening.
 
 US market extension.
 
-- Add IBKR adapter, US calendar, US fee and margin assumptions, LULD handling, and normal-hours-only pilot rules.
+- Evaluate Moomoo OpenAPI first; retain IBKR as the fallback adapter.
+- Add US calendar, US fee and margin assumptions, LULD handling, and normal-hours-only pilot rules.
 - Re-run the full backtest, replay, simulation, shadow, and minimum live flow.

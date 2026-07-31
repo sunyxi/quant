@@ -10,8 +10,9 @@ This scope defines the first implementable release boundary for the automated tr
 - Execution mode: research, replay, simulation, and Shadow Mode before any live order placement.
 - Strategy families: opening range breakout and VWAP reversion.
 - Trading unit: JP equity lot sizing, initially rounded down to the configured lot size.
-- Broker target: kabu Station for the future JP execution adapter.
-- US market target: IBKR in a later phase, after JP workflow proves stable.
+- First API PoC: Moomoo OpenAPI on macOS for sanitized read-only US account/market capability discovery, followed by paper-trading validation in separately approved Issues.
+- JP broker target: kabu Station remains the future JP cash-equity execution adapter because Moomoo JP does not currently support live JP cash-equity API trading.
+- US broker order: evaluate Moomoo OpenAPI first; retain IBKR as a later fallback.
 
 ## Explicitly In Scope
 
