@@ -21,10 +21,12 @@ from autotrade.execution.moomoo import (
     MoomooApiSdk,
     MoomooClientError,
     MoomooConfigurationError,
+    MoomooDiscoveryReportReader,
     MoomooDiscoveryReportWriter,
     MoomooEndpoint,
     MoomooReadOnlyDiscovery,
 )
+from autotrade.execution.moomoo_readiness import MoomooPaperReadinessGate
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -37,6 +39,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _run_kabu_readonly_probe(args, stdout=sys.stdout, stderr=sys.stderr)
     if args.command == "moomoo-readonly-discovery":
         return _run_moomoo_readonly_discovery(
+            args,
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+        )
+    if args.command == "moomoo-paper-readiness":
+        return _run_moomoo_paper_readiness(
             args,
             stdout=sys.stdout,
             stderr=sys.stderr,
@@ -97,6 +105,16 @@ def _build_parser() -> argparse.ArgumentParser:
         "--report-output",
         type=Path,
         help="Optional path for a sanitized create-only discovery report.",
+    )
+    readiness = subparsers.add_parser(
+        "moomoo-paper-readiness",
+        description="Evaluate a sanitized Moomoo discovery report offline.",
+    )
+    readiness.add_argument(
+        "--discovery-report",
+        type=Path,
+        required=True,
+        help="Path to a sanitized Moomoo discovery schema version 1 report.",
     )
     return parser
 
@@ -214,6 +232,23 @@ def _run_moomoo_readonly_discovery(
             print(f"error: {exc}", file=stderr)
             return 2
     return 0 if result.sanitized_failure_category is None else 1
+
+
+def _run_moomoo_paper_readiness(
+    args: argparse.Namespace,
+    *,
+    stdout: TextIO,
+    stderr: TextIO,
+) -> int:
+    try:
+        discovery = MoomooDiscoveryReportReader().read(args.discovery_report)
+    except MoomooConfigurationError as exc:
+        print(f"error: {exc}", file=stderr)
+        return 2
+
+    decision = MoomooPaperReadinessGate().evaluate(discovery)
+    print(json.dumps(decision.to_dict(), sort_keys=True), file=stdout)
+    return 0 if decision.is_ready else 1
 
 
 if __name__ == "__main__":

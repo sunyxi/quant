@@ -6,6 +6,8 @@
 
 ISSUE-035 は、任意の `moomoo-api` 境界と `moomoo-readonly-discovery` CLI を実装します。validate-only は SDK を import せず socket も開きません。明示的な `--connect` では、OpenD のグローバル状態、相場権限メタデータ、サニタイズ済み口座一覧形状だけを参照します。任意レポートの保存に失敗してもサニタイズ済み JSON は stdout に残りますが、終了コード `2` はブロッキング扱いです。購読、デモ注文、実注文、取消、取引アンロックは提供しません。
 
+ISSUE-036 は `moomoo-paper-readiness` を追加し、検証済み discovery report をオフラインで評価して決定的な `READY` または `BLOCKED` の証跡を出力します。SDK Context や証券会社への要求は作成しません。`READY` は、後続の審査済み米国株デモ注文 Issue の検討だけを許し、デモ注文、Shadow Mode、実注文、日本株取引を承認しません。
+
 現在のカレンダー層は、日本株の通常取引時間、昼休み、週末除外、手動祝日、引け前の新規エントリー停止時刻を研究用フィルターとして扱います。
 
 現在の板情報層は、研究用フィクスチャとして不変スナップショット、スプレッド、可視深度、OBI、microprice、鮮度、STALE 判定を扱います。

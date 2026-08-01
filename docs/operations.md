@@ -96,6 +96,8 @@ Install the SDK only as an isolated optional dependency or in a dedicated virtua
 
 Run validate-only mode before installing or importing the SDK. Use `--connect` only after OpenD is running and logged in. Store reports under `moomoo-discovery-reports/`, inspect only sanitized fields, and treat any nonzero exit as blocking. Discovery JSON is emitted before the optional report write, so exit code `2` means persistence failed even when stdout contains a successful result. Do not use a successful discovery as permission to enable paper or live order code.
 
+Run `moomoo-paper-readiness --discovery-report PATH` only against a retained sanitized schema version 1 report. The command is offline and must not require OpenD to be running. Archive the deterministic `READY` or `BLOCKED` JSON with research evidence if needed, but do not treat `READY` as approval to select an account, unlock trading, subscribe to data, or place an order. A paper-order path requires a new reviewed Issue.
+
 ## Issue Workflow
 
 0. Read `AGENT.md`.

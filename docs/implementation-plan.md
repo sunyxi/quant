@@ -89,6 +89,7 @@ Moomoo OpenAPI discovery before Windows-dependent broker work.
 
 - ISSUE-034: record Moomoo OpenAPI as the first API proof of concept while preserving kabu Station for JP cash equities and IBKR as a US fallback.
 - ISSUE-035: add a macOS-capable, read-only Moomoo OpenD discovery boundary with fake-SDK tests and sanitized evidence output.
+- ISSUE-036: evaluate sanitized discovery evidence through an offline US paper-readiness gate before any paper-order adapter is considered.
 - Require OpenD and `moomoo-api` `>=10.4.6408`; keep the SDK in an isolated optional dependency and verify its transitive `protobuf` compatibility without changing unrelated runtime packages.
 - Validate only loopback OpenD reachability at configurable `127.0.0.1:11111`, SDK/API version, account-list shape, US market capability, JP equity market-data entitlement metadata, and paper-account availability.
 - Place no live orders, do not unlock trading, and do not treat discovery output as Shadow Mode approval.

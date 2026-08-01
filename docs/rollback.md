@@ -22,6 +22,10 @@ ISSUE-034 changes requirements and documentation only. It adds no Moomoo OpenAPI
 
 ISSUE-035 has no order or market-data subscription side effects. Revert its branch through a reviewed PR, remove the `moomoo` optional dependency, and delete local `moomoo-discovery-reports/` artifacts after confirming they contain only sanitized schema version 1 fields. Transient stdout output requires no cleanup, but a report write failure must not be mistaken for a persisted artifact. Stop OpenD manually if it is no longer needed. No orders require cancellation and no positions require reconciliation.
 
+## Moomoo Paper Readiness Rollback
+
+ISSUE-036 is offline and has no SDK, broker, subscription, order, or position side effects. Revert its branch through a reviewed PR and remove the readiness CLI and decision model. Existing sanitized discovery reports remain valid ISSUE-035 evidence and require no broker reconciliation.
+
 ## Strategy Filter Rollback
 
 If market quality filters suppress expected research signals, remove `max_spread_bps` and `require_fresh_order_book` from strategy configuration first. If the issue is code-level behavior, revert the ISSUE-007 branch in a new PR.
