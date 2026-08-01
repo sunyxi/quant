@@ -8,6 +8,8 @@ ISSUE-035 は、任意の `moomoo-api` 境界と `moomoo-readonly-discovery` CLI
 
 ISSUE-036 は `moomoo-paper-readiness` を追加し、検証済み discovery report をオフラインで評価して不変かつ決定的な `READY` または `BLOCKED` のスナップショットを出力します。ログイン証跡の `null` は未確認、`false` は確認済み未ログインを示します。SDK Context や証券会社への要求は作成しません。`READY` は、後続の審査済み米国株デモ注文 Issue の検討だけを許し、デモ注文、Shadow Mode、実注文、日本株取引を承認しません。
 
+ISSUE-037 は、準備完了した米国株買い指値 intent 向けのオフライン `moomoo-paper-order-dry-run` 契約を追加します。passive/aggressive の元スタイル、8〜64文字の client order ID、BUY のリスク価格関係を検証し、`SIMULATE`、`NORMAL`、`DAY`、`RTH` の固定値と数量・想定元本上限を出力します。SDK の import、口座選択、発注は行わず、デモ取引や実取引を承認しません。
+
 現在のカレンダー層は、日本株の通常取引時間、昼休み、週末除外、手動祝日、引け前の新規エントリー停止時刻を研究用フィルターとして扱います。
 
 現在の板情報層は、研究用フィクスチャとして不変スナップショット、スプレッド、可視深度、OBI、microprice、鮮度、STALE 判定を扱います。

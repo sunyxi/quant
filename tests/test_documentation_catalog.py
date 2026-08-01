@@ -217,6 +217,14 @@ class DocumentationCatalogTests(unittest.TestCase):
 
         self.assertEqual("complete", tasks["ISSUE-036"]["status"])
 
+    def test_moomoo_paper_order_dry_run_issue_is_marked_complete(self) -> None:
+        source = json.loads(
+            (REPO_ROOT / "docs/task-source.json").read_text(encoding="utf-8")
+        )
+        tasks = {task["id"]: task for task in source["tasks"]}
+
+        self.assertEqual("complete", tasks["ISSUE-037"]["status"])
+
     def test_moomoo_feature_doc_captures_offline_readiness_boundary(self) -> None:
         document = (REPO_ROOT / "docs/moomoo-openapi.md").read_text(
             encoding="utf-8"
@@ -228,6 +236,22 @@ class DocumentationCatalogTests(unittest.TestCase):
             "READY",
             "BLOCKED",
             "does not authorize paper orders",
+        ]:
+            self.assertIn(term, document)
+
+    def test_moomoo_feature_doc_captures_paper_order_dry_run_boundary(self) -> None:
+        document = (REPO_ROOT / "docs/moomoo-openapi.md").read_text(
+            encoding="utf-8"
+        )
+
+        for term in [
+            "moomoo-paper-order-dry-run",
+            "SIMULATE",
+            "NORMAL",
+            "DAY",
+            "RTH",
+            "does not select an account",
+            "does not authorize a paper order",
         ]:
             self.assertIn(term, document)
 

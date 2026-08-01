@@ -1659,3 +1659,60 @@ Rollback: Revert the ISSUE-035 branch, remove the optional Moomoo SDK dependency
 - Refactor: optional, but must keep gates accurate.
 
 Rollback: Revert the ISSUE-036 branch and remove the offline readiness command and decision model; discovery reports remain sanitized local evidence and no broker, paper-order, live-order, subscription, or position side effects require reconciliation.
+
+## ISSUE-037: Add Moomoo US paper-order dry-run contract
+
+- Status: `complete`
+- Phase: `Phase 4`
+- Dependencies: ISSUE-036
+- Roadmap: see `docs/roadmap.md#phase-4`
+- Summary: Add an offline dry-run planner that maps an approved broker-independent US long limit OrderIntent and READY discovery evidence into a sanitized Moomoo paper-order plan without selecting an account or calling the SDK.
+
+### Acceptance Criteria
+
+- The planner accepts the existing OrderIntent only after an ISSUE-036 readiness decision is READY and rejects BLOCKED evidence with a fixed reason code.
+- The first contract supports only Market.US, Side.BUY, US.<ticker> symbols, positive whole-share quantity, and PASSIVE_LIMIT or AGGRESSIVE_LIMIT order styles.
+- Default safety limits cap dry-run quantity at 100 shares and notional at 25000 USD; exceeding either limit is blocked before a plan is created.
+- The immutable deterministic plan uses sanitized plain values equivalent to TrdEnv.SIMULATE, OrderType.NORMAL, TimeInForce.DAY, Session.RTH, and the Moomoo US.<ticker> code format.
+- The plan includes client order traceability and risk prices but excludes account identifiers, credentials, tokens, SDK objects, raw payloads, and live-environment options.
+- The planner and CLI do not import the external moomoo distribution, create an SDK context or socket, select an account, call place_order, unlock trading, subscribe, cancel, or modify an order.
+- An offline CLI consumes a validated discovery report plus explicit order fields, emits deterministic dry-run JSON, returns zero only when a plan is created, and fails cleanly for invalid evidence or policy violations.
+- A successful dry run is design evidence only and does not authorize or place a paper order, Shadow Mode order, live order, or JP cash-equity order.
+- Unit and fixture tests cover supported mapping, readiness blocking, every market/side/style/symbol/quantity/notional policy, sanitization, immutability, deterministic output, and the no-SDK/no-network/no-order boundary.
+- English, Japanese, Simplified Chinese, CLI, operations, limitations, rollback, feature documentation, implementation plan, and generated Task Catalog output are synchronized.
+
+### Gates
+
+- Python Unit Tests
+- Fixture Tests
+- Documentation Localization
+- Markdown Links/Style
+- Secret Scan
+- Task Catalog Generation
+
+### Changed Assets
+
+- `src/autotrade/cli.py`
+- `src/autotrade/execution/moomoo_paper_order.py`
+- `tests/test_cli.py`
+- `tests/test_moomoo_paper_order.py`
+- `tests/test_documentation_catalog.py`
+- `docs/task-source.json`
+- `docs/task-catalog.md`
+- `docs/moomoo-openapi.md`
+- `docs/implementation-plan.md`
+- `docs/cli-usage.md`
+- `docs/operations.md`
+- `docs/limitations.md`
+- `docs/rollback.md`
+- `docs/locales/en/overview.md`
+- `docs/locales/ja/overview.md`
+- `docs/locales/zh-CN/overview.md`
+
+### Test-first Evidence
+
+- Red: required before implementation starts.
+- Green: required after implementation.
+- Refactor: optional, but must keep gates accurate.
+
+Rollback: Revert the ISSUE-037 branch and remove the offline dry-run planner and CLI; no SDK, account, broker, paper-order, live-order, subscription, order, fill, or position side effects require cancellation or reconciliation.
