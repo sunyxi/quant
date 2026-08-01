@@ -1197,6 +1197,53 @@
         "docs/locales/zh-CN/overview.md"
       ],
       "rollback": "Disable the reconciliation command and inspect the Moomoo paper account manually before reverting ISSUE-040; the command creates no order mutation, but an earlier submitted paper order may still require manual handling."
+    },
+    {
+      "id": "ISSUE-041",
+      "title": "Persist sanitized Moomoo paper-order reconciliation evidence",
+      "status": "complete",
+      "phase": "Phase 4",
+      "dependencies": ["ISSUE-040"],
+      "summary": "Add create-only deterministic report persistence and strict offline reading for sanitized Moomoo paper-order reconciliation results so canary and incident evidence can survive process restart without storing raw broker data.",
+      "acceptance_criteria": [
+        "A reconciliation report writer persists schema version 1 result JSON deterministically, creates parent directories, and never overwrites an existing file.",
+        "A report reader accepts only UTF-8 JSON with the exact schema version 1 field set and reconstructs the immutable reconciliation result offline without loading the SDK or connecting to OpenD.",
+        "Validation rejects unknown schemas, unknown fields, missing fields, invalid enums, invalid localhost endpoints, invalid SDK versions, invalid client-order IDs, booleans used as counts, inconsistent status/failure combinations, and malformed JSON.",
+        "Reports contain only the existing sanitized reconciliation result and never include account IDs, broker order IDs, symbols, prices, quantities, credentials, tokens, raw payloads, SDK objects, or exception text.",
+        "The reconciliation CLI accepts --report-output only with --connect, writes only after a completed query result, and returns exit code 2 on conflict or filesystem failure without a traceback.",
+        "Report directories and matching report filenames are ignored by Git.",
+        "Unit and fixture tests cover deterministic round trip, all validation boundaries, create-only conflicts, write failures, CLI no-write validation mode, and no-SDK offline reading.",
+        "English, Japanese, Simplified Chinese, CLI, operations, limitations, rollback, feature documentation, implementation plan, ignore rules, and generated Task Catalog output are synchronized."
+      ],
+      "gates": [
+        "Python Unit Tests",
+        "Fixture Tests",
+        "Documentation Localization",
+        "Markdown Links/Style",
+        "Secret Scan",
+        "Task Catalog Generation"
+      ],
+      "changed_assets": [
+        ".gitignore",
+        "src/autotrade/cli.py",
+        "src/autotrade/execution/moomoo.py",
+        "src/autotrade/execution/moomoo_paper_reconcile.py",
+        "tests/test_cli.py",
+        "tests/test_moomoo_paper_reconcile.py",
+        "tests/test_documentation_catalog.py",
+        "docs/task-source.json",
+        "docs/task-catalog.md",
+        "docs/moomoo-openapi.md",
+        "docs/implementation-plan.md",
+        "docs/cli-usage.md",
+        "docs/operations.md",
+        "docs/limitations.md",
+        "docs/rollback.md",
+        "docs/locales/en/overview.md",
+        "docs/locales/ja/overview.md",
+        "docs/locales/zh-CN/overview.md"
+      ],
+      "rollback": "Disable report output, inspect retained reconciliation artifacts for sanitized fields, and delete local report files before reverting ISSUE-041 through a reviewed PR; report persistence creates no broker side effect."
     }
   ]
 }

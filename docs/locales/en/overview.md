@@ -16,6 +16,8 @@ ISSUE-039 adds a disabled-by-default `moomoo-paper-order-submit` boundary for on
 
 ISSUE-040 adds the read-only `moomoo-paper-order-reconcile` boundary. It runs one fresh `SIMULATE` order-list query and reports exact remark evidence as `UNIQUE`, `ABSENT`, `DUPLICATE`, `BLOCKED`, or `UNKNOWN` without broker identifiers. `ABSENT` is not proof that no submission occurred, and the command never resubmits or mutates an order.
 
+ISSUE-041 adds create-only schema version 1 reconciliation reports for durable canary and incident evidence. The strict reader validates them offline without OpenD or the SDK. Reports contain only sanitized result fields, never overwrite an existing artifact, and remain local under ignored paths.
+
 The current calendar layer covers JP regular sessions, lunch break, weekend rejection, manual holidays, and close-entry cutoff for research filtering.
 
 The current order book layer covers immutable snapshots, spread, visible depth, OBI, microprice, freshness, and stale-book health status for research fixtures.

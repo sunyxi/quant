@@ -153,6 +153,20 @@ Add `--connect` only while OpenD is logged in. The service reselects exactly one
 
 `ABSENT` means the order was not visible in that fresh query; it is not proof that no submission occurred. `DUPLICATE` and `UNKNOWN` are ambiguous. The command does not automatically resubmit, modify, cancel, unlock, subscribe, or access `REAL`, and operators must not rerun ISSUE-039 based only on reconciliation output.
 
+ISSUE-041 adds create-only schema version 1 reconciliation reports. Report output is available only for a connected query that reached `query_status=ok` or `query_status=failed`:
+
+```bash
+mkdir -p moomoo-reconciliation-reports
+PYTHONPATH=src python3 -m autotrade.cli moomoo-paper-order-reconcile \
+  --discovery-report moomoo-discovery-reports/moomoo-readonly-discovery-report.json \
+  --preflight-report moomoo-preflight-reports/moomoo-paper-account-preflight-report.json \
+  --client-order-id paper-canary-001 \
+  --connect \
+  --report-output moomoo-reconciliation-reports/moomoo-paper-order-reconciliation-report.json
+```
+
+The writer creates parent directories, never overwrites, and stores only the sanitized result. The strict reader reconstructs that immutable evidence offline without the SDK or OpenD and rejects incompatible schemas, fields, types, endpoints, identifiers, and status/failure combinations. Report paths are ignored by Git. A persistence error returns exit code `2`; stdout remains transient evidence and does not prove that a report was written.
+
 ## Security
 
 Repository code must never call `unlock_trade`. Any future live-trading unlock requires a separately reviewed Issue and manual action in the OpenD GUI. Dry-run, preflight, paper-submit, and reconciliation output contain no account identifier or credential. A confirmed paper-submit invocation has a simulated broker side effect and must be reconciled manually if its result is not `verified`.

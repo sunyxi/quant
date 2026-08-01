@@ -42,6 +42,10 @@ Disable ISSUE-039 invocation first. Inspect the Moomoo paper account for every a
 
 Disable the ISSUE-040 reconciliation command and inspect every previously queried client-order remark in the Moomoo app before reverting through a reviewed PR. The command itself is read-only and creates no new broker side effect, but removing it does not remove or cancel an order submitted earlier through ISSUE-039. Treat retained `absent`, `duplicate`, and `unknown` evidence as unresolved until manually reviewed.
 
+## Moomoo Reconciliation Report Rollback
+
+Disable ISSUE-041 `--report-output` first. Inspect every retained file under `moomoo-reconciliation-reports/` for sanitized schema version 1 fields, preserve any artifact needed by an incident review, and delete local reports only after approval. Revert the writer, reader, CLI option, and ignore rules through a reviewed PR. Report persistence is local and read-only, so it creates no broker order to cancel.
+
 ## Strategy Filter Rollback
 
 If market quality filters suppress expected research signals, remove `max_spread_bps` and `require_fresh_order_book` from strategy configuration first. If the issue is code-level behavior, revert the ISSUE-007 branch in a new PR.

@@ -249,6 +249,14 @@ class DocumentationCatalogTests(unittest.TestCase):
 
         self.assertEqual("complete", tasks["ISSUE-040"]["status"])
 
+    def test_moomoo_reconciliation_report_issue_is_marked_complete(self) -> None:
+        source = json.loads(
+            (REPO_ROOT / "docs/task-source.json").read_text(encoding="utf-8")
+        )
+        tasks = {task["id"]: task for task in source["tasks"]}
+
+        self.assertEqual("complete", tasks["ISSUE-041"]["status"])
+
     def test_moomoo_feature_doc_captures_offline_readiness_boundary(self) -> None:
         document = (REPO_ROOT / "docs/moomoo-openapi.md").read_text(
             encoding="utf-8"
@@ -330,6 +338,29 @@ class DocumentationCatalogTests(unittest.TestCase):
             ).read_text(encoding="utf-8")
             self.assertIn("moomoo-paper-order-reconcile", overview)
             self.assertIn("ABSENT", overview)
+
+    def test_moomoo_docs_capture_reconciliation_report_boundary(self) -> None:
+        feature_doc = (REPO_ROOT / "docs/moomoo-openapi.md").read_text(
+            encoding="utf-8"
+        )
+        for term in [
+            "--report-output",
+            "create-only",
+            "schema version 1",
+            "offline",
+            "moomoo-reconciliation-reports",
+        ]:
+            self.assertIn(term, feature_doc)
+
+        gitignore = (REPO_ROOT / ".gitignore").read_text(encoding="utf-8")
+        self.assertIn("moomoo-reconciliation-reports/", gitignore)
+
+        for locale in ["en", "ja", "zh-CN"]:
+            overview = (
+                REPO_ROOT / f"docs/locales/{locale}/overview.md"
+            ).read_text(encoding="utf-8")
+            self.assertIn("schema version 1", overview)
+            self.assertIn("create-only", overview)
 
     def test_task_catalog_links_first_issue_to_roadmap_and_gates(self) -> None:
         task_catalog = (REPO_ROOT / "docs/task-catalog.md").read_text(encoding="utf-8")

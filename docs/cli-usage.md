@@ -66,6 +66,14 @@ PYTHONPATH=src python3 -m autotrade.cli moomoo-paper-order-reconcile --discovery
 
 Add `--connect` to perform exactly one fresh read-only order-list query. Exit code `0` requires one exact client-order remark match. Exit code `1` means `absent`, `duplicate`, `blocked`, `unknown`, or a dependency failure; exit code `2` means invalid input or report data. The output contains no account or broker order ID. `absent` is point-in-time visibility evidence only and never authorizes automatic resubmission.
 
+Persist a completed connected query as a create-only schema version 1 report:
+
+```bash
+PYTHONPATH=src python3 -m autotrade.cli moomoo-paper-order-reconcile --discovery-report moomoo-discovery-reports/moomoo-readonly-discovery-report.json --preflight-report moomoo-preflight-reports/moomoo-paper-account-preflight-report.json --client-order-id paper-canary-001 --connect --report-output moomoo-reconciliation-reports/moomoo-paper-order-reconciliation-report.json
+```
+
+`--report-output` is invalid without `--connect`. The report writer creates missing parent directories but never overwrites an existing file. Persistence conflicts or filesystem failures return exit code `2` without a traceback. Reports contain only the sanitized reconciliation result and can be read offline with strict schema validation.
+
 ## Setup
 
 ```bash

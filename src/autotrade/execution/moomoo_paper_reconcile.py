@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import json
 from dataclasses import asdict, dataclass
 from enum import StrEnum
+from pathlib import Path
+from typing import Mapping
 
 from autotrade.execution.moomoo import (
     MIN_MOOMOO_API_VERSION,
+    MoomooConfigurationError,
     MoomooEndpoint,
     MoomooPaperAccountPreflightResult,
     MoomooSdkSource,
@@ -13,9 +17,11 @@ from autotrade.execution.moomoo import (
     is_moomoo_paper_preflight_successful,
     is_moomoo_us_paper_account_eligible,
     is_moomoo_version_at_least,
+    is_valid_moomoo_report_endpoint,
     moomoo_field,
     normalize_moomoo_version,
     parse_moomoo_response_records,
+    write_moomoo_create_only_report,
 )
 from autotrade.execution.moomoo_paper_order import (
     is_valid_moomoo_client_order_id,
@@ -55,6 +61,37 @@ class MoomooPaperOrderReconciliationResult:
         payload = asdict(self)
         payload["status"] = self.status.value
         return payload
+
+
+class MoomooPaperOrderReconciliationReportWriter:
+    def write(
+        self,
+        path: str | Path,
+        result: MoomooPaperOrderReconciliationResult,
+    ) -> Path:
+        return write_moomoo_create_only_report(
+            path,
+            result.to_dict(),
+            "paper-order reconciliation",
+        )
+
+
+class MoomooPaperOrderReconciliationReportReader:
+    def read(self, path: str | Path) -> MoomooPaperOrderReconciliationResult:
+        try:
+            payload = json.loads(Path(path).read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            raise MoomooConfigurationError(
+                "could not read the Moomoo paper-order reconciliation report"
+            ) from exc
+        required = set(MoomooPaperOrderReconciliationResult.__dataclass_fields__)
+        if not isinstance(payload, dict) or set(payload) != required:
+            raise MoomooConfigurationError(
+                "invalid Moomoo paper-order reconciliation report fields"
+            )
+        _validate_reconciliation_report_payload(payload)
+        payload["status"] = MoomooPaperOrderReconciliationStatus(payload["status"])
+        return MoomooPaperOrderReconciliationResult(**payload)
 
 
 def validate_moomoo_paper_reconciliation_evidence(
@@ -192,3 +229,130 @@ class MoomooPaperOrderReconciler:
             )
         finally:
             close_moomoo_context(context)
+
+
+def _validate_reconciliation_report_payload(
+    payload: Mapping[str, object],
+) -> None:
+    if type(payload["schema_version"]) is not int or payload[
+        "schema_version"
+    ] != MOOMOO_PAPER_ORDER_RECONCILIATION_SCHEMA_VERSION:
+        raise MoomooConfigurationError(
+            "unsupported Moomoo paper-order reconciliation report schema"
+        )
+    if not is_valid_moomoo_client_order_id(payload["client_order_id"]):
+        raise MoomooConfigurationError(
+            "invalid Moomoo paper-order reconciliation report payload"
+        )
+    if not is_valid_moomoo_report_endpoint(payload["endpoint"]):
+        raise MoomooConfigurationError(
+            "invalid Moomoo paper-order reconciliation report payload"
+        )
+    sdk_version = payload["sdk_version"]
+    if not isinstance(sdk_version, str) or (
+        sdk_version != "UNKNOWN"
+        and normalize_moomoo_version(sdk_version) != sdk_version
+    ):
+        raise MoomooConfigurationError(
+            "invalid Moomoo paper-order reconciliation report payload"
+        )
+    try:
+        status = MoomooPaperOrderReconciliationStatus(payload["status"])
+    except (TypeError, ValueError) as exc:
+        raise MoomooConfigurationError(
+            "invalid Moomoo paper-order reconciliation report status"
+        ) from exc
+    if payload["account_selection_status"] not in {
+        "not-run",
+        "unique",
+        "blocked",
+    } or payload["query_status"] not in {"not-run", "ok", "failed"}:
+        raise MoomooConfigurationError(
+            "invalid Moomoo paper-order reconciliation report payload"
+        )
+    count_fields = {
+        "readiness_schema_version",
+        "preflight_schema_version",
+        "eligible_account_count",
+        "match_count",
+    }
+    if any(
+        type(payload[field]) is not int or payload[field] < 0
+        for field in count_fields
+    ) or payload["refresh_cache"] is not True:
+        raise MoomooConfigurationError(
+            "invalid Moomoo paper-order reconciliation report payload"
+        )
+    failure = payload["sanitized_failure_category"]
+    valid_failures = {
+        None,
+        "client_order_id",
+        "readiness",
+        "preflight",
+        "dependency",
+        "version",
+        "account",
+        "connection",
+        "query",
+        "not_visible",
+        "ambiguous",
+    }
+    if failure not in valid_failures or not _is_consistent_reconciliation_state(
+        payload,
+        status,
+    ):
+        raise MoomooConfigurationError(
+            "invalid Moomoo paper-order reconciliation report state"
+        )
+
+
+def _is_consistent_reconciliation_state(
+    payload: Mapping[str, object],
+    status: MoomooPaperOrderReconciliationStatus,
+) -> bool:
+    query_status = payload["query_status"]
+    match_count = payload["match_count"]
+    failure = payload["sanitized_failure_category"]
+    account_ready = (
+        payload["account_selection_status"] == "unique"
+        and payload["eligible_account_count"] == 1
+    )
+    if status == MoomooPaperOrderReconciliationStatus.UNIQUE:
+        return (
+            account_ready
+            and query_status == "ok"
+            and match_count == 1
+            and failure is None
+        )
+    if status == MoomooPaperOrderReconciliationStatus.ABSENT:
+        return (
+            account_ready
+            and query_status == "ok"
+            and match_count == 0
+            and failure == "not_visible"
+        )
+    if status == MoomooPaperOrderReconciliationStatus.DUPLICATE:
+        return (
+            account_ready
+            and query_status == "ok"
+            and match_count >= 2
+            and failure == "ambiguous"
+        )
+    if status == MoomooPaperOrderReconciliationStatus.UNKNOWN:
+        return match_count == 0 and (
+            (failure == "query" and account_ready and query_status == "failed")
+            or (failure in {"account", "connection"} and query_status == "not-run")
+        )
+    return (
+        match_count == 0
+        and query_status == "not-run"
+        and failure
+        in {
+            "client_order_id",
+            "readiness",
+            "preflight",
+            "dependency",
+            "version",
+            "account",
+        }
+    )
