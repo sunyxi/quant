@@ -95,13 +95,13 @@ PYTHONPATH=src python3 -m autotrade.cli moomoo-paper-order-dry-run \
   --discovery-report moomoo-discovery-reports/moomoo-readonly-discovery-report.json \
   --client-order-id paper-dry-run-001 \
   --strategy-id us_paper_validation \
-  --code US.AAPL --quantity 10 \
+  --code US.AAPL --order-style AGGRESSIVE_LIMIT --quantity 10 \
   --limit-price 150.25 --stop-price 148.00 \
   --take-profit-price 154.00 \
   --created-at 2026-08-01T14:30:00+00:00
 ```
 
-The planner requires `READY`, US `BUY`, a canonical `US.<ticker>` code, whole shares, and a passive or aggressive limit intent. Defaults cap quantity at 100 and notional at USD 25,000. Its fixed contract uses `SIMULATE`, `NORMAL`, `DAY`, and `RTH`. It does not select an account, inspect buying power, call the SDK, or submit an order. The output is design evidence only and does not authorize a paper order, Shadow Mode, or live trading.
+The planner requires `READY`, US `BUY`, a canonical `US.<ticker>` code, an 8-64 character safe client order ID, whole shares, and a passive or aggressive limit intent. For a buy, the stop must be below the limit price and an optional take-profit price must be above it. Defaults cap quantity at 100 and notional at USD 25,000. Its fixed contract uses `SIMULATE`, `NORMAL`, `DAY`, and `RTH`. It does not select an account, inspect buying power, call the SDK, or submit an order. The output is design evidence only and does not authorize a paper order, Shadow Mode, or live trading. Non-finite CLI prices are invalid input and return exit code `2`.
 
 ## Security
 

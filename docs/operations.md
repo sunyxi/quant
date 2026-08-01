@@ -98,7 +98,7 @@ Run validate-only mode before installing or importing the SDK. Use `--connect` o
 
 Run `moomoo-paper-readiness --discovery-report PATH` only against a retained sanitized schema version 1 report. The command is offline and must not require OpenD to be running. Treat login `null` as "not checked" and `false` as "checked but not logged in" during triage. Invalid encoding fails cleanly with exit code `2`. Archive the deterministic immutable `READY` or `BLOCKED` JSON with research evidence if needed, but do not treat `READY` as approval to select an account, unlock trading, subscribe to data, or place an order. A paper-order path requires a new reviewed Issue.
 
-Run `moomoo-paper-order-dry-run` only after reviewing a retained `READY` discovery report. Verify the explicit code, quantity, prices, timestamp, USD 25,000 notional cap, and 100-share cap. The result must remain `SIMULATE` / `NORMAL` / `DAY` / `RTH` and contain no account identifier. Archive it only as local design evidence. It neither selects an account nor sends a paper order, so there is no broker order to reconcile or cancel.
+Run `moomoo-paper-order-dry-run` only after reviewing a retained `READY` discovery report. Verify the explicit code, 8-64 character client order ID, order style, quantity, finite prices, timestamp, USD 25,000 notional cap, and 100-share cap. For BUY, require `stop < limit < take-profit` when take-profit is present. The result must remain `SIMULATE` / `NORMAL` / `DAY` / `RTH` and contain no account identifier. Archive it only as local design evidence. It neither selects an account nor sends a paper order, so there is no broker order to reconcile or cancel.
 
 ## Issue Workflow
 

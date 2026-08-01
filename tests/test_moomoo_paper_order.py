@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import math
+import subprocess
+import sys
 import unittest
 from dataclasses import FrozenInstanceError, replace
 from datetime import UTC, datetime
@@ -118,6 +120,10 @@ class MoomooPaperOrderDryRunPlannerTests(unittest.TestCase):
                 order_intent(symbol="US.aapl"),
                 MoomooPaperOrderPlanReason.SYMBOL_INVALID,
             ),
+            (
+                order_intent(symbol="US.A.123"),
+                MoomooPaperOrderPlanReason.SYMBOL_INVALID,
+            ),
         ]
 
         for intent, reason in cases:
@@ -139,9 +145,14 @@ class MoomooPaperOrderDryRunPlannerTests(unittest.TestCase):
         )
 
     def test_rejects_notional_over_default_limit(self) -> None:
+        intent = replace(
+            order_intent(quantity=100, limit_price=250.01),
+            stop_price=240.0,
+            take_profit_price=260.0,
+        )
         self._assert_blocked(
             MoomooPaperOrderPlanReason.NOTIONAL_LIMIT_EXCEEDED,
-            order_intent(quantity=100, limit_price=250.01),
+            intent,
             readiness=ready_decision(),
         )
 
@@ -163,6 +174,32 @@ class MoomooPaperOrderDryRunPlannerTests(unittest.TestCase):
             caught.exception.reason,
         )
         self.assertNotIn("sensitive", str(caught.exception))
+
+    def test_rejects_inverted_buy_risk_prices(self) -> None:
+        cases = [
+            replace(order_intent(), stop_price=150.25),
+            replace(order_intent(), stop_price=151.0),
+            replace(order_intent(), take_profit_price=150.25),
+            replace(order_intent(), take_profit_price=149.0),
+        ]
+
+        for intent in cases:
+            with self.subTest(
+                stop_price=intent.stop_price,
+                take_profit_price=intent.take_profit_price,
+            ):
+                self._assert_blocked(
+                    MoomooPaperOrderPlanReason.PRICE_INVALID,
+                    intent,
+                    readiness=ready_decision(),
+                )
+
+    def test_rejects_client_order_id_shorter_than_eight_characters(self) -> None:
+        self._assert_blocked(
+            MoomooPaperOrderPlanReason.CLIENT_ORDER_ID_INVALID,
+            order_intent(client_order_id="short-1"),
+            readiness=ready_decision(),
+        )
 
     def test_plan_is_immutable_hashable_and_contains_no_sensitive_fields(self) -> None:
         plan = MoomooPaperOrderDryRunPlanner().plan(
@@ -198,6 +235,37 @@ class MoomooPaperOrderDryRunPlannerTests(unittest.TestCase):
             "subscribe(",
         ]:
             self.assertNotIn(forbidden, source)
+
+    def test_module_import_does_not_import_external_moomoo_sdk(self) -> None:
+        source_root = REPO_ROOT / "src"
+        script = f"""
+import builtins
+import sys
+
+sys.path.insert(0, {str(source_root)!r})
+original_import = builtins.__import__
+
+def guarded_import(name, *args, **kwargs):
+    if name == "moomoo" or name.startswith("moomoo."):
+        raise AssertionError("external moomoo SDK imported")
+    return original_import(name, *args, **kwargs)
+
+builtins.__import__ = guarded_import
+import autotrade.execution.moomoo_paper_order
+assert not any(
+    name == "moomoo" or name.startswith("moomoo.")
+    for name in sys.modules
+)
+"""
+
+        completed = subprocess.run(
+            [sys.executable, "-I", "-c", script],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+
+        self.assertEqual(0, completed.returncode, completed.stderr)
 
     def _assert_blocked(self, reason, intent, *, readiness) -> None:
         with self.assertRaises(MoomooPaperOrderPlanError) as caught:

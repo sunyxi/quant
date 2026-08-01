@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import getpass
 import json
+import math
 import os
 import sys
 from datetime import datetime
@@ -29,7 +30,10 @@ from autotrade.execution.moomoo import (
     MoomooEndpoint,
     MoomooReadOnlyDiscovery,
 )
-from autotrade.execution.moomoo_readiness import MoomooPaperReadinessGate
+from autotrade.execution.moomoo_readiness import (
+    MoomooPaperReadinessDecision,
+    MoomooPaperReadinessGate,
+)
 from autotrade.execution.moomoo_paper_order import (
     MoomooPaperOrderDryRunPlanner,
     MoomooPaperOrderPlanError,
@@ -137,6 +141,14 @@ def _build_parser() -> argparse.ArgumentParser:
     paper_order.add_argument("--client-order-id", required=True)
     paper_order.add_argument("--strategy-id", required=True)
     paper_order.add_argument("--code", required=True)
+    paper_order.add_argument(
+        "--order-style",
+        choices=[
+            OrderStyle.PASSIVE_LIMIT.value,
+            OrderStyle.AGGRESSIVE_LIMIT.value,
+        ],
+        default=OrderStyle.PASSIVE_LIMIT.value,
+    )
     paper_order.add_argument("--quantity", type=int, required=True)
     paper_order.add_argument("--limit-price", type=float, required=True)
     paper_order.add_argument("--stop-price", type=float, required=True)
@@ -267,12 +279,11 @@ def _run_moomoo_paper_readiness(
     stderr: TextIO,
 ) -> int:
     try:
-        discovery = MoomooDiscoveryReportReader().read(args.discovery_report)
+        decision = _read_moomoo_paper_readiness(args.discovery_report)
     except MoomooConfigurationError as exc:
         print(f"error: {exc}", file=stderr)
         return 2
 
-    decision = MoomooPaperReadinessGate().evaluate(discovery)
     print(json.dumps(decision.to_dict(), sort_keys=True), file=stdout)
     return 0 if decision.is_ready else 1
 
@@ -292,8 +303,15 @@ def _run_moomoo_paper_order_dry_run(
         print("error: created-at must include a timezone offset", file=stderr)
         return 2
 
+    prices = [args.limit_price, args.stop_price]
+    if args.take_profit_price is not None:
+        prices.append(args.take_profit_price)
+    if not all(math.isfinite(price) for price in prices):
+        print("error: invalid paper-order fields", file=stderr)
+        return 2
+
     try:
-        discovery = MoomooDiscoveryReportReader().read(args.discovery_report)
+        readiness = _read_moomoo_paper_readiness(args.discovery_report)
     except MoomooConfigurationError as exc:
         print(f"error: {exc}", file=stderr)
         return 2
@@ -306,7 +324,7 @@ def _run_moomoo_paper_order_dry_run(
             market=Market.US,
             side=Side.BUY,
             quantity=args.quantity,
-            order_style=OrderStyle.PASSIVE_LIMIT,
+            order_style=OrderStyle(args.order_style),
             limit_price=args.limit_price,
             stop_price=args.stop_price,
             take_profit_price=args.take_profit_price,
@@ -316,7 +334,6 @@ def _run_moomoo_paper_order_dry_run(
         print("error: invalid paper-order fields", file=stderr)
         return 2
 
-    readiness = MoomooPaperReadinessGate().evaluate(discovery)
     try:
         plan = MoomooPaperOrderDryRunPlanner().plan(
             intent,
@@ -327,6 +344,13 @@ def _run_moomoo_paper_order_dry_run(
         return 1
     print(json.dumps(plan.to_dict(), sort_keys=True), file=stdout)
     return 0
+
+
+def _read_moomoo_paper_readiness(
+    report_path: Path,
+) -> MoomooPaperReadinessDecision:
+    discovery = MoomooDiscoveryReportReader().read(report_path)
+    return MoomooPaperReadinessGate().evaluate(discovery)
 
 
 if __name__ == "__main__":

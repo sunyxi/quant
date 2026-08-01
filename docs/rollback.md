@@ -28,7 +28,7 @@ ISSUE-036 is offline and has no SDK, broker, subscription, order, or position si
 
 ## Moomoo Paper-order Dry-run Rollback
 
-ISSUE-037 is offline and has no SDK, account-selection, broker, subscription, order, fill, or position side effects. Revert its branch through a reviewed PR and remove the planner and CLI command. Dry-run stdout is transient design evidence; no order requires cancellation and no broker state requires reconciliation.
+ISSUE-037 is offline and has no SDK, account-selection, broker, subscription, order, fill, or position side effects. Revert its branch through a reviewed PR and remove the planner, shared readiness reader, CLI command, and validation rules. Dry-run stdout is transient design evidence; no order requires cancellation and no broker state requires reconciliation.
 
 ## Strategy Filter Rollback
 

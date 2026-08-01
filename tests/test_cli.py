@@ -336,6 +336,68 @@ class MoomooPaperOrderDryRunCliTests(unittest.TestCase):
         self.assertIn('"trd_env": "SIMULATE"', stdout.getvalue())
         self.assertNotIn("acc_id", stdout.getvalue())
 
+    def test_accepts_aggressive_limit_order_style(self) -> None:
+        stdout = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            report_path = Path(tmpdir) / "discovery.json"
+            MoomooDiscoveryReportWriter().write(
+                report_path,
+                MoomooDiscoveryResult(
+                    endpoint="127.0.0.1:11111",
+                    sdk_version="10.9.6908",
+                    server_version="1009",
+                    quote_connection_status="ok",
+                    trade_connection_status="ok",
+                    qot_logged_in=True,
+                    trd_logged_in=True,
+                    us_quote_entitlement="LV1",
+                    account_count=1,
+                    paper_account_count=1,
+                    paper_account_available=True,
+                    us_market_authorized=True,
+                ),
+            )
+            args = self._args(report_path)
+            args[1:1] = ["--order-style", "AGGRESSIVE_LIMIT"]
+            with redirect_stdout(stdout):
+                exit_code = main(args)
+
+        self.assertEqual(0, exit_code)
+        self.assertIn(
+            '"source_order_style": "AGGRESSIVE_LIMIT"',
+            stdout.getvalue(),
+        )
+
+    def test_non_finite_price_is_invalid_input(self) -> None:
+        discovery = MoomooDiscoveryResult(
+            endpoint="127.0.0.1:11111",
+            sdk_version="10.9.6908",
+            server_version="1009",
+            quote_connection_status="ok",
+            trade_connection_status="ok",
+            qot_logged_in=True,
+            trd_logged_in=True,
+            us_quote_entitlement="LV1",
+            account_count=1,
+            paper_account_count=1,
+            paper_account_available=True,
+            us_market_authorized=True,
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            report_path = Path(tmpdir) / "discovery.json"
+            MoomooDiscoveryReportWriter().write(report_path, discovery)
+            for invalid_price in ["nan", "inf"]:
+                args = self._args(report_path)
+                args[args.index("--limit-price") + 1] = invalid_price
+                stderr = io.StringIO()
+                with self.subTest(invalid_price=invalid_price), redirect_stderr(
+                    stderr
+                ):
+                    exit_code = main(args)
+                self.assertEqual(2, exit_code)
+                self.assertIn("invalid paper-order fields", stderr.getvalue())
+                self.assertNotIn("Traceback", stderr.getvalue())
+
     def test_blocked_readiness_and_invalid_timestamp_fail_cleanly(self) -> None:
         blocked = MoomooDiscoveryResult(
             endpoint="127.0.0.1:11111",

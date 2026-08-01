@@ -10,14 +10,17 @@ from autotrade.execution.moomoo_readiness import MoomooPaperReadinessDecision
 
 
 MOOMOO_PAPER_ORDER_PLAN_SCHEMA_VERSION = 1
-_CLIENT_ORDER_ID_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,63}")
+_CLIENT_ORDER_ID_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{7,63}")
 _US_CODE_PATTERN = re.compile(
-    r"US\.[A-Z][A-Z0-9]*(?:[.-][A-Z0-9]+)*"
+    r"US\.[A-Z][A-Z0-9]*(?:[.-][A-Z][A-Z0-9]*)*"
 )
-_SUPPORTED_STYLES = {
-    OrderStyle.PASSIVE_LIMIT,
-    OrderStyle.AGGRESSIVE_LIMIT,
-}
+_NUMERIC_TYPES = frozenset({int, float})
+_SUPPORTED_STYLES = frozenset(
+    {
+        OrderStyle.PASSIVE_LIMIT,
+        OrderStyle.AGGRESSIVE_LIMIT,
+    }
+)
 
 
 class MoomooPaperOrderPlanReason(StrEnum):
@@ -133,6 +136,17 @@ class MoomooPaperOrderDryRunPlanner:
             raise MoomooPaperOrderPlanError(
                 MoomooPaperOrderPlanReason.PRICE_INVALID
             )
+        if intent.stop_price >= intent.limit_price:
+            raise MoomooPaperOrderPlanError(
+                MoomooPaperOrderPlanReason.PRICE_INVALID
+            )
+        if (
+            intent.take_profit_price is not None
+            and intent.take_profit_price <= intent.limit_price
+        ):
+            raise MoomooPaperOrderPlanError(
+                MoomooPaperOrderPlanReason.PRICE_INVALID
+            )
 
         notional_usd = round(intent.quantity * intent.limit_price, 8)
         if notional_usd > self.max_notional_usd:
@@ -152,4 +166,4 @@ class MoomooPaperOrderDryRunPlanner:
 
 
 def _is_positive_finite(value: object) -> bool:
-    return type(value) in {int, float} and math.isfinite(value) and value > 0
+    return type(value) in _NUMERIC_TYPES and math.isfinite(value) and value > 0

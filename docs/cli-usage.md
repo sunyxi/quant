@@ -31,10 +31,10 @@ This command creates no SDK Context, socket, or broker request. It returns `0` f
 Build a sanitized US paper-order plan offline:
 
 ```bash
-PYTHONPATH=src python3 -m autotrade.cli moomoo-paper-order-dry-run --discovery-report moomoo-discovery-reports/moomoo-readonly-discovery-report.json --client-order-id paper-dry-run-001 --strategy-id us_paper_validation --code US.AAPL --quantity 10 --limit-price 150.25 --stop-price 148.00 --take-profit-price 154.00 --created-at 2026-08-01T14:30:00+00:00
+PYTHONPATH=src python3 -m autotrade.cli moomoo-paper-order-dry-run --discovery-report moomoo-discovery-reports/moomoo-readonly-discovery-report.json --client-order-id paper-dry-run-001 --strategy-id us_paper_validation --code US.AAPL --order-style AGGRESSIVE_LIMIT --quantity 10 --limit-price 150.25 --stop-price 148.00 --take-profit-price 154.00 --created-at 2026-08-01T14:30:00+00:00
 ```
 
-Exit code `0` means a deterministic `SIMULATE` plan was built, `1` means readiness or order policy blocked it, and `2` means the input or report was invalid. The command does not import the SDK, select an account, or submit an order.
+`--order-style` accepts `PASSIVE_LIMIT` (default) or `AGGRESSIVE_LIMIT`; both map to Moomoo `NORMAL` while preserving the source style. Client order IDs must contain 8-64 safe characters. Buy stops must be below the limit price and optional take-profit prices must be above it. Exit code `0` means a deterministic `SIMULATE` plan was built, `1` means readiness or order policy blocked it, and `2` means the input or report was invalid, including NaN or infinite prices. The command does not import the SDK, select an account, or submit an order. Market and side remain fixed to US and BUY as a deliberate command-level safety boundary.
 
 ## Setup
 
