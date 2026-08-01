@@ -38,6 +38,10 @@ ISSUE-038 performs read-only account, funds, position-list, and order-list calls
 
 Disable ISSUE-039 invocation first. Inspect the Moomoo paper account for every attempted client-order remark and manually cancel any unwanted open paper order in the Moomoo app before reverting through a reviewed PR. Do not infer that an exception means no order exists. No live-capital order is possible because the implementation exposes `SIMULATE` only.
 
+## Moomoo Paper-order Reconciliation Rollback
+
+Disable the ISSUE-040 reconciliation command and inspect every previously queried client-order remark in the Moomoo app before reverting through a reviewed PR. The command itself is read-only and creates no new broker side effect, but removing it does not remove or cancel an order submitted earlier through ISSUE-039. Treat retained `absent`, `duplicate`, and `unknown` evidence as unresolved until manually reviewed.
+
 ## Strategy Filter Rollback
 
 If market quality filters suppress expected research signals, remove `max_spread_bps` and `require_fresh_order_book` from strategy configuration first. If the issue is code-level behavior, revert the ISSUE-007 branch in a new PR.

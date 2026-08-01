@@ -14,6 +14,8 @@ ISSUE-038 adds the explicitly connected, read-only `moomoo-paper-account-preflig
 
 ISSUE-039 adds a disabled-by-default `moomoo-paper-order-submit` boundary for one explicitly confirmed US BUY limit order in `SIMULATE`. It calls submission at most once, verifies by a fresh client-order remark query, exposes no broker identifiers, and never retries an unknown outcome. Repository tests use fake SDKs only; a real paper canary requires separate operator approval.
 
+ISSUE-040 adds the read-only `moomoo-paper-order-reconcile` boundary. It runs one fresh `SIMULATE` order-list query and reports exact remark evidence as `UNIQUE`, `ABSENT`, `DUPLICATE`, `BLOCKED`, or `UNKNOWN` without broker identifiers. `ABSENT` is not proof that no submission occurred, and the command never resubmits or mutates an order.
+
 The current calendar layer covers JP regular sessions, lunch break, weekend rejection, manual holidays, and close-entry cutoff for research filtering.
 
 The current order book layer covers immutable snapshots, spread, visible depth, OBI, microprice, freshness, and stale-book health status for research fixtures.

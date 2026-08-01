@@ -41,6 +41,11 @@ from autotrade.execution.moomoo_paper_order import (
     MoomooPaperOrderDryRunPlanner,
     MoomooPaperOrderPlanError,
 )
+from autotrade.execution.moomoo_paper_reconcile import (
+    MoomooPaperOrderReconciler,
+    MoomooPaperOrderReconciliationStatus,
+    validate_moomoo_paper_reconciliation_evidence,
+)
 from autotrade.execution.moomoo_paper_submit import (
     MoomooPaperOrderSubmissionStatus,
     MoomooPaperOrderSubmitter,
@@ -81,6 +86,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
     if args.command == "moomoo-paper-order-submit":
         return _run_moomoo_paper_order_submit(
+            args,
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+        )
+    if args.command == "moomoo-paper-order-reconcile":
+        return _run_moomoo_paper_order_reconcile(
             args,
             stdout=sys.stdout,
             stderr=sys.stderr,
@@ -197,6 +208,16 @@ def _build_parser() -> argparse.ArgumentParser:
         "--acknowledge-paper-order-side-effect",
         action="store_true",
     )
+    reconcile = subparsers.add_parser(
+        "moomoo-paper-order-reconcile",
+        description="Validate or run read-only Moomoo paper-order reconciliation.",
+    )
+    reconcile.add_argument("--discovery-report", type=Path, required=True)
+    reconcile.add_argument("--preflight-report", type=Path, required=True)
+    reconcile.add_argument("--client-order-id", required=True)
+    reconcile.add_argument("--host", default="127.0.0.1")
+    reconcile.add_argument("--port", type=int, default=11111)
+    reconcile.add_argument("--connect", action="store_true")
     return parser
 
 
@@ -546,6 +567,67 @@ def _read_moomoo_paper_readiness(
 ) -> MoomooPaperReadinessDecision:
     discovery = MoomooDiscoveryReportReader().read(report_path)
     return MoomooPaperReadinessGate().evaluate(discovery)
+
+
+def _run_moomoo_paper_order_reconcile(
+    args: argparse.Namespace,
+    *,
+    stdout: TextIO,
+    stderr: TextIO,
+) -> int:
+    try:
+        endpoint = MoomooEndpoint(host=args.host, port=args.port)
+        readiness = _read_moomoo_paper_readiness(args.discovery_report)
+        preflight = MoomooPaperAccountPreflightReportReader().read(
+            args.preflight_report
+        )
+    except MoomooConfigurationError as exc:
+        print(f"error: {exc}", file=stderr)
+        return 2
+
+    failure = validate_moomoo_paper_reconciliation_evidence(
+        args.client_order_id,
+        endpoint=endpoint,
+        readiness=readiness,
+        preflight=preflight,
+    )
+    if failure == "client_order_id":
+        print("error: CLIENT_ORDER_ID_INVALID", file=stderr)
+        return 2
+    if failure is not None:
+        print(f"error: {failure.upper()}_NOT_READY", file=stderr)
+        return 1
+
+    if not args.connect:
+        print(
+            json.dumps(
+                {
+                    "client_order_id": args.client_order_id,
+                    "localhost_endpoint": endpoint.display,
+                    "mode": "validate-only",
+                    "preflight_schema_version": preflight.schema_version,
+                    "readiness_schema_version": readiness.schema_version,
+                    "reconciliation_status": "not-run",
+                },
+                sort_keys=True,
+            ),
+            file=stdout,
+        )
+        return 0
+
+    try:
+        sdk = MoomooApiSdk.load()
+    except MoomooClientError:
+        print("error: Moomoo paper-order reconciliation failed (dependency)", file=stderr)
+        return 1
+
+    result = MoomooPaperOrderReconciler(endpoint=endpoint, sdk=sdk).reconcile(
+        args.client_order_id,
+        readiness=readiness,
+        preflight=preflight,
+    )
+    print(json.dumps(result.to_dict(), sort_keys=True), file=stdout)
+    return 0 if result.status == MoomooPaperOrderReconciliationStatus.UNIQUE else 1
 
 
 if __name__ == "__main__":

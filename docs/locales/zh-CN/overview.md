@@ -14,6 +14,8 @@ ISSUE-038 新增显式连接的只读 `moomoo-paper-account-preflight`。它仅�
 
 ISSUE-039 新增默认禁用的 `moomoo-paper-order-submit` 边界，仅能把一笔显式确认的美股 BUY 限价单发送到 `SIMULATE`。它最多调用一次提交，通过强制刷新的 client order remark 查询验证，不输出券商标识，也绝不重试未知结果。仓库测试只用 fake SDK；真实 OpenD 模拟单需要操作者另行批准。
 
+ISSUE-040 新增只读 `moomoo-paper-order-reconcile` 边界。它只执行一次强制刷新的 `SIMULATE` 订单列表查询，把精确 remark 匹配证据输出为 `UNIQUE`、`ABSENT`、`DUPLICATE`、`BLOCKED` 或 `UNKNOWN`，且不包含券商标识。`ABSENT` 不能证明从未提交，该命令不会补单或修改订单。
+
 当前日历层已覆盖日股普通交易时段、午休、周末过滤、手工假日和收盘前停止新开仓 cutoff，用于研究和回测过滤。
 
 当前板情报层已覆盖不可变订单簿快照、价差、可见深度、OBI、microprice、数据新鲜度和 stale book health，用于研究 fixture。

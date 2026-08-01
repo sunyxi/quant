@@ -58,6 +58,14 @@ PYTHONPATH=src python3 -m autotrade.cli moomoo-paper-order-submit --discovery-re
 
 Submission is disabled unless `--connect`, `--submit-paper-order`, and `--acknowledge-paper-order-side-effect` are all present. Do not add these flags until the exact paper canary has separate operator approval. Exit `0` requires fresh verification by client-order remark. Exit `1`, `submitted`, or `unknown` requires manual account inspection and must never be retried automatically.
 
+Validate Moomoo paper-order reconciliation inputs without loading the SDK:
+
+```bash
+PYTHONPATH=src python3 -m autotrade.cli moomoo-paper-order-reconcile --discovery-report moomoo-discovery-reports/moomoo-readonly-discovery-report.json --preflight-report moomoo-preflight-reports/moomoo-paper-account-preflight-report.json --client-order-id paper-canary-001
+```
+
+Add `--connect` to perform exactly one fresh read-only order-list query. Exit code `0` requires one exact client-order remark match. Exit code `1` means `absent`, `duplicate`, `blocked`, `unknown`, or a dependency failure; exit code `2` means invalid input or report data. The output contains no account or broker order ID. `absent` is point-in-time visibility evidence only and never authorizes automatic resubmission.
+
 ## Setup
 
 ```bash
@@ -70,6 +78,12 @@ pip install -e ".[dev]"
 
 ```bash
 PYTHONPATH=src python3 -m unittest discover -s tests
+```
+
+Run the focused Moomoo paper reconciliation fixtures:
+
+```bash
+PYTHONPATH=src python3 -m unittest tests.test_moomoo_paper_reconcile
 ```
 
 ## Demo Backtest

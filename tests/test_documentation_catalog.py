@@ -241,6 +241,14 @@ class DocumentationCatalogTests(unittest.TestCase):
 
         self.assertEqual("complete", tasks["ISSUE-039"]["status"])
 
+    def test_moomoo_paper_order_reconcile_issue_is_marked_complete(self) -> None:
+        source = json.loads(
+            (REPO_ROOT / "docs/task-source.json").read_text(encoding="utf-8")
+        )
+        tasks = {task["id"]: task for task in source["tasks"]}
+
+        self.assertEqual("complete", tasks["ISSUE-040"]["status"])
+
     def test_moomoo_feature_doc_captures_offline_readiness_boundary(self) -> None:
         document = (REPO_ROOT / "docs/moomoo-openapi.md").read_text(
             encoding="utf-8"
@@ -302,6 +310,26 @@ class DocumentationCatalogTests(unittest.TestCase):
             "requires separate approval",
         ]:
             self.assertIn(term, document)
+
+    def test_moomoo_docs_capture_paper_reconciliation_boundary(self) -> None:
+        feature_doc = (REPO_ROOT / "docs/moomoo-openapi.md").read_text(
+            encoding="utf-8"
+        )
+        for term in [
+            "moomoo-paper-order-reconcile",
+            "ABSENT",
+            "not proof that no submission occurred",
+            "refresh_cache=True",
+            "does not automatically resubmit",
+        ]:
+            self.assertIn(term, feature_doc)
+
+        for locale in ["en", "ja", "zh-CN"]:
+            overview = (
+                REPO_ROOT / f"docs/locales/{locale}/overview.md"
+            ).read_text(encoding="utf-8")
+            self.assertIn("moomoo-paper-order-reconcile", overview)
+            self.assertIn("ABSENT", overview)
 
     def test_task_catalog_links_first_issue_to_roadmap_and_gates(self) -> None:
         task_catalog = (REPO_ROOT / "docs/task-catalog.md").read_text(encoding="utf-8")
