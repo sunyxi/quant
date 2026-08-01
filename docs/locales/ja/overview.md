@@ -4,7 +4,7 @@
 
 初期リリースの範囲は、日本株、買いのみ、持ち越しなし、実取引前の Shadow Mode のままです。macOS 上の Moomoo OpenAPI を、口座、米国株機能、日本株相場権限のサニタイズ済み参照専用 PoC として最優先し、実注文は行いません。日本株現物の相場情報は必要な権限があれば利用できますが、Moomoo JP は現在、日本株現物の実取引 API に対応していません。ISSUE-035 は OpenD と `moomoo-api` `>=10.4.6408` を要件とし、依存関係を分離して `unlock_trade` を禁止しています。kabu Station を将来の日本株接続先、IBKR を米国株の代替候補とします。
 
-ISSUE-035 は、任意の `moomoo-api` 境界と `moomoo-readonly-discovery` CLI を実装します。validate-only は SDK を import せず socket も開きません。明示的な `--connect` では、OpenD のグローバル状態、相場権限メタデータ、サニタイズ済み口座一覧形状だけを参照し、購読、デモ注文、実注文、取消、取引アンロックは提供しません。
+ISSUE-035 は、任意の `moomoo-api` 境界と `moomoo-readonly-discovery` CLI を実装します。validate-only は SDK を import せず socket も開きません。明示的な `--connect` では、OpenD のグローバル状態、相場権限メタデータ、サニタイズ済み口座一覧形状だけを参照します。任意レポートの保存に失敗してもサニタイズ済み JSON は stdout に残りますが、終了コード `2` はブロッキング扱いです。購読、デモ注文、実注文、取消、取引アンロックは提供しません。
 
 現在のカレンダー層は、日本株の通常取引時間、昼休み、週末除外、手動祝日、引け前の新規エントリー停止時刻を研究用フィルターとして扱います。
 

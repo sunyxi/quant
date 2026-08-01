@@ -7,6 +7,7 @@
 - The Moomoo JP support matrix currently supports API trading for US stocks and ETFs but does not support live JP cash-equity trading. JP equity market data is supported, including snapshots, candlesticks, order books, and tick data, but access remains quote-entitlement-dependent and must not be assumed.
 - ISSUE-035 requires OpenD and `moomoo-api` `>=10.4.6408`. Its transitive `protobuf` compatibility can change between releases, so the SDK is declared as an optional extra and its resolved environment must be verified in isolation.
 - JP quote entitlement is reported as `UNKNOWN` when the SDK does not expose `jp_qot_right`; the discovery does not infer permission by subscribing or requesting paid data.
+- Sanitized discovery JSON may be available on stdout when an optional report write fails. Exit code `2` remains authoritative and means no durable report should be assumed.
 - Repository code must not call `unlock_trade` in any environment. Any later real-trading unlock must be performed manually in the OpenD GUI after separate approval.
 - The backtest engine now has conservative limit-order fills and cost attribution, but does not yet model queue position, minute high/low touch logic, or calibrated fill probability.
 - JP regular sessions, lunch break, weekends, manual holidays, and close-entry cutoff are modeled for research filtering.

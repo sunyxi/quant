@@ -94,7 +94,7 @@ The discovery path must make no live orders, must not call `unlock_trade`, must 
 
 Install the SDK only as an isolated optional dependency or in a dedicated virtual environment. Verify the resolved `protobuf` dependency without silently changing unrelated runtime packages; the tested `moomoo-api` 10.9.6908 environment resolved `protobuf` 7.35.1 successfully.
 
-Run validate-only mode before installing or importing the SDK. Use `--connect` only after OpenD is running and logged in. Store reports under `moomoo-discovery-reports/`, inspect only sanitized fields, and treat any nonzero exit as blocking. Do not use a successful discovery as permission to enable paper or live order code.
+Run validate-only mode before installing or importing the SDK. Use `--connect` only after OpenD is running and logged in. Store reports under `moomoo-discovery-reports/`, inspect only sanitized fields, and treat any nonzero exit as blocking. Discovery JSON is emitted before the optional report write, so exit code `2` means persistence failed even when stdout contains a successful result. Do not use a successful discovery as permission to enable paper or live order code.
 
 ## Issue Workflow
 

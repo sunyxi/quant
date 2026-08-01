@@ -55,6 +55,16 @@ class FakeTradeContext:
         self.closed = True
 
 
+class NonListRecordsPayload:
+    def to_dict(self, orient: str) -> tuple[str, ...]:
+        if orient != "records":
+            raise AssertionError("unexpected orientation")
+        return ("not-a-record-list",)
+
+    def __iter__(self):
+        return iter(("sensitive-column-name",))
+
+
 class FakeSdk:
     ret_ok = 0
 
@@ -62,40 +72,46 @@ class FakeSdk:
         self,
         *,
         version: str = MIN_MOOMOO_API_VERSION,
-        global_state: tuple[int, object] = (
-            0,
-            {
-                "server_ver": "10.9.6918",
-                "qot_logined": True,
-                "trd_logined": True,
-            },
-        ),
-        user_info: tuple[int, object] = (
-            0,
-            {
-                "user_id": "sensitive-user-id",
-                "nick_name": "sensitive-name",
-                "us_qot_right": "LV3",
-                "jp_qot_right": "LV1",
-            },
-        ),
-        accounts: tuple[int, object] = (
-            0,
-            [
-                {
-                    "acc_id": "sensitive-paper-account",
-                    "card_num": "sensitive-card",
-                    "trd_env": "SIMULATE",
-                    "trdmarket_auth": ["US"],
-                },
-                {
-                    "acc_id": "sensitive-real-account",
-                    "trd_env": "REAL",
-                    "trdmarket_auth": ["US"],
-                },
-            ],
-        ),
+        global_state: tuple[int, object] | None = None,
+        user_info: tuple[int, object] | None = None,
+        accounts: tuple[int, object] | None = None,
     ) -> None:
+        if global_state is None:
+            global_state = (
+                0,
+                {
+                    "server_ver": "10.9.6918",
+                    "qot_logined": True,
+                    "trd_logined": True,
+                },
+            )
+        if user_info is None:
+            user_info = (
+                0,
+                {
+                    "user_id": "sensitive-user-id",
+                    "nick_name": "sensitive-name",
+                    "us_qot_right": "LV3",
+                    "jp_qot_right": "LV1",
+                },
+            )
+        if accounts is None:
+            accounts = (
+                0,
+                [
+                    {
+                        "acc_id": "sensitive-paper-account",
+                        "card_num": "sensitive-card",
+                        "trd_env": "SIMULATE",
+                        "trdmarket_auth": ["US"],
+                    },
+                    {
+                        "acc_id": "sensitive-real-account",
+                        "trd_env": "REAL",
+                        "trdmarket_auth": ["US"],
+                    },
+                ],
+            )
         self.version = version
         self.quote_context = FakeQuoteContext(
             global_state=global_state,
@@ -251,6 +267,19 @@ class MoomooReadOnlyDiscoveryTests(unittest.TestCase):
         self.assertEqual(0, sdk.create_quote_count)
         self.assertEqual(0, sdk.create_trade_count)
 
+    def test_rejects_malformed_short_version_before_constructing_contexts(self) -> None:
+        sdk = FakeSdk(version="10.5")
+
+        result = MoomooReadOnlyDiscovery(
+            endpoint=MoomooEndpoint(),
+            sdk=sdk,
+        ).run()
+
+        self.assertEqual("version", result.sanitized_failure_category)
+        self.assertEqual("UNKNOWN", result.sdk_version)
+        self.assertEqual(0, sdk.create_quote_count)
+        self.assertEqual(0, sdk.create_trade_count)
+
     def test_malformed_version_values_are_not_copied_to_output(self) -> None:
         sdk = FakeSdk(version="sensitive-sdk-version")
 
@@ -324,6 +353,33 @@ class MoomooReadOnlyDiscoveryTests(unittest.TestCase):
 
         self.assertEqual("UNKNOWN", result.us_quote_entitlement)
         self.assertEqual("UNKNOWN", result.jp_quote_entitlement)
+
+    def test_rejects_non_list_records_conversion_without_iterable_fallback(self) -> None:
+        sdk = FakeSdk(accounts=(0, NonListRecordsPayload()))
+
+        result = MoomooReadOnlyDiscovery(
+            endpoint=MoomooEndpoint(),
+            sdk=sdk,
+        ).run()
+
+        self.assertEqual("response", result.sanitized_failure_category)
+        self.assertEqual(0, result.account_count)
+        self.assertTrue(sdk.quote_context.closed)
+        self.assertTrue(sdk.trade_context.closed)
+
+    def test_fake_sdk_default_payloads_are_isolated_per_instance(self) -> None:
+        first = FakeSdk()
+        second = FakeSdk()
+        first_accounts = first.trade_context.accounts[1]
+        second_accounts = second.trade_context.accounts[1]
+        self.assertIsInstance(first_accounts, list)
+        self.assertIsInstance(second_accounts, list)
+
+        try:
+            first_accounts.append({"trd_env": "REAL"})
+            self.assertEqual(2, len(second_accounts))
+        finally:
+            first_accounts.pop()
 
 
 class MoomooDiscoveryReportTests(unittest.TestCase):

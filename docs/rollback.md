@@ -20,7 +20,7 @@ ISSUE-034 changes requirements and documentation only. It adds no Moomoo OpenAPI
 
 ## Moomoo Read-only Discovery Rollback
 
-ISSUE-035 has no order or market-data subscription side effects. Revert its branch through a reviewed PR, remove the `moomoo` optional dependency, and delete local `moomoo-discovery-reports/` artifacts after confirming they contain only sanitized schema version 1 fields. Stop OpenD manually if it is no longer needed. No orders require cancellation and no positions require reconciliation.
+ISSUE-035 has no order or market-data subscription side effects. Revert its branch through a reviewed PR, remove the `moomoo` optional dependency, and delete local `moomoo-discovery-reports/` artifacts after confirming they contain only sanitized schema version 1 fields. Transient stdout output requires no cleanup, but a report write failure must not be mistaken for a persisted artifact. Stop OpenD manually if it is no longer needed. No orders require cancellation and no positions require reconciliation.
 
 ## Strategy Filter Rollback
 

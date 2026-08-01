@@ -18,7 +18,7 @@ After OpenD is running and logged in, explicitly run sanitized read-only discove
 PYTHONPATH=src python3 -m autotrade.cli moomoo-readonly-discovery --connect --report-output moomoo-discovery-reports/moomoo-readonly-discovery-report.json
 ```
 
-The command must make no live orders or paper orders and must not call `unlock_trade`. It queries only global state, quote-entitlement metadata, and account-list shape. Reports are create-only and exclude raw account data.
+The command must make no live orders or paper orders and must not call `unlock_trade`. It queries only global state, quote-entitlement metadata, and account-list shape. Reports are create-only and exclude raw account data. Sanitized JSON is printed to stdout before an optional report write; a write failure still returns exit code `2`, even though discovery output remains available.
 
 ## Setup
 

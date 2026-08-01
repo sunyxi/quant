@@ -31,10 +31,6 @@ class MoomooDependencyError(MoomooClientError):
     pass
 
 
-class MoomooVersionError(MoomooClientError):
-    pass
-
-
 class MoomooConnectionError(MoomooClientError):
     pass
 
@@ -186,7 +182,10 @@ class MoomooReadOnlyDiscovery:
     def run(self) -> MoomooDiscoveryResult:
         raw_sdk_version = str(self.sdk.version)
         sdk_version = _safe_version(raw_sdk_version)
-        if not _version_at_least(raw_sdk_version, MIN_MOOMOO_API_VERSION):
+        if sdk_version == "UNKNOWN" or not _version_at_least(
+            raw_sdk_version,
+            MIN_MOOMOO_API_VERSION,
+        ):
             return self._failure("version", sdk_version=sdk_version)
 
         quote_context: MoomooQuoteContext | None = None
@@ -244,8 +243,6 @@ class MoomooReadOnlyDiscovery:
                 paper_account_available=paper_count > 0,
                 us_market_authorized=us_authorized,
             )
-        except MoomooVersionError:
-            return self._failure("version", sdk_version=sdk_version)
         except MoomooConnectionError:
             return self._failure("connection", sdk_version=sdk_version)
         except MoomooResponseError:
@@ -420,6 +417,7 @@ def _records(payload: object) -> list[object]:
             raise MoomooResponseError("unexpected Moomoo account list shape") from exc
         if isinstance(records, list):
             return records
+        raise MoomooResponseError("unexpected Moomoo account list shape")
     if isinstance(payload, list):
         return list(payload)
     if isinstance(payload, tuple):

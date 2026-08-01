@@ -4,7 +4,7 @@
 
 首期范围仍是日股、只做多、不隔夜，并在任何实盘前先通过 Shadow Mode。现优先在 macOS 上使用 Moomoo OpenAPI 完成账户、美股能力和日股行情权限的脱敏只读 PoC，不下实盘订单。日股现货行情在账户具备权限时可用，但 Moomoo JP 当前不支持日股现货实盘 API 交易。ISSUE-035 要求 OpenD 和 `moomoo-api` `>=10.4.6408`，隔离 SDK 依赖，并禁止 `unlock_trade`。kabu Station 仍作为日股未来通道，IBKR 作为美股备选。
 
-ISSUE-035 现已实现可选 `moomoo-api` 边界和 `moomoo-readonly-discovery` CLI。validate-only 不导入 SDK，也不打开 socket；只有显式 `--connect` 才会读取 OpenD 全局状态、行情权限元数据和脱敏账户列表形状。它不提供行情订阅、模拟订单、实盘订单、撤单或交易解锁。
+ISSUE-035 现已实现可选 `moomoo-api` 边界和 `moomoo-readonly-discovery` CLI。validate-only 不导入 SDK，也不打开 socket；只有显式 `--connect` 才会读取 OpenD 全局状态、行情权限元数据和脱敏账户列表形状。可选报告写入失败时，脱敏 JSON 仍保留在 stdout，但退出码 `2` 仍表示阻断。它不提供行情订阅、模拟订单、实盘订单、撤单或交易解锁。
 
 当前日历层已覆盖日股普通交易时段、午休、周末过滤、手工假日和收盘前停止新开仓 cutoff，用于研究和回测过滤。
 

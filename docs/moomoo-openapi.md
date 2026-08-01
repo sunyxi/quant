@@ -62,7 +62,7 @@ Schema version 1 reports contain only:
 - whether an account advertises US market authorization;
 - a sanitized failure category.
 
-Reports exclude account identifiers, card numbers, user identifiers, nicknames, credentials, tokens, raw account rows, raw quote payloads, and SDK exception messages. Report files are create-only and ignored by Git.
+Reports exclude account identifiers, card numbers, user identifiers, nicknames, credentials, tokens, raw account rows, raw quote payloads, and SDK exception messages. Report files are create-only and ignored by Git. Sanitized discovery JSON is emitted to stdout before an optional report write. A report path conflict or write failure still returns exit code `2`; stdout is diagnostic evidence and does not mean the report was persisted.
 
 ## Failure Categories
 

@@ -152,12 +152,13 @@ class MoomooDiscoveryCliTests(unittest.TestCase):
 
     def test_report_conflict_returns_clean_error(self) -> None:
         stderr = io.StringIO()
+        stdout = io.StringIO()
         with tempfile.TemporaryDirectory() as tmpdir:
             report_path = Path(tmpdir) / "report.json"
             report_path.write_text("existing", encoding="utf-8")
             with patch(
                 "autotrade.cli.MoomooApiSdk.load", return_value=FakeSdk()
-            ), redirect_stderr(stderr):
+            ), redirect_stdout(stdout), redirect_stderr(stderr):
                 exit_code = main(
                     [
                         "moomoo-readonly-discovery",
@@ -168,6 +169,8 @@ class MoomooDiscoveryCliTests(unittest.TestCase):
                 )
 
         self.assertEqual(2, exit_code)
+        self.assertIn('"paper_account_available": true', stdout.getvalue())
+        self.assertNotIn("sensitive", stdout.getvalue())
         self.assertIn("already exists", stderr.getvalue())
         self.assertNotIn("Traceback", stderr.getvalue())
 

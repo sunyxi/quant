@@ -4,7 +4,7 @@ This repository implements a research-first intraday trading platform skeleton. 
 
 The first release scope remains JP equities, long-only, no overnight, and Shadow Mode before live trading. Moomoo OpenAPI on macOS is now the first API proof of concept for sanitized read-only account, US equities, and JP quote-entitlement discovery, with no live orders. JP equity market data is supported when the account has the required quote entitlement, but Moomoo JP does not currently support live JP cash-equity API trading. ISSUE-035 requires OpenD and `moomoo-api` `>=10.4.6408`, keeps the dependency isolated, and prohibits `unlock_trade`. kabu Station remains the future JP target and IBKR remains a US fallback.
 
-ISSUE-035 now implements the optional `moomoo-api` boundary and `moomoo-readonly-discovery` CLI. Validate-only mode imports no SDK and opens no socket; explicit `--connect` reads only OpenD global state, quote-entitlement metadata, and sanitized account-list shape. It exposes no subscriptions, paper orders, live orders, cancellations, or trade unlock.
+ISSUE-035 now implements the optional `moomoo-api` boundary and `moomoo-readonly-discovery` CLI. Validate-only mode imports no SDK and opens no socket; explicit `--connect` reads only OpenD global state, quote-entitlement metadata, and sanitized account-list shape. Sanitized JSON remains available on stdout if optional report persistence fails, while exit code `2` remains blocking. It exposes no subscriptions, paper orders, live orders, cancellations, or trade unlock.
 
 The current calendar layer covers JP regular sessions, lunch break, weekend rejection, manual holidays, and close-entry cutoff for research filtering.
 

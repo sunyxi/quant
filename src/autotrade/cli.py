@@ -206,13 +206,13 @@ def _run_moomoo_readonly_discovery(
         return 1
 
     result = MoomooReadOnlyDiscovery(endpoint=endpoint, sdk=sdk).run()
+    print(json.dumps(result.to_dict(), sort_keys=True), file=stdout)
     if args.report_output is not None:
         try:
             MoomooDiscoveryReportWriter().write(args.report_output, result)
         except MoomooConfigurationError as exc:
             print(f"error: {exc}", file=stderr)
             return 2
-    print(json.dumps(result.to_dict(), sort_keys=True), file=stdout)
     return 0 if result.sanitized_failure_category is None else 1
 
 
