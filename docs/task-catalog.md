@@ -1635,6 +1635,7 @@ Rollback: Revert the ISSUE-035 branch, remove the optional Moomoo SDK dependency
 ### Changed Assets
 
 - `src/autotrade/cli.py`
+- `src/autotrade/execution/moomoo.py`
 - `src/autotrade/execution/moomoo_readiness.py`
 - `tests/test_cli.py`
 - `tests/test_moomoo_readiness.py`

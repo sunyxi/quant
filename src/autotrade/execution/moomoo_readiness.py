@@ -3,13 +3,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import StrEnum
 
-from autotrade.execution.moomoo import MoomooDiscoveryResult
+from autotrade.execution.moomoo import (
+    MOOMOO_VALID_ENTITLEMENTS,
+    MoomooDiscoveryResult,
+)
 
 
 MOOMOO_PAPER_READINESS_SCHEMA_VERSION = 1
-_SANITIZED_QUOTE_ENTITLEMENTS = frozenset(
-    {"NO", "BMP", "LV1", "LV2", "LV3", "SF", "UNKNOWN"}
-)
 
 
 class MoomooPaperReadinessStatus(StrEnum):
@@ -29,10 +29,36 @@ class MoomooPaperReadinessReason(StrEnum):
 
 
 @dataclass(frozen=True)
+class MoomooPaperReadinessEvidence:
+    discovery_schema_version: int
+    quote_connection_ok: bool
+    trade_connection_ok: bool
+    qot_logged_in: bool | None
+    trd_logged_in: bool | None
+    paper_account_count: int
+    paper_account_available: bool
+    us_market_authorized: bool
+    us_quote_entitlement: str
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "discovery_schema_version": self.discovery_schema_version,
+            "quote_connection_ok": self.quote_connection_ok,
+            "trade_connection_ok": self.trade_connection_ok,
+            "qot_logged_in": self.qot_logged_in,
+            "trd_logged_in": self.trd_logged_in,
+            "paper_account_count": self.paper_account_count,
+            "paper_account_available": self.paper_account_available,
+            "us_market_authorized": self.us_market_authorized,
+            "us_quote_entitlement": self.us_quote_entitlement,
+        }
+
+
+@dataclass(frozen=True)
 class MoomooPaperReadinessDecision:
     status: MoomooPaperReadinessStatus
-    reason_codes: list[MoomooPaperReadinessReason]
-    evidence: dict[str, object]
+    reason_codes: tuple[MoomooPaperReadinessReason, ...]
+    evidence: MoomooPaperReadinessEvidence
     schema_version: int = MOOMOO_PAPER_READINESS_SCHEMA_VERSION
 
     @property
@@ -44,7 +70,7 @@ class MoomooPaperReadinessDecision:
             "schema_version": self.schema_version,
             "status": self.status.value,
             "reason_codes": [reason.value for reason in self.reason_codes],
-            "evidence": dict(self.evidence),
+            "evidence": self.evidence.to_dict(),
         }
 
 
@@ -56,25 +82,25 @@ class MoomooPaperReadinessGate:
     ) -> MoomooPaperReadinessDecision:
         us_quote_entitlement = (
             discovery.us_quote_entitlement
-            if discovery.us_quote_entitlement in _SANITIZED_QUOTE_ENTITLEMENTS
+            if discovery.us_quote_entitlement in MOOMOO_VALID_ENTITLEMENTS
             else "UNKNOWN"
         )
-        evidence = {
-            "discovery_schema_version": discovery.schema_version,
-            "quote_connection_ok": discovery.quote_connection_status == "ok",
-            "trade_connection_ok": discovery.trade_connection_status == "ok",
-            "qot_logged_in": discovery.qot_logged_in is True,
-            "trd_logged_in": discovery.trd_logged_in is True,
-            "paper_account_count": discovery.paper_account_count,
-            "paper_account_available": discovery.paper_account_available,
-            "us_market_authorized": discovery.us_market_authorized,
-            "us_quote_entitlement": us_quote_entitlement,
-        }
+        evidence = MoomooPaperReadinessEvidence(
+            discovery_schema_version=discovery.schema_version,
+            quote_connection_ok=discovery.quote_connection_status == "ok",
+            trade_connection_ok=discovery.trade_connection_status == "ok",
+            qot_logged_in=discovery.qot_logged_in,
+            trd_logged_in=discovery.trd_logged_in,
+            paper_account_count=discovery.paper_account_count,
+            paper_account_available=discovery.paper_account_available,
+            us_market_authorized=discovery.us_market_authorized,
+            us_quote_entitlement=us_quote_entitlement,
+        )
 
         if discovery.sanitized_failure_category is not None:
             return self._blocked(
                 evidence,
-                [MoomooPaperReadinessReason.DISCOVERY_FAILED],
+                (MoomooPaperReadinessReason.DISCOVERY_FAILED,),
             )
 
         reasons: list[MoomooPaperReadinessReason] = []
@@ -99,17 +125,17 @@ class MoomooPaperReadinessGate:
             )
 
         if reasons:
-            return self._blocked(evidence, reasons)
+            return self._blocked(evidence, tuple(reasons))
         return MoomooPaperReadinessDecision(
             status=MoomooPaperReadinessStatus.READY,
-            reason_codes=[],
+            reason_codes=(),
             evidence=evidence,
         )
 
     def _blocked(
         self,
-        evidence: dict[str, object],
-        reasons: list[MoomooPaperReadinessReason],
+        evidence: MoomooPaperReadinessEvidence,
+        reasons: tuple[MoomooPaperReadinessReason, ...],
     ) -> MoomooPaperReadinessDecision:
         return MoomooPaperReadinessDecision(
             status=MoomooPaperReadinessStatus.BLOCKED,

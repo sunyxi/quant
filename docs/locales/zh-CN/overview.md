@@ -6,7 +6,7 @@
 
 ISSUE-035 现已实现可选 `moomoo-api` 边界和 `moomoo-readonly-discovery` CLI。validate-only 不导入 SDK，也不打开 socket；只有显式 `--connect` 才会读取 OpenD 全局状态、行情权限元数据和脱敏账户列表形状。可选报告写入失败时，脱敏 JSON 仍保留在 stdout，但退出码 `2` 仍表示阻断。它不提供行情订阅、模拟订单、实盘订单、撤单或交易解锁。
 
-ISSUE-036 新增 `moomoo-paper-readiness`，离线评估已验证的 discovery report，并输出确定性的 `READY` 或 `BLOCKED` 证据。它不创建 SDK Context，也不发起券商请求。`READY` 仅允许考虑后续经过审查的美股模拟订单 Issue，不授权模拟订单、Shadow Mode、实盘订单或日股交易。
+ISSUE-036 新增 `moomoo-paper-readiness`，离线评估已验证的 discovery report，并输出不可变且确定性的 `READY` 或 `BLOCKED` 快照。登录证据中的 `null` 表示尚未检查，`false` 表示已检查但未登录。它不创建 SDK Context，也不发起券商请求。`READY` 仅允许考虑后续经过审查的美股模拟订单 Issue，不授权模拟订单、Shadow Mode、实盘订单或日股交易。
 
 当前日历层已覆盖日股普通交易时段、午休、周末过滤、手工假日和收盘前停止新开仓 cutoff，用于研究和回测过滤。
 

@@ -4,7 +4,10 @@ import json
 import unittest
 from dataclasses import replace
 
-from autotrade.execution.moomoo import MoomooDiscoveryResult
+from autotrade.execution.moomoo import (
+    MOOMOO_VALID_ENTITLEMENTS,
+    MoomooDiscoveryResult,
+)
 from autotrade.execution.moomoo_readiness import (
     MoomooPaperReadinessGate,
     MoomooPaperReadinessReason,
@@ -37,7 +40,7 @@ class MoomooPaperReadinessGateTests(unittest.TestCase):
 
         self.assertEqual(MoomooPaperReadinessStatus.READY, decision.status)
         self.assertTrue(decision.is_ready)
-        self.assertEqual([], decision.reason_codes)
+        self.assertEqual((), decision.reason_codes)
         self.assertEqual(
             {
                 "discovery_schema_version": 1,
@@ -50,14 +53,14 @@ class MoomooPaperReadinessGateTests(unittest.TestCase):
                 "us_market_authorized": True,
                 "us_quote_entitlement": "LV1",
             },
-            decision.evidence,
+            decision.evidence.to_dict(),
         )
         self.assertEqual(
             {
                 "schema_version": 1,
                 "status": "READY",
                 "reason_codes": [],
-                "evidence": decision.evidence,
+                "evidence": decision.evidence.to_dict(),
             },
             decision.to_dict(),
         )
@@ -104,7 +107,7 @@ class MoomooPaperReadinessGateTests(unittest.TestCase):
                     replace(ready_discovery(), **changes)
                 )
                 self.assertEqual(MoomooPaperReadinessStatus.BLOCKED, decision.status)
-                self.assertEqual([reason], decision.reason_codes)
+                self.assertEqual((reason,), decision.reason_codes)
 
     def test_failed_discovery_blocks_without_derived_noise(self) -> None:
         discovery = replace(
@@ -118,9 +121,41 @@ class MoomooPaperReadinessGateTests(unittest.TestCase):
 
         self.assertEqual(MoomooPaperReadinessStatus.BLOCKED, decision.status)
         self.assertEqual(
-            [MoomooPaperReadinessReason.DISCOVERY_FAILED],
+            (MoomooPaperReadinessReason.DISCOVERY_FAILED,),
             decision.reason_codes,
         )
+
+    def test_unknown_login_state_remains_null_in_serialized_evidence(self) -> None:
+        decision = MoomooPaperReadinessGate().evaluate(
+            replace(
+                ready_discovery(),
+                qot_logged_in=None,
+                trd_logged_in=None,
+            )
+        )
+
+        evidence = decision.to_dict()["evidence"]
+        self.assertIsInstance(evidence, dict)
+        self.assertIsNone(evidence["qot_logged_in"])
+        self.assertIsNone(evidence["trd_logged_in"])
+        self.assertEqual(
+            (
+                MoomooPaperReadinessReason.QUOTE_NOT_LOGGED_IN,
+                MoomooPaperReadinessReason.TRADE_NOT_LOGGED_IN,
+            ),
+            decision.reason_codes,
+        )
+
+    def test_decision_is_deeply_immutable_and_hashable(self) -> None:
+        decision = MoomooPaperReadinessGate().evaluate(ready_discovery())
+
+        with self.assertRaises(AttributeError):
+            decision.reason_codes.append(
+                MoomooPaperReadinessReason.DISCOVERY_FAILED
+            )
+        with self.assertRaises((AttributeError, TypeError)):
+            decision.evidence["paper_account_count"] = 99
+        self.assertIsInstance(hash(decision), int)
 
     def test_untrusted_entitlement_is_sanitized_and_blocked(self) -> None:
         decision = MoomooPaperReadinessGate().evaluate(
@@ -132,12 +167,25 @@ class MoomooPaperReadinessGateTests(unittest.TestCase):
 
         self.assertEqual(MoomooPaperReadinessStatus.BLOCKED, decision.status)
         self.assertEqual(
-            [MoomooPaperReadinessReason.US_QUOTE_ENTITLEMENT_UNAVAILABLE],
+            (MoomooPaperReadinessReason.US_QUOTE_ENTITLEMENT_UNAVAILABLE,),
             decision.reason_codes,
         )
         serialized = json.dumps(decision.to_dict(), sort_keys=True)
         self.assertNotIn("sensitive", serialized)
-        self.assertEqual("UNKNOWN", decision.evidence["us_quote_entitlement"])
+        self.assertEqual("UNKNOWN", decision.evidence.us_quote_entitlement)
+
+    def test_uses_canonical_entitlement_policy(self) -> None:
+        usable_entitlements = MOOMOO_VALID_ENTITLEMENTS - {"NO", "UNKNOWN"}
+
+        for entitlement in usable_entitlements:
+            with self.subTest(entitlement=entitlement):
+                decision = MoomooPaperReadinessGate().evaluate(
+                    replace(
+                        ready_discovery(),
+                        us_quote_entitlement=entitlement,
+                    )
+                )
+                self.assertEqual(MoomooPaperReadinessStatus.READY, decision.status)
 
     def test_multiple_reasons_have_deterministic_policy_order(self) -> None:
         discovery = replace(
@@ -153,13 +201,13 @@ class MoomooPaperReadinessGateTests(unittest.TestCase):
         decision = MoomooPaperReadinessGate().evaluate(discovery)
 
         self.assertEqual(
-            [
+            (
                 MoomooPaperReadinessReason.QUOTE_CONNECTION_NOT_OK,
                 MoomooPaperReadinessReason.TRADE_NOT_LOGGED_IN,
                 MoomooPaperReadinessReason.PAPER_ACCOUNT_UNAVAILABLE,
                 MoomooPaperReadinessReason.US_MARKET_UNAUTHORIZED,
                 MoomooPaperReadinessReason.US_QUOTE_ENTITLEMENT_UNAVAILABLE,
-            ],
+            ),
             decision.reason_codes,
         )
 

@@ -6,7 +6,7 @@ The first release scope remains JP equities, long-only, no overnight, and Shadow
 
 ISSUE-035 now implements the optional `moomoo-api` boundary and `moomoo-readonly-discovery` CLI. Validate-only mode imports no SDK and opens no socket; explicit `--connect` reads only OpenD global state, quote-entitlement metadata, and sanitized account-list shape. Sanitized JSON remains available on stdout if optional report persistence fails, while exit code `2` remains blocking. It exposes no subscriptions, paper orders, live orders, cancellations, or trade unlock.
 
-ISSUE-036 adds `moomoo-paper-readiness`, which evaluates a validated discovery report offline and emits deterministic `READY` or `BLOCKED` evidence. It creates no SDK Context or broker request. `READY` only permits consideration of a later reviewed US paper-order Issue and does not authorize paper orders, Shadow Mode, live orders, or JP trading.
+ISSUE-036 adds `moomoo-paper-readiness`, which evaluates a validated discovery report offline and emits an immutable deterministic `READY` or `BLOCKED` snapshot. Login evidence preserves `null` for "not checked" and `false` for "checked but not logged in". It creates no SDK Context or broker request. `READY` only permits consideration of a later reviewed US paper-order Issue and does not authorize paper orders, Shadow Mode, live orders, or JP trading.
 
 The current calendar layer covers JP regular sessions, lunch break, weekend rejection, manual holidays, and close-entry cutoff for research filtering.
 

@@ -264,5 +264,23 @@ class MoomooPaperReadinessCliTests(unittest.TestCase):
         self.assertIn("could not read", stderr.getvalue())
         self.assertNotIn("Traceback", stderr.getvalue())
 
+    def test_non_utf8_report_fails_cleanly_without_traceback(self) -> None:
+        stderr = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            report_path = Path(tmpdir) / "invalid-utf8.json"
+            report_path.write_bytes(b"\xff\xfe\xfa")
+            with redirect_stderr(stderr):
+                exit_code = main(
+                    [
+                        "moomoo-paper-readiness",
+                        "--discovery-report",
+                        str(report_path),
+                    ]
+                )
+
+        self.assertEqual(2, exit_code)
+        self.assertIn("could not read", stderr.getvalue())
+        self.assertNotIn("Traceback", stderr.getvalue())
+
 if __name__ == "__main__":
     unittest.main()

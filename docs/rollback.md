@@ -24,7 +24,7 @@ ISSUE-035 has no order or market-data subscription side effects. Revert its bran
 
 ## Moomoo Paper Readiness Rollback
 
-ISSUE-036 is offline and has no SDK, broker, subscription, order, or position side effects. Revert its branch through a reviewed PR and remove the readiness CLI and decision model. Existing sanitized discovery reports remain valid ISSUE-035 evidence and require no broker reconciliation.
+ISSUE-036 is offline and has no SDK, broker, subscription, order, or position side effects. Revert its branch through a reviewed PR and remove the readiness CLI and immutable decision model. Tri-state readiness output is transient and needs no cleanup. Existing sanitized discovery reports remain valid ISSUE-035 evidence and require no broker reconciliation.
 
 ## Strategy Filter Rollback
 

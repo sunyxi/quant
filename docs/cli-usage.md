@@ -26,7 +26,7 @@ Evaluate a sanitized discovery report offline:
 PYTHONPATH=src python3 -m autotrade.cli moomoo-paper-readiness --discovery-report moomoo-discovery-reports/moomoo-readonly-discovery-report.json
 ```
 
-This command creates no SDK Context, socket, or broker request. It returns `0` for `READY`, `1` for `BLOCKED`, and `2` for an invalid or unreadable report. `READY` does not authorize paper orders or live trading.
+This command creates no SDK Context, socket, or broker request. It returns `0` for `READY`, `1` for `BLOCKED`, and `2` for an invalid, non-UTF-8, or unreadable report without a traceback. Login evidence retains `null` when a check was never reached. `READY` does not authorize paper orders or live trading.
 
 ## Setup
 

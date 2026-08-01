@@ -986,6 +986,7 @@
       ],
       "changed_assets": [
         "src/autotrade/cli.py",
+        "src/autotrade/execution/moomoo.py",
         "src/autotrade/execution/moomoo_readiness.py",
         "tests/test_cli.py",
         "tests/test_moomoo_readiness.py",
