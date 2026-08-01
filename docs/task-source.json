@@ -1149,6 +1149,54 @@
         "docs/locales/zh-CN/overview.md"
       ],
       "rollback": "Disable the command, inspect the sanitized result, and reconcile the paper account manually before reverting ISSUE-039; an accepted paper order may require manual cancellation in the Moomoo app even though live capital is never involved."
+    },
+    {
+      "id": "ISSUE-040",
+      "title": "Add Moomoo US paper-order read-only reconciliation",
+      "status": "complete",
+      "phase": "Phase 4",
+      "dependencies": ["ISSUE-039"],
+      "summary": "Add an explicitly connected, read-only reconciliation boundary that re-queries an eligible Moomoo SIMULATE account by client-order remark and emits sanitized absent, unique, duplicate, or unknown evidence without submitting, changing, or cancelling an order.",
+      "acceptance_criteria": [
+        "Reconciliation requires an ISSUE-036 READY decision and a successful schema version 1 ISSUE-038 preflight result before creating a trade context.",
+        "The service accepts only a validated 8-64 character client_order_id and reselects exactly one eligible ACTIVE US STOCK_AND_OPTION SIMULATE account while keeping acc_id in memory only.",
+        "The service calls order_list_query exactly once with TrdEnv.SIMULATE, the selected acc_id, refresh_cache=True, and no automatic retry.",
+        "Matching uses the exact broker remark and returns deterministic ABSENT, UNIQUE, DUPLICATE, BLOCKED, or UNKNOWN status with match count and fixed failure category only.",
+        "ABSENT is evidence that the order was not visible in that query, not proof that no submission occurred; UNKNOWN and DUPLICATE block automatic resubmission.",
+        "The immutable schema-versioned result excludes account IDs, broker order IDs, raw payloads, credentials, tokens, symbols, prices, quantities, SDK objects, and exception text.",
+        "The trade context closes on success and every failure path; query exceptions and malformed responses are sanitized and never trigger place_order, modify_order, cancel_order, unlock_trade, subscription, or live trading.",
+        "The CLI validates inputs and retained reports without loading the SDK by default and requires --connect for the single read-only localhost query.",
+        "Unit and fixture tests use fake SDK/context objects to cover every status, account selection, exact query mapping, no retry, sanitization, context closure, and forbidden-operation boundaries.",
+        "English, Japanese, Simplified Chinese, CLI, operations, limitations, rollback, feature documentation, implementation plan, and generated Task Catalog output are synchronized."
+      ],
+      "gates": [
+        "Python Unit Tests",
+        "Fixture Tests",
+        "Documentation Localization",
+        "Markdown Links/Style",
+        "Secret Scan",
+        "Task Catalog Generation"
+      ],
+      "changed_assets": [
+        "src/autotrade/cli.py",
+        "src/autotrade/execution/moomoo_paper_order.py",
+        "src/autotrade/execution/moomoo_paper_reconcile.py",
+        "tests/test_cli.py",
+        "tests/test_moomoo_paper_reconcile.py",
+        "tests/test_documentation_catalog.py",
+        "docs/task-source.json",
+        "docs/task-catalog.md",
+        "docs/moomoo-openapi.md",
+        "docs/implementation-plan.md",
+        "docs/cli-usage.md",
+        "docs/operations.md",
+        "docs/limitations.md",
+        "docs/rollback.md",
+        "docs/locales/en/overview.md",
+        "docs/locales/ja/overview.md",
+        "docs/locales/zh-CN/overview.md"
+      ],
+      "rollback": "Disable the reconciliation command and inspect the Moomoo paper account manually before reverting ISSUE-040; the command creates no order mutation, but an earlier submitted paper order may still require manual handling."
     }
   ]
 }

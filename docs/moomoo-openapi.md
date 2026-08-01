@@ -138,9 +138,24 @@ The service reselects exactly one eligible simulated account, calls `place_order
 
 The command has no `REAL`, SELL, market, extended-hours, option, JP, unlock, modify, cancel, or subscription path. Successful fake-SDK validation does not authorize a real OpenD canary; that requires separate approval.
 
+## Read-only Paper-order Reconciliation
+
+ISSUE-040 adds `moomoo-paper-order-reconcile`. Its default validate-only mode checks retained discovery and preflight evidence plus the client order ID without loading the SDK:
+
+```bash
+PYTHONPATH=src python3 -m autotrade.cli moomoo-paper-order-reconcile \
+  --discovery-report moomoo-discovery-reports/moomoo-readonly-discovery-report.json \
+  --preflight-report moomoo-preflight-reports/moomoo-paper-account-preflight-report.json \
+  --client-order-id paper-canary-001
+```
+
+Add `--connect` only while OpenD is logged in. The service reselects exactly one eligible `SIMULATE` account and calls `order_list_query` once with `refresh_cache=True`. It compares the exact broker `remark` and emits `unique`, `absent`, `duplicate`, `blocked`, or `unknown` with sanitized counts and fixed failure categories only.
+
+`ABSENT` means the order was not visible in that fresh query; it is not proof that no submission occurred. `DUPLICATE` and `UNKNOWN` are ambiguous. The command does not automatically resubmit, modify, cancel, unlock, subscribe, or access `REAL`, and operators must not rerun ISSUE-039 based only on reconciliation output.
+
 ## Security
 
-Repository code must never call `unlock_trade`. Any future live-trading unlock requires a separately reviewed Issue and manual action in the OpenD GUI. Dry-run, preflight, and paper-submit output contain no account identifier or credential. A confirmed paper-submit invocation has a simulated broker side effect and must be reconciled manually if its result is not `verified`.
+Repository code must never call `unlock_trade`. Any future live-trading unlock requires a separately reviewed Issue and manual action in the OpenD GUI. Dry-run, preflight, paper-submit, and reconciliation output contain no account identifier or credential. A confirmed paper-submit invocation has a simulated broker side effect and must be reconciled manually if its result is not `verified`.
 
 ## Official References
 

@@ -17,6 +17,7 @@ from autotrade.execution.moomoo import (
 from tests.test_moomoo_discovery import FakeSdk
 from tests.test_moomoo_readiness import ready_discovery
 from tests.test_moomoo_preflight import FakePreflightSdk
+from tests.test_moomoo_paper_reconcile import FakeReconcileSdk
 from tests.test_moomoo_paper_submit import FakeSubmitSdk, successful_preflight
 
 
@@ -683,6 +684,65 @@ class MoomooPaperOrderSubmitCliTests(unittest.TestCase):
         self.assertEqual(0, exit_code)
         self.assertIn('"status": "verified"', stdout.getvalue())
         self.assertEqual(1, len(sdk.context.place_calls))
+
+
+class MoomooPaperOrderReconcileCliTests(unittest.TestCase):
+    def _reports(self, tmpdir: str) -> tuple[Path, Path]:
+        discovery_path = Path(tmpdir) / "discovery.json"
+        preflight_path = Path(tmpdir) / "preflight.json"
+        MoomooDiscoveryReportWriter().write(discovery_path, ready_discovery())
+        MoomooPaperAccountPreflightReportWriter().write(
+            preflight_path,
+            successful_preflight(),
+        )
+        return discovery_path, preflight_path
+
+    @staticmethod
+    def _args(discovery_path: Path, preflight_path: Path) -> list[str]:
+        return [
+            "moomoo-paper-order-reconcile",
+            "--discovery-report", str(discovery_path),
+            "--preflight-report", str(preflight_path),
+            "--client-order-id", "paper-dry-run-001",
+        ]
+
+    def test_default_is_validate_only_without_sdk_load(self) -> None:
+        stdout = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            discovery, preflight = self._reports(tmpdir)
+            with patch(
+                "autotrade.cli.MoomooApiSdk.load",
+                side_effect=AssertionError("SDK loaded"),
+            ), redirect_stdout(stdout):
+                exit_code = main(self._args(discovery, preflight))
+
+        self.assertEqual(0, exit_code)
+        self.assertIn('"mode": "validate-only"', stdout.getvalue())
+        self.assertIn('"reconciliation_status": "not-run"', stdout.getvalue())
+        self.assertNotIn("acc_id", stdout.getvalue())
+
+    def test_connect_runs_one_sanitized_read_only_query(self) -> None:
+        stdout = io.StringIO()
+        sdk = FakeReconcileSdk()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            discovery, preflight = self._reports(tmpdir)
+            with patch(
+                "autotrade.cli.MoomooApiSdk.load",
+                return_value=sdk,
+            ), patch(
+                "autotrade.cli.validate_moomoo_paper_reconciliation_evidence",
+                side_effect=AssertionError("CLI duplicated service validation"),
+            ), redirect_stdout(stdout):
+                exit_code = main(
+                    self._args(discovery, preflight) + ["--connect"]
+                )
+
+        self.assertEqual(0, exit_code)
+        self.assertIn('"status": "unique"', stdout.getvalue())
+        self.assertNotIn("acc_id", stdout.getvalue())
+        self.assertNotIn('"order_id":', stdout.getvalue())
+        self.assertEqual(1, len(sdk.context.order_query_calls))
+        self.assertEqual([], sdk.context.place_calls)
 
 
 if __name__ == "__main__":

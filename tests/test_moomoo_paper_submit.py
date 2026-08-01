@@ -207,6 +207,7 @@ class MoomooPaperOrderSubmitterTests(unittest.TestCase):
         cases = [
             {"acknowledged": False},
             {"readiness": replace(ready_decision(), status="BLOCKED")},
+            {"preflight": replace(successful_preflight(), schema_version=2)},
             {
                 "preflight": replace(
                     successful_preflight(),
@@ -404,6 +405,7 @@ class MoomooPaperOrderSubmitterTests(unittest.TestCase):
 
     def test_source_has_no_live_unlock_modify_cancel_subscribe_or_retry(self) -> None:
         source = inspect.getsource(MoomooPaperOrderSubmitter)
+        self.assertNotIn("def _read_records", source)
         for forbidden in [
             "unlock_trade",
             "modify_order",

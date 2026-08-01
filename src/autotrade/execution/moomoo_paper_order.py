@@ -109,7 +109,7 @@ class MoomooPaperOrderDryRunPlanner:
             raise MoomooPaperOrderPlanError(
                 MoomooPaperOrderPlanReason.QUANTITY_LIMIT_EXCEEDED
             )
-        if not _CLIENT_ORDER_ID_PATTERN.fullmatch(intent.client_order_id):
+        if not is_valid_moomoo_client_order_id(intent.client_order_id):
             raise MoomooPaperOrderPlanError(
                 MoomooPaperOrderPlanReason.CLIENT_ORDER_ID_INVALID
             )
@@ -151,3 +151,10 @@ class MoomooPaperOrderDryRunPlanner:
 
 def _is_positive_finite(value: object) -> bool:
     return type(value) in _NUMERIC_TYPES and math.isfinite(value) and value > 0
+
+
+def is_valid_moomoo_client_order_id(value: object) -> bool:
+    return (
+        isinstance(value, str)
+        and _CLIENT_ORDER_ID_PATTERN.fullmatch(value) is not None
+    )

@@ -104,6 +104,8 @@ Run `moomoo-paper-account-preflight` in validate-only mode first. Use `--connect
 
 Run `moomoo-paper-order-submit` without confirmation flags first and review the preview. A real paper canary requires separate approval of symbol, quantity, limit, stop, timestamp, retained discovery evidence, and retained preflight evidence. Only then add all three confirmation flags. The command can call `place_order` once and has a simulated broker side effect. If the result is `UNKNOWN`, `submitted`, nonzero, or interrupted after connection, stop and inspect the Moomoo app/order list by client-order remark. Do not rerun the command, change the client order ID, or assume rejection until reconciliation is complete.
 
+Run `moomoo-paper-order-reconcile` without `--connect` first to validate the retained READY discovery report, successful schema version 1 preflight report, loopback endpoint, and client order ID. Then use `--connect` for one fresh `SIMULATE` order-list query with `refresh_cache=True`. Archive only the sanitized result. `unique` confirms one visible exact remark match. `ABSENT` is not proof that no submission occurred; `duplicate` and `unknown` are ambiguous. None of these results authorizes automatic resubmission, modification, or cancellation. Inspect the Moomoo app and escalate before any further paper-order command.
+
 ## Issue Workflow
 
 0. Read `AGENT.md`.

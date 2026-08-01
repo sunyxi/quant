@@ -14,6 +14,8 @@ ISSUE-038 は、明示的に接続する参照専用 `moomoo-paper-account-prefl
 
 ISSUE-039 は、明示的に確認した米国株 BUY 指値注文一件を `SIMULATE` へ送信する、標準無効の `moomoo-paper-order-submit` 境界を追加します。送信は最大一回で、client order remark を最新化照会し、不明な結果は再試行しません。リポジトリテストは fake SDK のみを使い、実 OpenD のデモ注文は別途の操作者承認を必要とします。
 
+ISSUE-040 は、参照専用の `moomoo-paper-order-reconcile` 境界を追加します。最新化した `SIMULATE` 注文一覧を一回だけ照会し、完全一致する remark の証跡を `UNIQUE`、`ABSENT`、`DUPLICATE`、`BLOCKED`、`UNKNOWN` として、証券会社 ID なしで出力します。`ABSENT` は未送信の証明ではなく、このコマンドは再送信や注文変更を行いません。
+
 現在のカレンダー層は、日本株の通常取引時間、昼休み、週末除外、手動祝日、引け前の新規エントリー停止時刻を研究用フィルターとして扱います。
 
 現在の板情報層は、研究用フィクスチャとして不変スナップショット、スプレッド、可視深度、OBI、microprice、鮮度、STALE 判定を扱います。

@@ -870,3 +870,33 @@ def is_moomoo_version_at_least(current: str, minimum: str) -> bool:
 
 def close_moomoo_context(context: object | None) -> None:
     _safe_close(context)
+
+
+def parse_moomoo_response_records(
+    response: object,
+    *,
+    ret_ok: int,
+) -> list[object]:
+    if not isinstance(response, tuple) or len(response) != 2:
+        raise MoomooResponseError("invalid Moomoo response")
+    status, payload = response
+    if status != ret_ok:
+        raise MoomooResponseError("Moomoo request failed")
+    return moomoo_records(payload)
+
+
+def is_moomoo_paper_preflight_successful(
+    preflight: MoomooPaperAccountPreflightResult,
+    endpoint: MoomooEndpoint,
+) -> bool:
+    return (
+        preflight.schema_version == MOOMOO_PAPER_ACCOUNT_PREFLIGHT_SCHEMA_VERSION
+        and preflight.sanitized_failure_category is None
+        and preflight.connection_status == "ok"
+        and preflight.account_selection_status == "unique"
+        and preflight.eligible_account_count == 1
+        and preflight.funds_query_status == "ok"
+        and preflight.positions_query_status == "ok"
+        and preflight.orders_query_status == "ok"
+        and preflight.endpoint == endpoint.display
+    )
