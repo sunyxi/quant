@@ -1100,6 +1100,55 @@
         "docs/locales/zh-CN/overview.md"
       ],
       "rollback": "Revert the ISSUE-038 branch and remove the read-only connected preflight, CLI, report artifacts, and task metadata; no order, cancellation, fill, subscription, or position side effect requires broker reconciliation."
+    },
+    {
+      "id": "ISSUE-039",
+      "title": "Add explicit Moomoo US paper-order submission boundary",
+      "status": "complete",
+      "phase": "Phase 4",
+      "dependencies": ["ISSUE-038"],
+      "summary": "Add a disabled-by-default boundary that can submit exactly one reviewed US BUY limit order to an eligible Moomoo SIMULATE account, then verifies it through a fresh read without exposing broker identifiers or enabling live trading.",
+      "acceptance_criteria": [
+        "Submission requires an ISSUE-036 READY decision, a successful schema version 1 ISSUE-038 preflight result, and an ISSUE-037 dry-run plan.",
+        "Only US BUY NORMAL limit orders in TrdEnv.SIMULATE with DAY and RTH settings are supported; REAL, SELL, market, extended-hours, options, JP orders, unlock, modify, cancel, and subscription paths are absent.",
+        "The service creates one US trade context, reselects exactly one eligible ACTIVE US STOCK_AND_OPTION SIMULATE account, and keeps its positive integer acc_id in memory only.",
+        "place_order is called at most once with the reviewed plan fields and client_order_id as a broker remark; submission exceptions or malformed responses become UNKNOWN and are never retried automatically.",
+        "After an accepted response, order_list_query runs with TrdEnv.SIMULATE, the selected acc_id, and refresh_cache=True to verify exactly one matching client-order remark.",
+        "The immutable sanitized result reports submitted, verified, rejected, blocked, or unknown status and fixed failure categories without account IDs, broker order IDs, raw payloads, credentials, or SDK exception text.",
+        "The trade context closes on every path and duplicate service invocation is not made internally.",
+        "The CLI remains preview-only by default and requires explicit connection, paper submission, and side-effect acknowledgement flags before loading the SDK.",
+        "Unit and fixture tests use fake SDK/context objects and prove exact request mapping, one-call behavior, no retry, verification, sanitization, closure, and forbidden-operation boundaries.",
+        "No real OpenD paper order is submitted by repository validation; an operator must separately approve concrete canary order parameters before a real fixture run.",
+        "English, Japanese, Simplified Chinese, CLI, operations, limitations, rollback, feature documentation, implementation plan, and generated Task Catalog output are synchronized."
+      ],
+      "gates": [
+        "Python Unit Tests",
+        "Fixture Tests",
+        "Documentation Localization",
+        "Markdown Links/Style",
+        "Secret Scan",
+        "Task Catalog Generation"
+      ],
+      "changed_assets": [
+        "src/autotrade/cli.py",
+        "src/autotrade/execution/moomoo.py",
+        "src/autotrade/execution/moomoo_paper_submit.py",
+        "tests/test_cli.py",
+        "tests/test_moomoo_paper_submit.py",
+        "tests/test_documentation_catalog.py",
+        "docs/task-source.json",
+        "docs/task-catalog.md",
+        "docs/moomoo-openapi.md",
+        "docs/implementation-plan.md",
+        "docs/cli-usage.md",
+        "docs/operations.md",
+        "docs/limitations.md",
+        "docs/rollback.md",
+        "docs/locales/en/overview.md",
+        "docs/locales/ja/overview.md",
+        "docs/locales/zh-CN/overview.md"
+      ],
+      "rollback": "Disable the command, inspect the sanitized result, and reconcile the paper account manually before reverting ISSUE-039; an accepted paper order may require manual cancellation in the Moomoo app even though live capital is never involved."
     }
   ]
 }

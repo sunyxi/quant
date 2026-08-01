@@ -92,6 +92,7 @@ Moomoo OpenAPI discovery before Windows-dependent broker work.
 - ISSUE-036: evaluate sanitized discovery evidence through an offline US paper-readiness gate before any paper-order adapter is considered.
 - ISSUE-037: map a ready broker-independent US long limit intent into a sanitized offline `SIMULATE` paper-order contract without selecting an account or calling the SDK.
 - ISSUE-038: connect explicitly for a read-only US paper-account preflight, select exactly one eligible `SIMULATE` account in memory, and validate fresh funds, positions, and order-list reads without order mutations.
+- ISSUE-039: add a disabled-by-default, single-call Moomoo US paper-order submission boundary with explicit side-effect acknowledgement and fresh remark verification.
 - Require OpenD and `moomoo-api` `>=10.4.6408`; keep the SDK in an isolated optional dependency and verify its transitive `protobuf` compatibility without changing unrelated runtime packages.
 - Validate only loopback OpenD reachability at configurable `127.0.0.1:11111`, SDK/API version, account-list shape, US market capability, JP equity market-data entitlement metadata, and paper-account availability.
 - Place no live orders, do not unlock trading, and do not treat discovery output as Shadow Mode approval.

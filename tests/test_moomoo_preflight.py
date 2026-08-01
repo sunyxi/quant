@@ -326,6 +326,21 @@ class MoomooApiSdkPreflightContractTests(unittest.TestCase):
 
         self.assertEqual("SIMULATE", sdk.simulate_trade_environment)
 
+    def test_exposes_fixed_paper_order_enum_values(self) -> None:
+        module = SimpleNamespace(
+            TrdSide=SimpleNamespace(BUY="BUY"),
+            OrderType=SimpleNamespace(NORMAL="NORMAL"),
+            TimeInForce=SimpleNamespace(DAY="DAY"),
+            Session=SimpleNamespace(RTH="RTH"),
+        )
+
+        sdk = MoomooApiSdk(module=module)  # type: ignore[arg-type]
+
+        self.assertEqual("BUY", sdk.buy_trade_side)
+        self.assertEqual("NORMAL", sdk.normal_order_type)
+        self.assertEqual("DAY", sdk.day_time_in_force)
+        self.assertEqual("RTH", sdk.rth_session)
+
 
 if __name__ == "__main__":
     unittest.main()

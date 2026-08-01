@@ -83,6 +83,8 @@ class MoomooTradeContext(Protocol):
 
     def order_list_query(self, **kwargs: object) -> tuple[int, object]: ...
 
+    def place_order(self, **kwargs: object) -> tuple[int, object]: ...
+
     def close(self) -> None: ...
 
 
@@ -90,6 +92,10 @@ class MoomooSdkSource(Protocol):
     version: str
     ret_ok: int
     simulate_trade_environment: object
+    buy_trade_side: object
+    normal_order_type: object
+    day_time_in_force: object
+    rth_session: object
 
     def create_quote_context(self, endpoint: MoomooEndpoint) -> MoomooQuoteContext: ...
 
@@ -144,6 +150,30 @@ class MoomooApiSdk:
         except AttributeError as exc:
             raise MoomooDependencyError(
                 "moomoo-api does not expose the simulated trade environment"
+            ) from exc
+
+    @property
+    def buy_trade_side(self) -> object:
+        return self._required_constant("TrdSide", "BUY", "buy trade side")
+
+    @property
+    def normal_order_type(self) -> object:
+        return self._required_constant("OrderType", "NORMAL", "normal order type")
+
+    @property
+    def day_time_in_force(self) -> object:
+        return self._required_constant("TimeInForce", "DAY", "day time in force")
+
+    @property
+    def rth_session(self) -> object:
+        return self._required_constant("Session", "RTH", "RTH session")
+
+    def _required_constant(self, group: str, name: str, label: str) -> object:
+        try:
+            return getattr(getattr(self.module, group), name)
+        except AttributeError as exc:
+            raise MoomooDependencyError(
+                f"moomoo-api does not expose the {label}"
             ) from exc
 
     def create_quote_context(self, endpoint: MoomooEndpoint) -> MoomooQuoteContext:

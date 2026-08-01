@@ -34,6 +34,10 @@ ISSUE-037 is offline and has no SDK, account-selection, broker, subscription, or
 
 ISSUE-038 performs read-only account, funds, position-list, and order-list calls only. Revert its branch through a reviewed PR, remove the preflight service and CLI, and delete local `moomoo-preflight-reports/` artifacts after checking that they contain only sanitized schema version 1 fields. No order was placed, modified, or cancelled, so no broker order or position reconciliation is required.
 
+## Moomoo Paper-order Submission Rollback
+
+Disable ISSUE-039 invocation first. Inspect the Moomoo paper account for every attempted client-order remark and manually cancel any unwanted open paper order in the Moomoo app before reverting through a reviewed PR. Do not infer that an exception means no order exists. No live-capital order is possible because the implementation exposes `SIMULATE` only.
+
 ## Strategy Filter Rollback
 
 If market quality filters suppress expected research signals, remove `max_spread_bps` and `require_fresh_order_book` from strategy configuration first. If the issue is code-level behavior, revert the ISSUE-007 branch in a new PR.

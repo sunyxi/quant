@@ -12,6 +12,8 @@ ISSUE-037 新增离线 `moomoo-paper-order-dry-run` 契约，用于已就绪的�
 
 ISSUE-038 新增显式连接的只读 `moomoo-paper-account-preflight`。它仅在内存中选择唯一的有效美股 `SIMULATE` `STOCK_AND_OPTION` 账户，强制刷新并读取资金、持仓和订单列表，只输出脱敏分类与计数。它不输出账户 ID、不修改订单，也不授权模拟或实盘交易。
 
+ISSUE-039 新增默认禁用的 `moomoo-paper-order-submit` 边界，仅能把一笔显式确认的美股 BUY 限价单发送到 `SIMULATE`。它最多调用一次提交，通过强制刷新的 client order remark 查询验证，不输出券商标识，也绝不重试未知结果。仓库测试只用 fake SDK；真实 OpenD 模拟单需要操作者另行批准。
+
 当前日历层已覆盖日股普通交易时段、午休、周末过滤、手工假日和收盘前停止新开仓 cutoff，用于研究和回测过滤。
 
 当前板情报层已覆盖不可变订单簿快照、价差、可见深度、OBI、microprice、数据新鲜度和 stale book health，用于研究 fixture。
