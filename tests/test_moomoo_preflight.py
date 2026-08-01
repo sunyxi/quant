@@ -15,19 +15,20 @@ from autotrade.execution.moomoo import (
     MoomooPaperAccountPreflight,
     MoomooPaperAccountPreflightReportReader,
     MoomooPaperAccountPreflightReportWriter,
+    MoomooResponseError,
 )
 from autotrade.execution.moomoo_readiness import MoomooPaperReadinessGate
 from tests.test_moomoo_readiness import ready_discovery
 
 
-SENSITIVE_ACCOUNT_ID = "sensitive-paper-account-id"
+SENSITIVE_ACCOUNT_ID = 987654321
 
 
 def ready_decision():
     return MoomooPaperReadinessGate().evaluate(ready_discovery())
 
 
-def eligible_account(account_id: str = SENSITIVE_ACCOUNT_ID) -> dict[str, object]:
+def eligible_account(account_id: object = SENSITIVE_ACCOUNT_ID) -> dict[str, object]:
     return {
         "acc_id": account_id,
         "trd_env": "SIMULATE",
@@ -77,6 +78,27 @@ class FakePaperTradeContext:
 class RaisingPaperTradeContext(FakePaperTradeContext):
     def position_list_query(self, **kwargs) -> tuple[int, object]:
         raise RuntimeError("sensitive SDK exception")
+
+
+class RaisingResponsePaperTradeContext(FakePaperTradeContext):
+    def __init__(self, category: str) -> None:
+        super().__init__()
+        self.category = category
+
+    def accinfo_query(self, **kwargs) -> tuple[int, object]:
+        if self.category == "funds":
+            raise MoomooResponseError("sensitive funds response")
+        return super().accinfo_query(**kwargs)
+
+    def position_list_query(self, **kwargs) -> tuple[int, object]:
+        if self.category == "positions":
+            raise MoomooResponseError("sensitive positions response")
+        return super().position_list_query(**kwargs)
+
+    def order_list_query(self, **kwargs) -> tuple[int, object]:
+        if self.category == "orders":
+            raise MoomooResponseError("sensitive orders response")
+        return super().order_list_query(**kwargs)
 
 
 class FakePreflightSdk:
@@ -143,7 +165,7 @@ class MoomooPaperAccountPreflightTests(unittest.TestCase):
             context.query_calls,
         )
         self.assertTrue(context.closed)
-        self.assertNotIn(SENSITIVE_ACCOUNT_ID, str(result.to_dict()))
+        self.assertNotIn(str(SENSITIVE_ACCOUNT_ID), str(result.to_dict()))
         with self.assertRaises(FrozenInstanceError):
             result.position_count = 99
 
@@ -180,10 +202,24 @@ class MoomooPaperAccountPreflightTests(unittest.TestCase):
                     endpoint=MoomooEndpoint(),
                     sdk=FakePreflightSdk(context),
                 ).run(readiness=ready_decision())
-            self.assertEqual("account", result.sanitized_failure_category)
-            self.assertEqual(expected_count, result.eligible_account_count)
-            self.assertEqual([], context.query_calls)
-            self.assertTrue(context.closed)
+                self.assertEqual("account", result.sanitized_failure_category)
+                self.assertEqual(expected_count, result.eligible_account_count)
+                self.assertEqual([], context.query_calls)
+                self.assertTrue(context.closed)
+
+    def test_rejects_missing_non_integer_or_non_positive_account_id(self) -> None:
+        for account_id in (None, False, "", "123", 0, -1):
+            context = FakePaperTradeContext(
+                accounts=(0, [eligible_account(account_id)]),
+            )
+            with self.subTest(account_id=account_id):
+                result = MoomooPaperAccountPreflight(
+                    endpoint=MoomooEndpoint(),
+                    sdk=FakePreflightSdk(context),
+                ).run(readiness=ready_decision())
+                self.assertEqual("account", result.sanitized_failure_category)
+                self.assertEqual([], context.query_calls)
+                self.assertTrue(context.closed)
 
     def test_classifies_each_read_response_failure_without_leaking_payload(self) -> None:
         cases = [
@@ -215,6 +251,18 @@ class MoomooPaperAccountPreflightTests(unittest.TestCase):
         self.assertTrue(context.closed)
         self.assertNotIn("sensitive", str(result.to_dict()))
 
+    def test_classifies_direct_sdk_response_errors_by_query_stage(self) -> None:
+        for category in ("funds", "positions", "orders"):
+            context = RaisingResponsePaperTradeContext(category)
+            with self.subTest(category=category):
+                result = MoomooPaperAccountPreflight(
+                    endpoint=MoomooEndpoint(),
+                    sdk=FakePreflightSdk(context),
+                ).run(readiness=ready_decision())
+                self.assertEqual(category, result.sanitized_failure_category)
+                self.assertNotIn("sensitive", str(result.to_dict()))
+                self.assertTrue(context.closed)
+
     def test_report_round_trip_is_create_only_and_rejects_unknown_schema(self) -> None:
         result = MoomooPaperAccountPreflight(
             endpoint=MoomooEndpoint(),
@@ -238,6 +286,22 @@ class MoomooPaperAccountPreflightTests(unittest.TestCase):
             invalid_path.write_text(payload, encoding="utf-8")
             with self.assertRaises(MoomooConfigurationError):
                 MoomooPaperAccountPreflightReportReader().read(invalid_path)
+
+            invalid_status_path = Path(tmpdir) / "invalid-status.json"
+            invalid_status_path.write_text(
+                report_path.read_text(encoding="utf-8").replace(
+                    '"connection_status": "ok"',
+                    '"connection_status": "error"',
+                ),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(
+                MoomooConfigurationError,
+                "connection_status",
+            ):
+                MoomooPaperAccountPreflightReportReader().read(
+                    invalid_status_path
+                )
 
     def test_preflight_source_has_no_order_or_unlock_operation(self) -> None:
         source = inspect.getsource(MoomooPaperAccountPreflight)

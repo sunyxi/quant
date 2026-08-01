@@ -310,6 +310,54 @@ class MoomooPaperAccountPreflightCliTests(unittest.TestCase):
         self.assertIn('"mode": "validate-only"', stdout.getvalue())
         self.assertIn('"connection_status": "not-run"', stdout.getvalue())
 
+    def test_remote_host_is_rejected_before_sdk_load(self) -> None:
+        stderr = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            discovery_path = Path(tmpdir) / "discovery.json"
+            MoomooDiscoveryReportWriter().write(discovery_path, ready_discovery())
+            with patch(
+                "autotrade.cli.MoomooApiSdk.load",
+                side_effect=AssertionError("SDK loaded"),
+            ), redirect_stderr(stderr):
+                exit_code = main(
+                    [
+                        "moomoo-paper-account-preflight",
+                        "--discovery-report",
+                        str(discovery_path),
+                        "--host",
+                        "example.com",
+                    ]
+                )
+
+        self.assertEqual(2, exit_code)
+        self.assertIn("loopback", stderr.getvalue())
+
+    def test_validate_only_blocked_discovery_does_not_load_sdk(self) -> None:
+        stderr = io.StringIO()
+        stdout = io.StringIO()
+        blocked = MoomooDiscoveryResult(
+            paper_account_count=0,
+            paper_account_available=False,
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            discovery_path = Path(tmpdir) / "discovery.json"
+            MoomooDiscoveryReportWriter().write(discovery_path, blocked)
+            with patch(
+                "autotrade.cli.MoomooApiSdk.load",
+                side_effect=AssertionError("SDK loaded"),
+            ), redirect_stdout(stdout), redirect_stderr(stderr):
+                exit_code = main(
+                    [
+                        "moomoo-paper-account-preflight",
+                        "--discovery-report",
+                        str(discovery_path),
+                    ]
+                )
+
+        self.assertEqual(1, exit_code)
+        self.assertEqual("", stdout.getvalue())
+        self.assertIn("READINESS_NOT_READY", stderr.getvalue())
+
     def test_connect_runs_sanitized_preflight_and_writes_report(self) -> None:
         stdout = io.StringIO()
         sdk = FakePreflightSdk()
