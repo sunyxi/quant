@@ -156,14 +156,24 @@ class MoomooPaperOrderDryRunPlannerTests(unittest.TestCase):
             readiness=ready_decision(),
         )
 
-    def test_rejects_non_finite_limit_price(self) -> None:
-        non_finite = replace(order_intent(), limit_price=math.nan)
+    def test_rejects_non_finite_risk_prices(self) -> None:
+        cases = [
+            replace(order_intent(), limit_price=math.nan),
+            replace(order_intent(), stop_price=math.nan),
+            replace(order_intent(), take_profit_price=math.nan),
+        ]
 
-        self._assert_blocked(
-            MoomooPaperOrderPlanReason.PRICE_INVALID,
-            non_finite,
-            readiness=ready_decision(),
-        )
+        for intent in cases:
+            with self.subTest(
+                limit_price=intent.limit_price,
+                stop_price=intent.stop_price,
+                take_profit_price=intent.take_profit_price,
+            ):
+                self._assert_blocked(
+                    MoomooPaperOrderPlanReason.PRICE_INVALID,
+                    intent,
+                    readiness=ready_decision(),
+                )
 
     def test_rejects_client_order_id_with_spaces_without_leaking_it(self) -> None:
         with self.assertRaises(MoomooPaperOrderPlanError) as caught:
@@ -253,6 +263,19 @@ assert not any(
         )
 
         self.assertEqual(0, completed.returncode, completed.stderr)
+
+    def test_runtime_source_has_no_broker_operation_calls(self) -> None:
+        source = (
+            REPO_ROOT / "src/autotrade/execution/moomoo_paper_order.py"
+        ).read_text(encoding="utf-8")
+
+        for forbidden in [
+            "OpenSecTradeContext",
+            "place_order(",
+            "unlock_trade",
+            "subscribe(",
+        ]:
+            self.assertNotIn(forbidden, source)
 
     def _assert_blocked(self, reason, intent, *, readiness) -> None:
         with self.assertRaises(MoomooPaperOrderPlanError) as caught:

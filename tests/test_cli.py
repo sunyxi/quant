@@ -341,6 +341,7 @@ class MoomooPaperOrderDryRunCliTests(unittest.TestCase):
             '"source_order_style": "AGGRESSIVE_LIMIT"',
             stdout.getvalue(),
         )
+        self.assertIn('"take_profit_price": null', stdout.getvalue())
 
     def test_non_finite_price_is_invalid_input(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
