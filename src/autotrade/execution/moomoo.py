@@ -434,7 +434,9 @@ class MoomooPaperAccountPreflight:
             context = self.sdk.create_us_trade_context(self.endpoint)
             state["connection_status"] = "ok"
             accounts = _records(self._read_payload(context.get_acc_list(), "account"))
-            eligible = [row for row in accounts if self._eligible(row)]
+            eligible = [
+                row for row in accounts if is_moomoo_us_paper_account_eligible(row)
+            ]
             state["eligible_account_count"] = len(eligible)
             if len(eligible) != 1:
                 state["account_selection_status"] = "blocked"
@@ -492,14 +494,6 @@ class MoomooPaperAccountPreflight:
             return self._result(**state, sanitized_failure_category="system")
         finally:
             _safe_close(context)
-
-    def _eligible(self, row: object) -> bool:
-        return (
-            _enum_name(_field(row, "trd_env")) == "SIMULATE"
-            and _enum_name(_field(row, "sim_acc_type")) == "STOCK_AND_OPTION"
-            and "US" in _market_names(_field(row, "trdmarket_auth"))
-            and _enum_name(_field(row, "acc_status")) == "ACTIVE"
-        )
 
     def _read_payload(self, response: tuple[int, object], category: str) -> object:
         if not isinstance(response, tuple) or len(response) != 2:
@@ -689,7 +683,6 @@ def _validate_report_payload(payload: Mapping[str, object]) -> None:
     }
     if any(not isinstance(payload[field], str) for field in string_fields):
         raise MoomooConfigurationError("invalid Moomoo discovery report payload")
-
     if not _safe_report_endpoint(payload["endpoint"]):
         raise MoomooConfigurationError("invalid Moomoo discovery report payload")
     if payload["sdk_version"] != "UNKNOWN" and not _VERSION_PATTERN.fullmatch(
@@ -741,6 +734,15 @@ def _validate_report_payload(payload: Mapping[str, object]) -> None:
         "system",
     }:
         raise MoomooConfigurationError("invalid Moomoo discovery report payload")
+
+
+def is_moomoo_us_paper_account_eligible(row: object) -> bool:
+    return (
+        _enum_name(_field(row, "trd_env")) == "SIMULATE"
+        and _enum_name(_field(row, "sim_acc_type")) == "STOCK_AND_OPTION"
+        and "US" in _market_names(_field(row, "trdmarket_auth"))
+        and _enum_name(_field(row, "acc_status")) == "ACTIVE"
+    )
 
 
 def _safe_report_endpoint(value: str) -> bool:

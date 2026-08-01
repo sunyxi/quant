@@ -101,6 +101,26 @@ class MissingConstantSubmitSdk(FakeSubmitSdk):
         raise AttributeError("sensitive missing constant")
 
 
+class GetOnlyRow:
+    def __init__(self, values: dict[str, object]) -> None:
+        self.values = values
+
+    def get(self, name: str) -> object:
+        return self.values.get(name)
+
+
+class NonListFrame:
+    def __init__(self) -> None:
+        self.iterated = False
+
+    def to_dict(self, orient: str) -> tuple[object, ...]:
+        return ()
+
+    def __iter__(self):
+        self.iterated = True
+        raise AssertionError("must not iterate malformed frame")
+
+
 class MoomooPaperOrderSubmitterTests(unittest.TestCase):
     def test_submits_once_and_verifies_by_client_remark(self) -> None:
         context = FakeSubmitContext()
@@ -198,6 +218,60 @@ class MoomooPaperOrderSubmitterTests(unittest.TestCase):
                 )
                 self.assertEqual([], context.place_calls)
                 self.assertTrue(context.closed)
+
+    def test_accepts_sdk_row_with_callable_get(self) -> None:
+        context = FakeSubmitContext()
+        context.accounts = (0, [GetOnlyRow(eligible_account())])
+
+        result = MoomooPaperOrderSubmitter(
+            endpoint=MoomooEndpoint(),
+            sdk=FakeSubmitSdk(context),
+        ).submit(
+            paper_plan(),
+            readiness=ready_decision(),
+            preflight=successful_preflight(),
+            acknowledged=True,
+        )
+
+        self.assertEqual(MoomooPaperOrderSubmissionStatus.VERIFIED, result.status)
+        self.assertEqual(1, len(context.place_calls))
+
+    def test_malformed_frame_does_not_fall_through_to_iteration(self) -> None:
+        context = FakeSubmitContext()
+        frame = NonListFrame()
+        context.accounts = (0, frame)
+
+        result = MoomooPaperOrderSubmitter(
+            endpoint=MoomooEndpoint(),
+            sdk=FakeSubmitSdk(context),
+        ).submit(
+            paper_plan(),
+            readiness=ready_decision(),
+            preflight=successful_preflight(),
+            acknowledged=True,
+        )
+
+        self.assertEqual(MoomooPaperOrderSubmissionStatus.BLOCKED, result.status)
+        self.assertFalse(frame.iterated)
+        self.assertEqual([], context.place_calls)
+
+    def test_short_sdk_version_is_blocked_before_context_creation(self) -> None:
+        sdk = FakeSubmitSdk()
+        sdk.version = "10.5"
+
+        result = MoomooPaperOrderSubmitter(
+            endpoint=MoomooEndpoint(),
+            sdk=sdk,
+        ).submit(
+            paper_plan(),
+            readiness=ready_decision(),
+            preflight=successful_preflight(),
+            acknowledged=True,
+        )
+
+        self.assertEqual(MoomooPaperOrderSubmissionStatus.BLOCKED, result.status)
+        self.assertEqual("version", result.sanitized_failure_category)
+        self.assertEqual(0, sdk.create_calls)
 
     def test_rejected_response_is_sanitized_and_not_verified(self) -> None:
         context = FakeSubmitContext()

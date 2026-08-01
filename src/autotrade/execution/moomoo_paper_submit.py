@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping
 from dataclasses import asdict, dataclass
 from enum import StrEnum
 from typing import Protocol
@@ -9,6 +8,13 @@ from autotrade.execution.moomoo import (
     MIN_MOOMOO_API_VERSION,
     MoomooEndpoint,
     MoomooPaperAccountPreflightResult,
+    MoomooResponseError,
+    _field,
+    _records,
+    _safe_close,
+    _safe_version,
+    _version_at_least,
+    is_moomoo_us_paper_account_eligible,
 )
 from autotrade.execution.moomoo_paper_order import MoomooPaperOrderPlan
 from autotrade.execution.moomoo_readiness import MoomooPaperReadinessDecision
@@ -117,7 +123,9 @@ class MoomooPaperOrderSubmitter:
         try:
             context = self.sdk.create_us_trade_context(self.endpoint)
             accounts = self._read_records(context.get_acc_list())
-            eligible = [row for row in accounts if self._eligible(row)]
+            eligible = [
+                row for row in accounts if is_moomoo_us_paper_account_eligible(row)
+            ]
             state["eligible_account_count"] = len(eligible)
             if len(eligible) != 1:
                 state["account_selection_status"] = "blocked"
@@ -246,14 +254,6 @@ class MoomooPaperOrderSubmitter:
             return "plan"
         return None
 
-    def _eligible(self, row: object) -> bool:
-        return (
-            _enum_name(_field(row, "trd_env")) == "SIMULATE"
-            and _enum_name(_field(row, "sim_acc_type")) == "STOCK_AND_OPTION"
-            and "US" in _market_names(_field(row, "trdmarket_auth"))
-            and _enum_name(_field(row, "acc_status")) == "ACTIVE"
-        )
-
     def _read_records(self, response: tuple[int, object]) -> list[object]:
         if not isinstance(response, tuple) or len(response) != 2:
             raise ValueError("invalid response")
@@ -268,71 +268,6 @@ class MoomooPaperOrderSubmitter:
         if response[0] != self.sdk.ret_ok:
             return "rejected"
         try:
-            return "accepted" if self._read_records(response) else "unknown"
-        except ValueError:
+            return "accepted" if _records(response[1]) else "unknown"
+        except MoomooResponseError:
             return "unknown"
-
-
-def _records(payload: object) -> list[object]:
-    if hasattr(payload, "to_dict"):
-        records = payload.to_dict("records")
-        if isinstance(records, list):
-            return records
-    if isinstance(payload, (list, tuple)):
-        return list(payload)
-    if isinstance(payload, Iterable) and not isinstance(
-        payload,
-        (str, bytes, Mapping),
-    ):
-        return list(payload)
-    raise ValueError("invalid records")
-
-
-def _field(row: object, name: str) -> object:
-    if isinstance(row, Mapping):
-        return row.get(name)
-    return getattr(row, name, None)
-
-
-def _enum_name(value: object) -> str:
-    name = getattr(value, "name", None)
-    text = str(name if name is not None else value).strip()
-    if "." in text:
-        text = text.rsplit(".", 1)[-1]
-    return text.upper()
-
-
-def _market_names(value: object) -> set[str]:
-    if isinstance(value, str):
-        parts: Iterable[object] = value.strip("[]").split(",")
-    elif isinstance(value, Iterable) and not isinstance(value, (bytes, Mapping)):
-        parts = value
-    else:
-        parts = ()
-    return {_enum_name(part) for part in parts}
-
-
-def _safe_version(value: object) -> str:
-    text = str(value).strip()
-    try:
-        tuple(int(part) for part in text.split("."))
-    except ValueError:
-        return "UNKNOWN"
-    return text
-
-
-def _version_at_least(current: str, minimum: str) -> bool:
-    if current == "UNKNOWN":
-        return False
-    return tuple(int(part) for part in current.split(".")) >= tuple(
-        int(part) for part in minimum.split(".")
-    )
-
-
-def _safe_close(context: object | None) -> None:
-    if context is None:
-        return
-    try:
-        context.close()
-    except Exception:
-        pass

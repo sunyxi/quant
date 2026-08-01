@@ -495,6 +495,9 @@ class MoomooPaperOrderDryRunCliTests(unittest.TestCase):
                 )
 
         self.assertEqual(0, exit_code)
+        self.assertIn('"dry_run": true', stdout.getvalue())
+        self.assertIn('"trd_env": "SIMULATE"', stdout.getvalue())
+        self.assertNotIn("acc_id", stdout.getvalue())
 
 
     def test_accepts_aggressive_limit_order_style(self) -> None:
