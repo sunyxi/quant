@@ -10,6 +10,8 @@ ISSUE-036 新增 `moomoo-paper-readiness`，离线评估已验证的 discovery r
 
 ISSUE-037 新增离线 `moomoo-paper-order-dry-run` 契约，用于已就绪的美股买入限价 intent。它支持 passive 或 aggressive 源风格，验证 8–64 字符 client order ID 和 BUY 风险价格关系，输出固定的 `SIMULATE`、`NORMAL`、`DAY` 和 `RTH` 值，并限制数量与名义金额。它不导入 SDK、不选择账户、不发送订单，也不授权模拟或实盘交易。
 
+ISSUE-038 新增显式连接的只读 `moomoo-paper-account-preflight`。它仅在内存中选择唯一的有效美股 `SIMULATE` `STOCK_AND_OPTION` 账户，强制刷新并读取资金、持仓和订单列表，只输出脱敏分类与计数。它不输出账户 ID、不修改订单，也不授权模拟或实盘交易。
+
 当前日历层已覆盖日股普通交易时段、午休、周末过滤、手工假日和收盘前停止新开仓 cutoff，用于研究和回测过滤。
 
 当前板情报层已覆盖不可变订单簿快照、价差、可见深度、OBI、microprice、数据新鲜度和 stale book health，用于研究 fixture。

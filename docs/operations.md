@@ -100,6 +100,8 @@ Run `moomoo-paper-readiness --discovery-report PATH` only against a retained san
 
 Run `moomoo-paper-order-dry-run` only after reviewing a retained `READY` discovery report. Verify the explicit code, 8-64 character client order ID, order style, quantity, finite prices, timestamp, USD 25,000 notional cap, and 100-share cap. For BUY, require `stop < limit < take-profit` when take-profit is present. The result must remain `SIMULATE` / `NORMAL` / `DAY` / `RTH` and contain no account identifier. Archive it only as local design evidence. It neither selects an account nor sends a paper order, so there is no broker order to reconcile or cancel.
 
+Run `moomoo-paper-account-preflight` in validate-only mode first. Use `--connect` only while OpenD is logged in and only with a retained report that evaluates to `READY`. The command must find exactly one active US `SIMULATE` `STOCK_AND_OPTION` account and run fresh funds, positions, and order-list reads. Treat zero or multiple eligible accounts, any failed read, or any nonzero exit as blocking. Store create-only reports under `moomoo-preflight-reports/` and confirm they contain classifications and counts only. Never paste an account ID or raw SDK payload into an incident, log, or PR. A passed preflight proves read compatibility only and does not authorize a paper order.
+
 ## Issue Workflow
 
 0. Read `AGENT.md`.

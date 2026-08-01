@@ -28,6 +28,8 @@ from autotrade.execution.moomoo import (
     MoomooDiscoveryReportReader,
     MoomooDiscoveryReportWriter,
     MoomooEndpoint,
+    MoomooPaperAccountPreflight,
+    MoomooPaperAccountPreflightReportWriter,
     MoomooReadOnlyDiscovery,
 )
 from autotrade.execution.moomoo_readiness import (
@@ -56,6 +58,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
     if args.command == "moomoo-paper-readiness":
         return _run_moomoo_paper_readiness(
+            args,
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+        )
+    if args.command == "moomoo-paper-account-preflight":
+        return _run_moomoo_paper_account_preflight(
             args,
             stdout=sys.stdout,
             stderr=sys.stderr,
@@ -132,6 +140,32 @@ def _build_parser() -> argparse.ArgumentParser:
         type=Path,
         required=True,
         help="Path to a sanitized Moomoo discovery schema version 1 report.",
+    )
+    preflight = subparsers.add_parser(
+        "moomoo-paper-account-preflight",
+        description="Validate or run the read-only Moomoo US paper-account preflight.",
+    )
+    preflight.add_argument("--discovery-report", type=Path, required=True)
+    preflight.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="Loopback Moomoo OpenD host. Defaults to 127.0.0.1.",
+    )
+    preflight.add_argument(
+        "--port",
+        type=int,
+        default=11111,
+        help="Moomoo OpenD port. Defaults to 11111.",
+    )
+    preflight.add_argument(
+        "--connect",
+        action="store_true",
+        help="Explicitly load moomoo-api and run the read-only account preflight.",
+    )
+    preflight.add_argument(
+        "--report-output",
+        type=Path,
+        help="Optional path for a sanitized create-only preflight report.",
     )
     paper_order = subparsers.add_parser(
         "moomoo-paper-order-dry-run",
@@ -286,6 +320,61 @@ def _run_moomoo_paper_readiness(
 
     print(json.dumps(decision.to_dict(), sort_keys=True), file=stdout)
     return 0 if decision.is_ready else 1
+
+
+def _run_moomoo_paper_account_preflight(
+    args: argparse.Namespace,
+    *,
+    stdout: TextIO,
+    stderr: TextIO,
+) -> int:
+    try:
+        endpoint = MoomooEndpoint(host=args.host, port=args.port)
+        readiness = _read_moomoo_paper_readiness(args.discovery_report)
+    except MoomooConfigurationError as exc:
+        print(f"error: {exc}", file=stderr)
+        return 2
+
+    if not readiness.is_ready:
+        print("error: READINESS_NOT_READY", file=stderr)
+        return 1
+
+    if not args.connect:
+        print(
+            json.dumps(
+                {
+                    "mode": "validate-only",
+                    "probe": "Moomoo US paper-account read-only preflight",
+                    "localhost_endpoint": endpoint.display,
+                    "readiness_status": "READY",
+                    "connection_status": "not-run",
+                },
+                sort_keys=True,
+            ),
+            file=stdout,
+        )
+        return 0
+
+    try:
+        sdk = MoomooApiSdk.load()
+    except MoomooClientError:
+        print("error: Moomoo paper-account preflight failed (dependency)", file=stderr)
+        return 1
+
+    result = MoomooPaperAccountPreflight(endpoint=endpoint, sdk=sdk).run(
+        readiness=readiness
+    )
+    print(json.dumps(result.to_dict(), sort_keys=True), file=stdout)
+    if args.report_output is not None:
+        try:
+            MoomooPaperAccountPreflightReportWriter().write(
+                args.report_output,
+                result,
+            )
+        except MoomooConfigurationError as exc:
+            print(f"error: {exc}", file=stderr)
+            return 2
+    return 0 if result.sanitized_failure_category is None else 1
 
 
 def _run_moomoo_paper_order_dry_run(

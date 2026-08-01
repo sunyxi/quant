@@ -103,9 +103,25 @@ PYTHONPATH=src python3 -m autotrade.cli moomoo-paper-order-dry-run \
 
 The planner requires `READY`, US `BUY`, a canonical `US.<ticker>` code, an 8-64 character safe client order ID, whole shares, and a passive or aggressive limit intent. For a buy, the stop must be below the limit price and an optional take-profit price must be above it. Defaults cap quantity at 100 and notional at USD 25,000. Its fixed contract uses `SIMULATE`, `NORMAL`, `DAY`, and `RTH`. It does not select an account, inspect buying power, call the SDK, or submit an order. The output is design evidence only and does not authorize a paper order, Shadow Mode, or live trading. Non-finite CLI prices are invalid input and return exit code `2`.
 
+## Connected Paper-account Preflight
+
+ISSUE-038 adds `moomoo-paper-account-preflight`. Its default validate-only mode reads a validated discovery report but does not load the SDK or connect. Explicit `--connect` requires a `READY` decision, opens one US trade Context, and selects exactly one `ACTIVE`, US-authorized `SIMULATE` account whose `sim_acc_type` is `STOCK_AND_OPTION`:
+
+```bash
+mkdir -p moomoo-preflight-reports
+PYTHONPATH=src python3 -m autotrade.cli moomoo-paper-account-preflight \
+  --discovery-report moomoo-discovery-reports/moomoo-readonly-discovery-report.json \
+  --connect \
+  --report-output moomoo-preflight-reports/moomoo-paper-account-preflight-report.json
+```
+
+The selected account ID remains in memory only. The preflight calls `accinfo_query`, `position_list_query`, and `order_list_query` with the selected ID, `TrdEnv.SIMULATE`, and `refresh_cache=True`. It closes the Context on every path and reports only account classification, query statuses, aggregate position/order counts, SDK version, loopback endpoint, and a fixed failure category. The output does not include account identifiers, raw broker rows, credentials, order IDs, or SDK exception text.
+
+This is a read compatibility check. It does not call `unlock_trade`, place, modify, or cancel an order, subscribe to market data, expose a `REAL` environment option, or authorize Shadow Mode. A successful preflight does not authorize a paper order; submission requires a separate reviewed Issue.
+
 ## Security
 
-Repository code must never call `unlock_trade`. Any future live-trading unlock requires a separately reviewed Issue and manual action in the OpenD GUI. The dry-run plan contains no account identifier or credential and has no broker side effect.
+Repository code must never call `unlock_trade`. Any future live-trading unlock requires a separately reviewed Issue and manual action in the OpenD GUI. Dry-run and preflight output contain no account identifier or credential and have no broker order side effect.
 
 ## Official References
 

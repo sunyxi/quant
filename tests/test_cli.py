@@ -15,6 +15,7 @@ from autotrade.execution.moomoo import (
 )
 from tests.test_moomoo_discovery import FakeSdk
 from tests.test_moomoo_readiness import ready_discovery
+from tests.test_moomoo_preflight import FakePreflightSdk
 
 
 class KabuStationCliTests(unittest.TestCase):
@@ -281,6 +282,179 @@ class MoomooPaperReadinessCliTests(unittest.TestCase):
 
         self.assertEqual(2, exit_code)
         self.assertIn("could not read", stderr.getvalue())
+        self.assertNotIn("Traceback", stderr.getvalue())
+
+
+class MoomooPaperAccountPreflightCliTests(unittest.TestCase):
+    def test_validate_only_does_not_load_sdk_or_connect(self) -> None:
+        stdout = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            discovery_path = Path(tmpdir) / "discovery.json"
+            MoomooDiscoveryReportWriter().write(
+                discovery_path,
+                ready_discovery(),
+            )
+            with patch(
+                "autotrade.cli.MoomooApiSdk.load",
+                side_effect=AssertionError("SDK loaded"),
+            ), redirect_stdout(stdout):
+                exit_code = main(
+                    [
+                        "moomoo-paper-account-preflight",
+                        "--discovery-report",
+                        str(discovery_path),
+                    ]
+                )
+
+        self.assertEqual(0, exit_code)
+        self.assertIn('"mode": "validate-only"', stdout.getvalue())
+        self.assertIn('"connection_status": "not-run"', stdout.getvalue())
+
+    def test_remote_host_is_rejected_before_sdk_load(self) -> None:
+        stderr = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            discovery_path = Path(tmpdir) / "discovery.json"
+            MoomooDiscoveryReportWriter().write(discovery_path, ready_discovery())
+            with patch(
+                "autotrade.cli.MoomooApiSdk.load",
+                side_effect=AssertionError("SDK loaded"),
+            ), redirect_stderr(stderr):
+                exit_code = main(
+                    [
+                        "moomoo-paper-account-preflight",
+                        "--discovery-report",
+                        str(discovery_path),
+                        "--host",
+                        "example.com",
+                    ]
+                )
+
+        self.assertEqual(2, exit_code)
+        self.assertIn("loopback", stderr.getvalue())
+
+    def test_validate_only_blocked_discovery_does_not_load_sdk(self) -> None:
+        stderr = io.StringIO()
+        stdout = io.StringIO()
+        blocked = MoomooDiscoveryResult(
+            paper_account_count=0,
+            paper_account_available=False,
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            discovery_path = Path(tmpdir) / "discovery.json"
+            MoomooDiscoveryReportWriter().write(discovery_path, blocked)
+            with patch(
+                "autotrade.cli.MoomooApiSdk.load",
+                side_effect=AssertionError("SDK loaded"),
+            ), redirect_stdout(stdout), redirect_stderr(stderr):
+                exit_code = main(
+                    [
+                        "moomoo-paper-account-preflight",
+                        "--discovery-report",
+                        str(discovery_path),
+                    ]
+                )
+
+        self.assertEqual(1, exit_code)
+        self.assertEqual("", stdout.getvalue())
+        self.assertIn("READINESS_NOT_READY", stderr.getvalue())
+
+    def test_connect_runs_sanitized_preflight_and_writes_report(self) -> None:
+        stdout = io.StringIO()
+        sdk = FakePreflightSdk()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            discovery_path = Path(tmpdir) / "discovery.json"
+            report_path = Path(tmpdir) / "preflight.json"
+            MoomooDiscoveryReportWriter().write(
+                discovery_path,
+                ready_discovery(),
+            )
+            with patch(
+                "autotrade.cli.MoomooApiSdk.load",
+                return_value=sdk,
+            ), redirect_stdout(stdout):
+                exit_code = main(
+                    [
+                        "moomoo-paper-account-preflight",
+                        "--discovery-report",
+                        str(discovery_path),
+                        "--connect",
+                        "--report-output",
+                        str(report_path),
+                    ]
+                )
+
+            report = report_path.read_text(encoding="utf-8")
+
+        self.assertEqual(0, exit_code)
+        self.assertIn('"sanitized_failure_category": null', stdout.getvalue())
+        self.assertIn('"refresh_cache": true', report)
+        self.assertNotIn("acc_id", stdout.getvalue())
+        self.assertNotIn("sensitive", stdout.getvalue())
+        self.assertTrue(sdk.context.closed)
+
+    def test_blocked_discovery_prevents_sdk_load(self) -> None:
+        stderr = io.StringIO()
+        blocked = MoomooDiscoveryResult(
+            endpoint="127.0.0.1:11111",
+            sdk_version="10.9.6908",
+            server_version="1009",
+            quote_connection_status="ok",
+            trade_connection_status="ok",
+            qot_logged_in=True,
+            trd_logged_in=True,
+            us_quote_entitlement="UNKNOWN",
+            account_count=1,
+            paper_account_count=1,
+            paper_account_available=True,
+            us_market_authorized=True,
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            discovery_path = Path(tmpdir) / "discovery.json"
+            MoomooDiscoveryReportWriter().write(discovery_path, blocked)
+            with patch(
+                "autotrade.cli.MoomooApiSdk.load",
+                side_effect=AssertionError("SDK loaded"),
+            ), redirect_stderr(stderr):
+                exit_code = main(
+                    [
+                        "moomoo-paper-account-preflight",
+                        "--discovery-report",
+                        str(discovery_path),
+                        "--connect",
+                    ]
+                )
+
+        self.assertEqual(1, exit_code)
+        self.assertIn("READINESS_NOT_READY", stderr.getvalue())
+        self.assertNotIn("Traceback", stderr.getvalue())
+
+    def test_report_write_failure_returns_two_without_traceback(self) -> None:
+        stderr = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            discovery_path = Path(tmpdir) / "discovery.json"
+            report_path = Path(tmpdir) / "existing.json"
+            report_path.write_text("occupied", encoding="utf-8")
+            MoomooDiscoveryReportWriter().write(
+                discovery_path,
+                ready_discovery(),
+            )
+            with patch(
+                "autotrade.cli.MoomooApiSdk.load",
+                return_value=FakePreflightSdk(),
+            ), redirect_stderr(stderr):
+                exit_code = main(
+                    [
+                        "moomoo-paper-account-preflight",
+                        "--discovery-report",
+                        str(discovery_path),
+                        "--connect",
+                        "--report-output",
+                        str(report_path),
+                    ]
+                )
+
+        self.assertEqual(2, exit_code)
+        self.assertIn("already exists", stderr.getvalue())
         self.assertNotIn("Traceback", stderr.getvalue())
 
 

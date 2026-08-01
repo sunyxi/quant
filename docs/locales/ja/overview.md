@@ -10,6 +10,8 @@ ISSUE-036 は `moomoo-paper-readiness` を追加し、検証済み discovery rep
 
 ISSUE-037 は、準備完了した米国株買い指値 intent 向けのオフライン `moomoo-paper-order-dry-run` 契約を追加します。passive/aggressive の元スタイル、8〜64文字の client order ID、BUY のリスク価格関係を検証し、`SIMULATE`、`NORMAL`、`DAY`、`RTH` の固定値と数量・想定元本上限を出力します。SDK の import、口座選択、発注は行わず、デモ取引や実取引を承認しません。
 
+ISSUE-038 は、明示的に接続する参照専用 `moomoo-paper-account-preflight` を追加します。有効な米国 `SIMULATE` `STOCK_AND_OPTION` 口座をメモリ内で一つだけ選び、資金、建玉、注文一覧を最新化して参照します。口座 ID は出力せず、注文を変更せず、デモ取引や実取引を承認しません。
+
 現在のカレンダー層は、日本株の通常取引時間、昼休み、週末除外、手動祝日、引け前の新規エントリー停止時刻を研究用フィルターとして扱います。
 
 現在の板情報層は、研究用フィクスチャとして不変スナップショット、スプレッド、可視深度、OBI、microprice、鮮度、STALE 判定を扱います。

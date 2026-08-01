@@ -3,8 +3,8 @@ from __future__ import annotations
 import importlib
 import json
 import re
-from collections.abc import Iterable, Mapping
-from dataclasses import asdict, dataclass
+from collections.abc import Callable, Iterable, Mapping
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from types import ModuleType
 from typing import Any, Protocol
@@ -12,6 +12,8 @@ from typing import Any, Protocol
 
 MIN_MOOMOO_API_VERSION = "10.4.6408"
 MOOMOO_DISCOVERY_SCHEMA_VERSION = 1
+MOOMOO_PAPER_ACCOUNT_PREFLIGHT_SCHEMA_VERSION = 1
+_MOOMOO_PREFLIGHT_REFRESH_CACHE = True
 _LOOPBACK_HOSTS = frozenset({"127.0.0.1", "localhost", "::1"})
 _VERSION_PATTERN = re.compile(r"\d+(?:\.\d+){2,3}")
 _SERVER_VERSION_PATTERN = re.compile(r"\d+(?:\.\d+){0,3}")
@@ -75,12 +77,19 @@ class MoomooQuoteContext(Protocol):
 class MoomooTradeContext(Protocol):
     def get_acc_list(self) -> tuple[int, object]: ...
 
+    def accinfo_query(self, **kwargs: object) -> tuple[int, object]: ...
+
+    def position_list_query(self, **kwargs: object) -> tuple[int, object]: ...
+
+    def order_list_query(self, **kwargs: object) -> tuple[int, object]: ...
+
     def close(self) -> None: ...
 
 
 class MoomooSdkSource(Protocol):
     version: str
     ret_ok: int
+    simulate_trade_environment: object
 
     def create_quote_context(self, endpoint: MoomooEndpoint) -> MoomooQuoteContext: ...
 
@@ -127,6 +136,15 @@ class MoomooApiSdk:
     @property
     def ret_ok(self) -> int:
         return int(getattr(self.module, "RET_OK", 0))
+
+    @property
+    def simulate_trade_environment(self) -> object:
+        try:
+            return self.module.TrdEnv.SIMULATE
+        except AttributeError as exc:
+            raise MoomooDependencyError(
+                "moomoo-api does not expose the simulated trade environment"
+            ) from exc
 
     def create_quote_context(self, endpoint: MoomooEndpoint) -> MoomooQuoteContext:
         try:
@@ -281,21 +299,7 @@ class MoomooDiscoveryReportWriter:
         path: str | Path,
         result: MoomooDiscoveryResult,
     ) -> Path:
-        output_path = Path(path)
-        try:
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-            with output_path.open("x", encoding="utf-8") as stream:
-                json.dump(result.to_dict(), stream, sort_keys=True)
-                stream.write("\n")
-        except FileExistsError as exc:
-            raise MoomooConfigurationError(
-                "Moomoo discovery report already exists"
-            ) from exc
-        except OSError as exc:
-            raise MoomooConfigurationError(
-                "could not write the Moomoo discovery report"
-            ) from exc
-        return output_path
+        return _write_create_only_report(path, result.to_dict(), "discovery")
 
 
 class MoomooDiscoveryReportReader:
@@ -323,6 +327,324 @@ class MoomooDiscoveryReportReader:
             raise MoomooConfigurationError(
                 "invalid Moomoo discovery report payload"
             ) from exc
+
+
+class MoomooPaperReadinessSource(Protocol):
+    schema_version: int
+
+    @property
+    def is_ready(self) -> bool: ...
+
+
+@dataclass(frozen=True)
+class MoomooPaperAccountPreflightResult:
+    schema_version: int = MOOMOO_PAPER_ACCOUNT_PREFLIGHT_SCHEMA_VERSION
+    endpoint: str = "127.0.0.1:11111"
+    sdk_version: str = "UNKNOWN"
+    readiness_schema_version: int = 0
+    connection_status: str = "not-run"
+    account_selection_status: str = "not-run"
+    eligible_account_count: int = 0
+    account_type: str = "UNKNOWN"
+    sim_account_type: str = "UNKNOWN"
+    account_status: str = "UNKNOWN"
+    funds_query_status: str = "not-run"
+    positions_query_status: str = "not-run"
+    orders_query_status: str = "not-run"
+    position_count: int = 0
+    order_record_count: int = 0
+    refresh_cache: bool = _MOOMOO_PREFLIGHT_REFRESH_CACHE
+    sanitized_failure_category: str | None = None
+
+    def to_dict(self) -> dict[str, object]:
+        return asdict(self)
+
+
+class _MoomooPreflightQueryFailure(RuntimeError):
+    def __init__(self, category: str) -> None:
+        super().__init__(category)
+        self.category = category
+
+
+@dataclass(frozen=True)
+class MoomooPaperAccountPreflight:
+    endpoint: MoomooEndpoint
+    sdk: MoomooSdkSource
+
+    def run(
+        self,
+        *,
+        readiness: MoomooPaperReadinessSource,
+    ) -> MoomooPaperAccountPreflightResult:
+        readiness_schema_version = _safe_nonnegative_int(readiness.schema_version)
+        if not readiness.is_ready:
+            return self._result(
+                readiness_schema_version=readiness_schema_version,
+                sanitized_failure_category="readiness",
+            )
+
+        raw_sdk_version = str(self.sdk.version)
+        sdk_version = _safe_version(raw_sdk_version)
+        if sdk_version == "UNKNOWN" or not _version_at_least(
+            raw_sdk_version,
+            MIN_MOOMOO_API_VERSION,
+        ):
+            return self._result(
+                readiness_schema_version=readiness_schema_version,
+                sdk_version=sdk_version,
+                sanitized_failure_category="version",
+            )
+
+        context: MoomooTradeContext | None = None
+        state: dict[str, object] = {
+            "readiness_schema_version": readiness_schema_version,
+            "sdk_version": sdk_version,
+        }
+        try:
+            context = self.sdk.create_us_trade_context(self.endpoint)
+            state["connection_status"] = "ok"
+            accounts = _records(self._read_payload(context.get_acc_list(), "account"))
+            eligible = [row for row in accounts if self._eligible(row)]
+            state["eligible_account_count"] = len(eligible)
+            if len(eligible) != 1:
+                state["account_selection_status"] = "blocked"
+                return self._result(**state, sanitized_failure_category="account")
+
+            account = eligible[0]
+            account_id = _field(account, "acc_id")
+            if not (
+                isinstance(account_id, int)
+                and not isinstance(account_id, bool)
+                and account_id > 0
+            ):
+                state["account_selection_status"] = "blocked"
+                return self._result(**state, sanitized_failure_category="account")
+
+            state.update(
+                account_selection_status="unique",
+                account_type=_enum_name(_field(account, "acc_type")),
+                sim_account_type=_enum_name(_field(account, "sim_acc_type")),
+                account_status=_enum_name(_field(account, "acc_status")),
+            )
+            query_kwargs = {
+                "trd_env": self.sdk.simulate_trade_environment,
+                "acc_id": account_id,
+                "refresh_cache": _MOOMOO_PREFLIGHT_REFRESH_CACHE,
+            }
+            self._query_records(
+                lambda: context.accinfo_query(**query_kwargs),
+                "funds",
+            )
+            state["funds_query_status"] = "ok"
+            positions = self._query_records(
+                lambda: context.position_list_query(**query_kwargs),
+                "positions",
+            )
+            state["positions_query_status"] = "ok"
+            state["position_count"] = len(positions)
+            orders = self._query_records(
+                lambda: context.order_list_query(**query_kwargs),
+                "orders",
+            )
+            state["orders_query_status"] = "ok"
+            state["order_record_count"] = len(orders)
+            return self._result(**state)
+        except MoomooConnectionError:
+            return self._result(**state, sanitized_failure_category="connection")
+        except _MoomooPreflightQueryFailure as exc:
+            return self._result(
+                **state,
+                sanitized_failure_category=exc.category,
+            )
+        except MoomooResponseError:
+            return self._result(**state, sanitized_failure_category="account")
+        except Exception:
+            return self._result(**state, sanitized_failure_category="system")
+        finally:
+            _safe_close(context)
+
+    def _eligible(self, row: object) -> bool:
+        return (
+            _enum_name(_field(row, "trd_env")) == "SIMULATE"
+            and _enum_name(_field(row, "sim_acc_type")) == "STOCK_AND_OPTION"
+            and "US" in _market_names(_field(row, "trdmarket_auth"))
+            and _enum_name(_field(row, "acc_status")) == "ACTIVE"
+        )
+
+    def _read_payload(self, response: tuple[int, object], category: str) -> object:
+        if not isinstance(response, tuple) or len(response) != 2:
+            raise _MoomooPreflightQueryFailure(category)
+        status, payload = response
+        if status != self.sdk.ret_ok:
+            raise _MoomooPreflightQueryFailure(category)
+        return payload
+
+    def _read_records(
+        self,
+        response: tuple[int, object],
+        category: str,
+    ) -> list[object]:
+        try:
+            return _records(self._read_payload(response, category))
+        except MoomooResponseError as exc:
+            raise _MoomooPreflightQueryFailure(category) from exc
+
+    def _query_records(
+        self,
+        query: Callable[[], tuple[int, object]],
+        category: str,
+    ) -> list[object]:
+        try:
+            response = query()
+        except MoomooResponseError as exc:
+            raise _MoomooPreflightQueryFailure(category) from exc
+        return self._read_records(response, category)
+
+    def _result(
+        self,
+        **changes: Any,
+    ) -> MoomooPaperAccountPreflightResult:
+        return replace(
+            MoomooPaperAccountPreflightResult(
+                endpoint=self.endpoint.display,
+            ),
+            **changes,
+        )
+
+
+class MoomooPaperAccountPreflightReportWriter:
+    def write(
+        self,
+        path: str | Path,
+        result: MoomooPaperAccountPreflightResult,
+    ) -> Path:
+        return _write_create_only_report(
+            path,
+            result.to_dict(),
+            "paper-account preflight",
+        )
+
+
+class MoomooPaperAccountPreflightReportReader:
+    def read(self, path: str | Path) -> MoomooPaperAccountPreflightResult:
+        try:
+            payload = json.loads(Path(path).read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            raise MoomooConfigurationError(
+                "could not read the Moomoo paper-account preflight report"
+            ) from exc
+        required = set(MoomooPaperAccountPreflightResult.__dataclass_fields__)
+        if not isinstance(payload, dict) or set(payload) != required:
+            raise MoomooConfigurationError(
+                "invalid Moomoo paper-account preflight report fields"
+            )
+        _validate_preflight_report_payload(payload)
+        return MoomooPaperAccountPreflightResult(**payload)
+
+
+def _write_create_only_report(
+    path: str | Path,
+    payload: Mapping[str, object],
+    label: str,
+) -> Path:
+    output_path = Path(path)
+    try:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with output_path.open("x", encoding="utf-8") as stream:
+            json.dump(payload, stream, sort_keys=True)
+            stream.write("\n")
+    except FileExistsError as exc:
+        raise MoomooConfigurationError(
+            f"Moomoo {label} report already exists"
+        ) from exc
+    except OSError as exc:
+        raise MoomooConfigurationError(
+            f"could not write the Moomoo {label} report"
+        ) from exc
+    return output_path
+
+
+def _validate_preflight_report_payload(payload: Mapping[str, object]) -> None:
+    if (
+        type(payload.get("schema_version")) is not int
+        or payload["schema_version"]
+        != MOOMOO_PAPER_ACCOUNT_PREFLIGHT_SCHEMA_VERSION
+    ):
+        raise MoomooConfigurationError(
+            "unsupported Moomoo paper-account preflight report schema"
+        )
+    string_fields = {
+        "endpoint",
+        "sdk_version",
+        "connection_status",
+        "account_selection_status",
+        "account_type",
+        "sim_account_type",
+        "account_status",
+        "funds_query_status",
+        "positions_query_status",
+        "orders_query_status",
+    }
+    if any(not isinstance(payload[field], str) for field in string_fields):
+        raise MoomooConfigurationError(
+            "invalid Moomoo paper-account preflight report payload"
+        )
+    if not _safe_report_endpoint(payload["endpoint"]):
+        raise MoomooConfigurationError(
+            "invalid Moomoo paper-account preflight report payload"
+        )
+    if payload["sdk_version"] != "UNKNOWN" and not _VERSION_PATTERN.fullmatch(
+        payload["sdk_version"]
+    ):
+        raise MoomooConfigurationError(
+            "invalid Moomoo paper-account preflight report payload"
+        )
+    allowed_values = {
+        "connection_status": {"not-run", "ok"},
+        "account_selection_status": {"not-run", "unique", "blocked"},
+        "account_type": {"UNKNOWN", "MARGIN", "CASH"},
+        "sim_account_type": {"UNKNOWN", "STOCK_AND_OPTION"},
+        "account_status": {"UNKNOWN", "ACTIVE"},
+        "funds_query_status": {"not-run", "ok"},
+        "positions_query_status": {"not-run", "ok"},
+        "orders_query_status": {"not-run", "ok"},
+    }
+    for field, allowed in allowed_values.items():
+        if payload[field] not in allowed:
+            raise MoomooConfigurationError(
+                f"invalid Moomoo paper-account preflight report field: {field}"
+            )
+    count_fields = {
+        "readiness_schema_version",
+        "eligible_account_count",
+        "position_count",
+        "order_record_count",
+    }
+    if any(
+        type(payload[field]) is not int or payload[field] < 0
+        for field in count_fields
+    ):
+        raise MoomooConfigurationError(
+            "invalid Moomoo paper-account preflight report payload"
+        )
+    if type(payload["refresh_cache"]) is not bool:
+        raise MoomooConfigurationError(
+            "invalid Moomoo paper-account preflight report payload"
+        )
+    if payload["sanitized_failure_category"] not in {
+        None,
+        "readiness",
+        "version",
+        "connection",
+        "account",
+        "funds",
+        "positions",
+        "orders",
+        "system",
+    }:
+        raise MoomooConfigurationError(
+            "invalid Moomoo paper-account preflight report payload"
+        )
 
 
 def _validate_report_payload(payload: Mapping[str, object]) -> None:
@@ -481,6 +803,12 @@ def _safe_entitlement(value: object) -> str:
 
 def _safe_bool(value: object) -> bool | None:
     return value if isinstance(value, bool) else None
+
+
+def _safe_nonnegative_int(value: object) -> int:
+    if type(value) is int and value >= 0:
+        return value
+    return 0
 
 
 def _safe_close(context: object | None) -> None:

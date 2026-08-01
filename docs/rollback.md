@@ -30,6 +30,10 @@ ISSUE-036 is offline and has no SDK, broker, subscription, order, or position si
 
 ISSUE-037 is offline and has no SDK, account-selection, broker, subscription, order, fill, or position side effects. Revert its branch through a reviewed PR and remove the planner, shared readiness reader, CLI command, and validation rules. Dry-run stdout is transient design evidence; no order requires cancellation and no broker state requires reconciliation.
 
+## Moomoo Paper-account Preflight Rollback
+
+ISSUE-038 performs read-only account, funds, position-list, and order-list calls only. Revert its branch through a reviewed PR, remove the preflight service and CLI, and delete local `moomoo-preflight-reports/` artifacts after checking that they contain only sanitized schema version 1 fields. No order was placed, modified, or cancelled, so no broker order or position reconciliation is required.
+
 ## Strategy Filter Rollback
 
 If market quality filters suppress expected research signals, remove `max_spread_bps` and `require_fresh_order_book` from strategy configuration first. If the issue is code-level behavior, revert the ISSUE-007 branch in a new PR.

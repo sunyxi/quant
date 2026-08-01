@@ -16,3 +16,5 @@ kabu-probe-reports/
 *kabu-readonly-probe-report*.json
 moomoo-discovery-reports/
 *moomoo-readonly-discovery-report*.json
+moomoo-preflight-reports/
+*moomoo-paper-account-preflight-report*.json
