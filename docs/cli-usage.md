@@ -36,6 +36,20 @@ PYTHONPATH=src python3 -m autotrade.cli moomoo-paper-order-dry-run --discovery-r
 
 `--order-style` accepts `PASSIVE_LIMIT` (default) or `AGGRESSIVE_LIMIT`; both map to Moomoo `NORMAL` while preserving the source style. Client order IDs must contain 8-64 safe characters. Buy stops must be below the limit price and optional take-profit prices must be above it. Exit code `0` means a deterministic `SIMULATE` plan was built, `1` means readiness or order policy blocked it, and `2` means the input or report was invalid, including NaN or infinite prices. The command does not import the SDK, select an account, or submit an order. Market and side remain fixed to US and BUY as a deliberate command-level safety boundary.
 
+Validate the connected paper-account preflight configuration without loading the SDK:
+
+```bash
+PYTHONPATH=src python3 -m autotrade.cli moomoo-paper-account-preflight --discovery-report moomoo-discovery-reports/moomoo-readonly-discovery-report.json
+```
+
+After OpenD is running and the retained report evaluates to `READY`, explicitly run the read-only preflight:
+
+```bash
+PYTHONPATH=src python3 -m autotrade.cli moomoo-paper-account-preflight --discovery-report moomoo-discovery-reports/moomoo-readonly-discovery-report.json --connect --report-output moomoo-preflight-reports/moomoo-paper-account-preflight-report.json
+```
+
+The connected command accepts only loopback OpenD endpoints and an eligible US `SIMULATE` `STOCK_AND_OPTION` account. It refreshes and reads funds, positions, and orders, but prints no account or order identifiers and performs no order mutation. Reports are create-only. Exit code `0` means all reads succeeded, `1` means readiness or compatibility blocked the preflight, and `2` means configuration or report persistence failed.
+
 ## Setup
 
 ```bash

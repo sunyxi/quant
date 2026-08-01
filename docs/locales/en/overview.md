@@ -10,6 +10,8 @@ ISSUE-036 adds `moomoo-paper-readiness`, which evaluates a validated discovery r
 
 ISSUE-037 adds an offline `moomoo-paper-order-dry-run` contract for a ready US long limit intent. It supports passive or aggressive source styles, validates an 8-64 character client order ID and BUY risk-price ordering, and emits fixed `SIMULATE`, `NORMAL`, `DAY`, and `RTH` values with quantity and notional caps. It does not import the SDK, select an account, submit an order, or authorize paper or live trading.
 
+ISSUE-038 adds the explicitly connected, read-only `moomoo-paper-account-preflight`. It selects exactly one active US `SIMULATE` `STOCK_AND_OPTION` account in memory, refreshes funds, positions, and order-list reads, and emits only sanitized classifications and counts. It never exposes the account ID, mutates orders, or authorizes paper or live trading.
+
 The current calendar layer covers JP regular sessions, lunch break, weekend rejection, manual holidays, and close-entry cutoff for research filtering.
 
 The current order book layer covers immutable snapshots, spread, visible depth, OBI, microprice, freshness, and stale-book health status for research fixtures.
