@@ -16,7 +16,9 @@ _LOOPBACK_HOSTS = frozenset({"127.0.0.1", "localhost", "::1"})
 _VERSION_PATTERN = re.compile(r"\d+(?:\.\d+){2,3}")
 _SERVER_VERSION_PATTERN = re.compile(r"\d+(?:\.\d+){0,3}")
 _ENDPOINT_PATTERN = re.compile(r"(?:127\.0\.0\.1|localhost):\d{1,5}|\[::1\]:\d{1,5}")
-_ENTITLEMENTS = frozenset({"NO", "BMP", "LV1", "LV2", "LV3", "SF", "UNKNOWN"})
+MOOMOO_VALID_ENTITLEMENTS = frozenset(
+    {"NO", "BMP", "LV1", "LV2", "LV3", "SF", "UNKNOWN"}
+)
 
 
 class MoomooClientError(RuntimeError):
@@ -300,7 +302,7 @@ class MoomooDiscoveryReportReader:
     def read(self, path: str | Path) -> MoomooDiscoveryResult:
         try:
             payload = json.loads(Path(path).read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError) as exc:
+        except (OSError, ValueError) as exc:
             raise MoomooConfigurationError(
                 "could not read the Moomoo discovery report"
             ) from exc
@@ -349,8 +351,8 @@ def _validate_report_payload(payload: Mapping[str, object]) -> None:
     ):
         raise MoomooConfigurationError("invalid Moomoo discovery report payload")
     if (
-        payload["us_quote_entitlement"] not in _ENTITLEMENTS
-        or payload["jp_quote_entitlement"] not in _ENTITLEMENTS
+        payload["us_quote_entitlement"] not in MOOMOO_VALID_ENTITLEMENTS
+        or payload["jp_quote_entitlement"] not in MOOMOO_VALID_ENTITLEMENTS
     ):
         raise MoomooConfigurationError("invalid Moomoo discovery report payload")
 
@@ -474,7 +476,7 @@ def _safe_server_version(value: object) -> str:
 
 def _safe_entitlement(value: object) -> str:
     entitlement = _enum_name(value)
-    return entitlement if entitlement in _ENTITLEMENTS else "UNKNOWN"
+    return entitlement if entitlement in MOOMOO_VALID_ENTITLEMENTS else "UNKNOWN"
 
 
 def _safe_bool(value: object) -> bool | None:

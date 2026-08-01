@@ -1602,3 +1602,60 @@ Rollback: Revert the ISSUE-034 decision branch, remove dependent ISSUE-035 from 
 - Refactor: optional, but must keep gates accurate.
 
 Rollback: Revert the ISSUE-035 branch, remove the optional Moomoo SDK dependency if introduced, and delete sanitized local discovery reports after review; no paper or live order side effects are allowed.
+
+## ISSUE-036: Add Moomoo paper-trading readiness gate
+
+- Status: `complete`
+- Phase: `Phase 4`
+- Dependencies: ISSUE-035
+- Roadmap: see `docs/roadmap.md#phase-4`
+- Summary: Add an offline, broker-independent readiness gate that consumes a sanitized Moomoo discovery report and determines whether a separately approved US paper-trading experiment may be designed, without connecting to OpenD or placing orders.
+
+### Acceptance Criteria
+
+- The gate consumes only a validated Moomoo discovery schema version 1 report and creates no SDK context, socket, subscription, account selection, or broker request.
+- Readiness requires successful quote and trade discovery, logged-in quote and trade contexts, at least one paper account, US market authorization, and a known non-NO US quote entitlement.
+- Missing or incompatible evidence produces deterministic fixed reason codes and a BLOCKED result without exposing account identifiers or raw broker payloads.
+- The decision contains only status, fixed reason codes, sanitized aggregate evidence, and schema versions needed for auditability.
+- A CLI command evaluates an explicit discovery report path offline, emits deterministic JSON, and returns zero only for READY; invalid reports fail cleanly without a traceback.
+- The command and gate do not call unlock_trade, place paper orders, place live orders, cancel orders, or subscribe to market data.
+- READY means only that a later US paper-order adapter Issue may be considered; it does not authorize Shadow Mode, paper orders, live orders, or JP cash-equity trading.
+- Unit and fixture tests cover READY, each blocking condition, malformed reports, deterministic ordering, and the no-SDK/no-network CLI boundary.
+- English, Japanese, Simplified Chinese, CLI, operations, limitations, rollback, feature documentation, and generated Task Catalog output are synchronized.
+
+### Gates
+
+- Python Unit Tests
+- Fixture Tests
+- Documentation Localization
+- Markdown Links/Style
+- Secret Scan
+- Task Catalog Generation
+
+### Changed Assets
+
+- `src/autotrade/cli.py`
+- `src/autotrade/execution/moomoo.py`
+- `src/autotrade/execution/moomoo_readiness.py`
+- `tests/test_cli.py`
+- `tests/test_moomoo_readiness.py`
+- `tests/test_documentation_catalog.py`
+- `docs/task-source.json`
+- `docs/task-catalog.md`
+- `docs/moomoo-openapi.md`
+- `docs/implementation-plan.md`
+- `docs/cli-usage.md`
+- `docs/operations.md`
+- `docs/limitations.md`
+- `docs/rollback.md`
+- `docs/locales/en/overview.md`
+- `docs/locales/ja/overview.md`
+- `docs/locales/zh-CN/overview.md`
+
+### Test-first Evidence
+
+- Red: required before implementation starts.
+- Green: required after implementation.
+- Refactor: optional, but must keep gates accurate.
+
+Rollback: Revert the ISSUE-036 branch and remove the offline readiness command and decision model; discovery reports remain sanitized local evidence and no broker, paper-order, live-order, subscription, or position side effects require reconciliation.

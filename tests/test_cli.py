@@ -9,6 +9,10 @@ from unittest.mock import patch
 
 from autotrade.cli import main
 from autotrade.execution.kabu_station import KabuStationClientError
+from autotrade.execution.moomoo import (
+    MoomooDiscoveryReportWriter,
+    MoomooDiscoveryResult,
+)
 from tests.test_moomoo_discovery import FakeSdk
 
 
@@ -172,6 +176,110 @@ class MoomooDiscoveryCliTests(unittest.TestCase):
         self.assertIn('"paper_account_available": true', stdout.getvalue())
         self.assertNotIn("sensitive", stdout.getvalue())
         self.assertIn("already exists", stderr.getvalue())
+        self.assertNotIn("Traceback", stderr.getvalue())
+
+
+class MoomooPaperReadinessCliTests(unittest.TestCase):
+    def test_ready_report_is_evaluated_offline_without_sdk_load(self) -> None:
+        stdout = io.StringIO()
+        discovery = MoomooDiscoveryResult(
+            endpoint="127.0.0.1:11111",
+            sdk_version="10.9.6908",
+            server_version="1009",
+            quote_connection_status="ok",
+            trade_connection_status="ok",
+            qot_logged_in=True,
+            trd_logged_in=True,
+            us_quote_entitlement="LV1",
+            account_count=1,
+            paper_account_count=1,
+            paper_account_available=True,
+            us_market_authorized=True,
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            report_path = Path(tmpdir) / "discovery.json"
+            MoomooDiscoveryReportWriter().write(report_path, discovery)
+            with patch(
+                "autotrade.cli.MoomooApiSdk.load",
+                side_effect=AssertionError("SDK loaded"),
+            ), redirect_stdout(stdout):
+                exit_code = main(
+                    [
+                        "moomoo-paper-readiness",
+                        "--discovery-report",
+                        str(report_path),
+                    ]
+                )
+
+        self.assertEqual(0, exit_code)
+        self.assertIn('"status": "READY"', stdout.getvalue())
+        self.assertNotIn("acc_id", stdout.getvalue())
+
+    def test_blocked_report_returns_one(self) -> None:
+        stdout = io.StringIO()
+        discovery = MoomooDiscoveryResult(
+            endpoint="127.0.0.1:11111",
+            sdk_version="10.9.6908",
+            server_version="1009",
+            quote_connection_status="ok",
+            trade_connection_status="ok",
+            qot_logged_in=True,
+            trd_logged_in=True,
+            us_quote_entitlement="UNKNOWN",
+            account_count=1,
+            paper_account_count=1,
+            paper_account_available=True,
+            us_market_authorized=True,
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            report_path = Path(tmpdir) / "discovery.json"
+            MoomooDiscoveryReportWriter().write(report_path, discovery)
+            with redirect_stdout(stdout):
+                exit_code = main(
+                    [
+                        "moomoo-paper-readiness",
+                        "--discovery-report",
+                        str(report_path),
+                    ]
+                )
+
+        self.assertEqual(1, exit_code)
+        self.assertIn("US_QUOTE_ENTITLEMENT_UNAVAILABLE", stdout.getvalue())
+
+    def test_invalid_report_fails_cleanly_without_traceback(self) -> None:
+        stderr = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            report_path = Path(tmpdir) / "invalid.json"
+            report_path.write_text("not-json", encoding="utf-8")
+            with redirect_stderr(stderr):
+                exit_code = main(
+                    [
+                        "moomoo-paper-readiness",
+                        "--discovery-report",
+                        str(report_path),
+                    ]
+                )
+
+        self.assertEqual(2, exit_code)
+        self.assertIn("could not read", stderr.getvalue())
+        self.assertNotIn("Traceback", stderr.getvalue())
+
+    def test_non_utf8_report_fails_cleanly_without_traceback(self) -> None:
+        stderr = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            report_path = Path(tmpdir) / "invalid-utf8.json"
+            report_path.write_bytes(b"\xff\xfe\xfa")
+            with redirect_stderr(stderr):
+                exit_code = main(
+                    [
+                        "moomoo-paper-readiness",
+                        "--discovery-report",
+                        str(report_path),
+                    ]
+                )
+
+        self.assertEqual(2, exit_code)
+        self.assertIn("could not read", stderr.getvalue())
         self.assertNotIn("Traceback", stderr.getvalue())
 
 if __name__ == "__main__":

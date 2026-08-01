@@ -20,6 +20,14 @@ PYTHONPATH=src python3 -m autotrade.cli moomoo-readonly-discovery --connect --re
 
 The command must make no live orders or paper orders and must not call `unlock_trade`. It queries only global state, quote-entitlement metadata, and account-list shape. Reports are create-only and exclude raw account data. Sanitized JSON is printed to stdout before an optional report write; a write failure still returns exit code `2`, even though discovery output remains available.
 
+Evaluate a sanitized discovery report offline:
+
+```bash
+PYTHONPATH=src python3 -m autotrade.cli moomoo-paper-readiness --discovery-report moomoo-discovery-reports/moomoo-readonly-discovery-report.json
+```
+
+This command creates no SDK Context, socket, or broker request. It returns `0` for `READY`, `1` for `BLOCKED`, and `2` for an invalid, non-UTF-8, or unreadable report without a traceback. Login evidence retains `null` when a check was never reached. `READY` does not authorize paper orders or live trading.
+
 ## Setup
 
 ```bash

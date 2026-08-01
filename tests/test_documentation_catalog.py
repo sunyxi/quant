@@ -209,6 +209,28 @@ class DocumentationCatalogTests(unittest.TestCase):
 
         self.assertEqual("complete", tasks["ISSUE-035"]["status"])
 
+    def test_moomoo_paper_readiness_issue_is_marked_complete(self) -> None:
+        source = json.loads(
+            (REPO_ROOT / "docs/task-source.json").read_text(encoding="utf-8")
+        )
+        tasks = {task["id"]: task for task in source["tasks"]}
+
+        self.assertEqual("complete", tasks["ISSUE-036"]["status"])
+
+    def test_moomoo_feature_doc_captures_offline_readiness_boundary(self) -> None:
+        document = (REPO_ROOT / "docs/moomoo-openapi.md").read_text(
+            encoding="utf-8"
+        )
+
+        for term in [
+            "moomoo-paper-readiness",
+            "offline",
+            "READY",
+            "BLOCKED",
+            "does not authorize paper orders",
+        ]:
+            self.assertIn(term, document)
+
     def test_task_catalog_links_first_issue_to_roadmap_and_gates(self) -> None:
         task_catalog = (REPO_ROOT / "docs/task-catalog.md").read_text(encoding="utf-8")
 

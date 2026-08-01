@@ -73,9 +73,22 @@ Reports exclude account identifiers, card numbers, user identifiers, nicknames, 
 
 A failed discovery blocks paper trading, Shadow Mode, and live trading. A successful discovery proves compatibility only; it does not approve orders.
 
+## Offline Paper Readiness
+
+ISSUE-036 adds an offline gate that consumes only a validated schema version 1 discovery report:
+
+```bash
+PYTHONPATH=src python3 -m autotrade.cli moomoo-paper-readiness \
+  --discovery-report moomoo-discovery-reports/moomoo-readonly-discovery-report.json
+```
+
+The gate creates no SDK Context or socket and performs no broker request. A `READY` result requires successful quote and trade connections, both login booleans, at least one paper account, US market authorization, and a known non-`NO` US quote entitlement. Otherwise it emits `BLOCKED` with fixed reason codes in policy order.
+
+The decision is an immutable, hashable snapshot containing only readiness schema version 1, status, fixed reason codes, discovery schema version, booleans, paper-account count, and the sanitized US entitlement enum. Login evidence preserves `true`, `false`, or `null`; `null` means the check was not reached. Exit code `0` means `READY`, `1` means `BLOCKED`, and `2` means the report is invalid, non-UTF-8, or unreadable. `READY` allows only consideration of a separately reviewed US paper-order adapter Issue; it does not authorize paper orders, Shadow Mode, live orders, or JP cash-equity trading.
+
 ## Security
 
-Repository code must never call `unlock_trade`. Any future live-trading unlock requires a separately reviewed Issue and manual action in the OpenD GUI. The default for any future order experiment remains paper trading, but ISSUE-035 exposes no order path.
+Repository code must never call `unlock_trade`. Any future live-trading unlock requires a separately reviewed Issue and manual action in the OpenD GUI. The default for any future order experiment remains paper trading, but ISSUE-035 and ISSUE-036 expose no order path.
 
 ## Official References
 
