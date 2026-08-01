@@ -729,6 +729,9 @@ class MoomooPaperOrderReconcileCliTests(unittest.TestCase):
             with patch(
                 "autotrade.cli.MoomooApiSdk.load",
                 return_value=sdk,
+            ), patch(
+                "autotrade.cli.validate_moomoo_paper_reconciliation_evidence",
+                side_effect=AssertionError("CLI duplicated service validation"),
             ), redirect_stdout(stdout):
                 exit_code = main(
                     self._args(discovery, preflight) + ["--connect"]

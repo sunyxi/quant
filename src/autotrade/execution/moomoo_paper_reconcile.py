@@ -5,18 +5,17 @@ from enum import StrEnum
 
 from autotrade.execution.moomoo import (
     MIN_MOOMOO_API_VERSION,
-    MOOMOO_PAPER_ACCOUNT_PREFLIGHT_SCHEMA_VERSION,
     MoomooEndpoint,
     MoomooPaperAccountPreflightResult,
-    MoomooResponseError,
     MoomooSdkSource,
     MoomooTradeContext,
     close_moomoo_context,
+    is_moomoo_paper_preflight_successful,
     is_moomoo_us_paper_account_eligible,
     is_moomoo_version_at_least,
     moomoo_field,
-    moomoo_records,
     normalize_moomoo_version,
+    parse_moomoo_response_records,
 )
 from autotrade.execution.moomoo_paper_order import (
     is_valid_moomoo_client_order_id,
@@ -69,17 +68,7 @@ def validate_moomoo_paper_reconciliation_evidence(
         return "client_order_id"
     if not readiness.is_ready:
         return "readiness"
-    if not (
-        preflight.schema_version == MOOMOO_PAPER_ACCOUNT_PREFLIGHT_SCHEMA_VERSION
-        and preflight.sanitized_failure_category is None
-        and preflight.connection_status == "ok"
-        and preflight.account_selection_status == "unique"
-        and preflight.eligible_account_count == 1
-        and preflight.funds_query_status == "ok"
-        and preflight.positions_query_status == "ok"
-        and preflight.orders_query_status == "ok"
-        and preflight.endpoint == endpoint.display
-    ):
+    if not is_moomoo_paper_preflight_successful(preflight, endpoint):
         return "preflight"
     return None
 
@@ -96,7 +85,7 @@ class MoomooPaperOrderReconciler:
         readiness: MoomooPaperReadinessDecision,
         preflight: MoomooPaperAccountPreflightResult,
     ) -> MoomooPaperOrderReconciliationResult:
-        base: dict[str, object] = {
+        state: dict[str, object] = {
             "client_order_id": client_order_id,
             "status": MoomooPaperOrderReconciliationStatus.BLOCKED,
             "endpoint": self.endpoint.display,
@@ -111,7 +100,7 @@ class MoomooPaperOrderReconciler:
         )
         if failure is not None:
             return MoomooPaperOrderReconciliationResult(
-                **base,
+                **state,
                 sanitized_failure_category=failure,
             )
 
@@ -119,23 +108,25 @@ class MoomooPaperOrderReconciler:
             sdk_version = normalize_moomoo_version(self.sdk.version)
         except Exception:
             return MoomooPaperOrderReconciliationResult(
-                **base,
+                **state,
                 sanitized_failure_category="dependency",
             )
         if not is_moomoo_version_at_least(sdk_version, MIN_MOOMOO_API_VERSION):
             return MoomooPaperOrderReconciliationResult(
-                **base,
+                **state,
                 sdk_version=sdk_version,
                 sanitized_failure_category="version",
             )
-        base["sdk_version"] = sdk_version
+        state["sdk_version"] = sdk_version
 
         context: MoomooTradeContext | None = None
-        state = dict(base)
         query_attempted = False
         try:
             context = self.sdk.create_us_trade_context(self.endpoint)
-            accounts = self._read_records(context.get_acc_list())
+            accounts = parse_moomoo_response_records(
+                context.get_acc_list(),
+                ret_ok=self.sdk.ret_ok,
+            )
             eligible = [
                 row for row in accounts if is_moomoo_us_paper_account_eligible(row)
             ]
@@ -166,7 +157,10 @@ class MoomooPaperOrderReconciler:
                 acc_id=account_id,
                 refresh_cache=_REFRESH_CACHE,
             )
-            rows = self._read_records(response)
+            rows = parse_moomoo_response_records(
+                response,
+                ret_ok=self.sdk.ret_ok,
+            )
             state["query_status"] = "ok"
             matches = [
                 row
@@ -198,11 +192,3 @@ class MoomooPaperOrderReconciler:
             )
         finally:
             close_moomoo_context(context)
-
-    def _read_records(self, response: tuple[int, object]) -> list[object]:
-        if not isinstance(response, tuple) or len(response) != 2:
-            raise MoomooResponseError("invalid Moomoo response")
-        status, payload = response
-        if status != self.sdk.ret_ok:
-            raise MoomooResponseError("Moomoo request failed")
-        return moomoo_records(payload)

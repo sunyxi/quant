@@ -265,6 +265,7 @@ class MoomooPaperOrderReconcilerTests(unittest.TestCase):
 
     def test_source_contains_no_order_mutation_live_or_retry_path(self) -> None:
         source = inspect.getsource(MoomooPaperOrderReconciler)
+        self.assertNotIn("def _read_records", source)
         for forbidden in [
             "place_order",
             "modify_order",

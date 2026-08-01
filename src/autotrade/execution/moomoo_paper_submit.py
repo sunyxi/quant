@@ -11,11 +11,13 @@ from autotrade.execution.moomoo import (
     MoomooSdkSource,
     MoomooTradeContext,
     close_moomoo_context,
+    is_moomoo_paper_preflight_successful,
     is_moomoo_version_at_least,
     is_moomoo_us_paper_account_eligible,
     moomoo_field,
     moomoo_records,
     normalize_moomoo_version,
+    parse_moomoo_response_records,
 )
 from autotrade.execution.moomoo_paper_order import MoomooPaperOrderPlan
 from autotrade.execution.moomoo_readiness import MoomooPaperReadinessDecision
@@ -98,7 +100,10 @@ class MoomooPaperOrderSubmitter:
         state: dict[str, object] = dict(base)
         try:
             context = self.sdk.create_us_trade_context(self.endpoint)
-            accounts = self._read_records(context.get_acc_list())
+            accounts = parse_moomoo_response_records(
+                context.get_acc_list(),
+                ret_ok=self.sdk.ret_ok,
+            )
             eligible = [
                 row for row in accounts if is_moomoo_us_paper_account_eligible(row)
             ]
@@ -169,7 +174,10 @@ class MoomooPaperOrderSubmitter:
                 acc_id=account_id,
                 refresh_cache=_REFRESH_CACHE,
             )
-            orders = self._read_records(query_response)
+            orders = parse_moomoo_response_records(
+                query_response,
+                ret_ok=self.sdk.ret_ok,
+            )
             state["verification_query_status"] = "ok"
             matches = [
                 row
@@ -208,16 +216,7 @@ class MoomooPaperOrderSubmitter:
             return "acknowledgement"
         if not readiness.is_ready:
             return "readiness"
-        if not (
-            preflight.sanitized_failure_category is None
-            and preflight.connection_status == "ok"
-            and preflight.account_selection_status == "unique"
-            and preflight.eligible_account_count == 1
-            and preflight.funds_query_status == "ok"
-            and preflight.positions_query_status == "ok"
-            and preflight.orders_query_status == "ok"
-            and preflight.endpoint == self.endpoint.display
-        ):
+        if not is_moomoo_paper_preflight_successful(preflight, self.endpoint):
             return "preflight"
         if not (
             plan.dry_run is True
@@ -229,14 +228,6 @@ class MoomooPaperOrderSubmitter:
         ):
             return "plan"
         return None
-
-    def _read_records(self, response: tuple[int, object]) -> list[object]:
-        if not isinstance(response, tuple) or len(response) != 2:
-            raise ValueError("invalid response")
-        status, payload = response
-        if status != self.sdk.ret_ok:
-            raise ValueError("request failed")
-        return moomoo_records(payload)
 
     def _submission_outcome(self, response: tuple[int, object]) -> str:
         if not isinstance(response, tuple) or len(response) != 2:

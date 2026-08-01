@@ -585,20 +585,19 @@ def _run_moomoo_paper_order_reconcile(
         print(f"error: {exc}", file=stderr)
         return 2
 
-    failure = validate_moomoo_paper_reconciliation_evidence(
-        args.client_order_id,
-        endpoint=endpoint,
-        readiness=readiness,
-        preflight=preflight,
-    )
-    if failure == "client_order_id":
-        print("error: CLIENT_ORDER_ID_INVALID", file=stderr)
-        return 2
-    if failure is not None:
-        print(f"error: {failure.upper()}_NOT_READY", file=stderr)
-        return 1
-
     if not args.connect:
+        failure = validate_moomoo_paper_reconciliation_evidence(
+            args.client_order_id,
+            endpoint=endpoint,
+            readiness=readiness,
+            preflight=preflight,
+        )
+        if failure == "client_order_id":
+            print("error: CLIENT_ORDER_ID_INVALID", file=stderr)
+            return 2
+        if failure is not None:
+            print(f"error: {failure.upper()}_NOT_READY", file=stderr)
+            return 1
         print(
             json.dumps(
                 {
@@ -626,6 +625,9 @@ def _run_moomoo_paper_order_reconcile(
         readiness=readiness,
         preflight=preflight,
     )
+    if result.sanitized_failure_category == "client_order_id":
+        print("error: CLIENT_ORDER_ID_INVALID", file=stderr)
+        return 2
     print(json.dumps(result.to_dict(), sort_keys=True), file=stdout)
     return 0 if result.status == MoomooPaperOrderReconciliationStatus.UNIQUE else 1
 
