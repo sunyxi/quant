@@ -9,6 +9,7 @@ from autotrade.execution.moomoo import (
     MIN_MOOMOO_API_VERSION,
     MoomooEndpoint,
     MoomooPaperAccountPreflightResult,
+    MoomooQuoteContext,
 )
 from autotrade.execution.moomoo_paper_order import MoomooPaperOrderDryRunPlanner
 from autotrade.execution.moomoo_paper_submit import (
@@ -60,6 +61,12 @@ class FakeSubmitContext:
     def get_acc_list(self) -> tuple[int, object]:
         return self.accounts
 
+    def accinfo_query(self, **kwargs: object) -> tuple[int, object]:
+        raise NotImplementedError("submit path never queries account info")
+
+    def position_list_query(self, **kwargs: object) -> tuple[int, object]:
+        raise NotImplementedError("submit path never queries positions")
+
     def place_order(self, **kwargs) -> tuple[int, object]:
         self.place_calls.append(kwargs)
         return self.place_response
@@ -90,6 +97,9 @@ class FakeSubmitSdk:
     def __init__(self, context: FakeSubmitContext | None = None) -> None:
         self.context = context or FakeSubmitContext()
         self.create_calls = 0
+
+    def create_quote_context(self, endpoint: MoomooEndpoint) -> MoomooQuoteContext:
+        raise NotImplementedError("submit path never uses quote context")
 
     def create_us_trade_context(self, endpoint: MoomooEndpoint) -> FakeSubmitContext:
         self.create_calls += 1
@@ -123,6 +133,15 @@ class NonListFrame:
 
 
 class MoomooPaperOrderSubmitterTests(unittest.TestCase):
+    def test_fakes_expose_the_complete_shared_moomoo_protocols(self) -> None:
+        sdk = FakeSubmitSdk()
+
+        self.assertTrue(callable(getattr(sdk, "create_quote_context", None)))
+        self.assertTrue(callable(getattr(sdk.context, "accinfo_query", None)))
+        self.assertTrue(
+            callable(getattr(sdk.context, "position_list_query", None))
+        )
+
     def test_uses_public_shared_moomoo_contracts(self) -> None:
         source = inspect.getsource(moomoo_paper_submit)
 
