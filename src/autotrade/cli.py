@@ -29,6 +29,7 @@ from autotrade.execution.moomoo import (
     MoomooDiscoveryReportWriter,
     MoomooEndpoint,
     MoomooPaperAccountPreflight,
+    MoomooPaperAccountPreflightReportReader,
     MoomooPaperAccountPreflightReportWriter,
     MoomooReadOnlyDiscovery,
 )
@@ -39,6 +40,10 @@ from autotrade.execution.moomoo_readiness import (
 from autotrade.execution.moomoo_paper_order import (
     MoomooPaperOrderDryRunPlanner,
     MoomooPaperOrderPlanError,
+)
+from autotrade.execution.moomoo_paper_submit import (
+    MoomooPaperOrderSubmissionStatus,
+    MoomooPaperOrderSubmitter,
 )
 
 
@@ -70,6 +75,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
     if args.command == "moomoo-paper-order-dry-run":
         return _run_moomoo_paper_order_dry_run(
+            args,
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+        )
+    if args.command == "moomoo-paper-order-submit":
+        return _run_moomoo_paper_order_submit(
             args,
             stdout=sys.stdout,
             stderr=sys.stderr,
@@ -171,11 +182,30 @@ def _build_parser() -> argparse.ArgumentParser:
         "moomoo-paper-order-dry-run",
         description="Build a sanitized Moomoo US paper-order plan offline.",
     )
-    paper_order.add_argument("--discovery-report", type=Path, required=True)
-    paper_order.add_argument("--client-order-id", required=True)
-    paper_order.add_argument("--strategy-id", required=True)
-    paper_order.add_argument("--code", required=True)
-    paper_order.add_argument(
+    _add_moomoo_order_arguments(paper_order)
+    submit = subparsers.add_parser(
+        "moomoo-paper-order-submit",
+        description="Preview or explicitly submit one Moomoo US paper order.",
+    )
+    _add_moomoo_order_arguments(submit)
+    submit.add_argument("--preflight-report", type=Path, required=True)
+    submit.add_argument("--host", default="127.0.0.1")
+    submit.add_argument("--port", type=int, default=11111)
+    submit.add_argument("--connect", action="store_true")
+    submit.add_argument("--submit-paper-order", action="store_true")
+    submit.add_argument(
+        "--acknowledge-paper-order-side-effect",
+        action="store_true",
+    )
+    return parser
+
+
+def _add_moomoo_order_arguments(command: argparse.ArgumentParser) -> None:
+    command.add_argument("--discovery-report", type=Path, required=True)
+    command.add_argument("--client-order-id", required=True)
+    command.add_argument("--strategy-id", required=True)
+    command.add_argument("--code", required=True)
+    command.add_argument(
         "--order-style",
         choices=[
             OrderStyle.PASSIVE_LIMIT.value,
@@ -183,12 +213,11 @@ def _build_parser() -> argparse.ArgumentParser:
         ],
         default=OrderStyle.PASSIVE_LIMIT.value,
     )
-    paper_order.add_argument("--quantity", type=int, required=True)
-    paper_order.add_argument("--limit-price", type=float, required=True)
-    paper_order.add_argument("--stop-price", type=float, required=True)
-    paper_order.add_argument("--take-profit-price", type=float)
-    paper_order.add_argument("--created-at", required=True)
-    return parser
+    command.add_argument("--quantity", type=int, required=True)
+    command.add_argument("--limit-price", type=float, required=True)
+    command.add_argument("--stop-price", type=float, required=True)
+    command.add_argument("--take-profit-price", type=float)
+    command.add_argument("--created-at", required=True)
 
 
 def _run_kabu_readonly_probe(
@@ -383,6 +412,19 @@ def _run_moomoo_paper_order_dry_run(
     stdout: TextIO,
     stderr: TextIO,
 ) -> int:
+    prepared = _prepare_moomoo_paper_order(args, stderr=stderr)
+    if isinstance(prepared, int):
+        return prepared
+    _, plan = prepared
+    print(json.dumps(plan.to_dict(), sort_keys=True), file=stdout)
+    return 0
+
+
+def _prepare_moomoo_paper_order(
+    args: argparse.Namespace,
+    *,
+    stderr: TextIO,
+):
     try:
         created_at = datetime.fromisoformat(args.created_at)
     except ValueError:
@@ -431,8 +473,72 @@ def _run_moomoo_paper_order_dry_run(
     except MoomooPaperOrderPlanError as exc:
         print(f"error: {exc.reason.value}", file=stderr)
         return 1
-    print(json.dumps(plan.to_dict(), sort_keys=True), file=stdout)
-    return 0
+    return readiness, plan
+
+
+def _run_moomoo_paper_order_submit(
+    args: argparse.Namespace,
+    *,
+    stdout: TextIO,
+    stderr: TextIO,
+) -> int:
+    prepared = _prepare_moomoo_paper_order(args, stderr=stderr)
+    if isinstance(prepared, int):
+        return prepared
+    readiness, plan = prepared
+    try:
+        endpoint = MoomooEndpoint(host=args.host, port=args.port)
+        preflight = MoomooPaperAccountPreflightReportReader().read(
+            args.preflight_report
+        )
+    except MoomooConfigurationError as exc:
+        print(f"error: {exc}", file=stderr)
+        return 2
+
+    confirmations = (
+        args.connect,
+        args.submit_paper_order,
+        args.acknowledge_paper_order_side_effect,
+    )
+    if not any(confirmations):
+        print(
+            json.dumps(
+                {
+                    "mode": "preview-only",
+                    "submission_status": "not-run",
+                    "plan": plan.to_dict(),
+                    "preflight_schema_version": preflight.schema_version,
+                },
+                sort_keys=True,
+            ),
+            file=stdout,
+        )
+        return 0
+    if not all(confirmations):
+        print(
+            "error: --connect, --submit-paper-order, and "
+            "--acknowledge-paper-order-side-effect are all required",
+            file=stderr,
+        )
+        return 2
+    try:
+        sdk = MoomooApiSdk.load()
+    except MoomooClientError:
+        print("error: Moomoo paper-order submission failed (dependency)", file=stderr)
+        return 1
+
+    result = MoomooPaperOrderSubmitter(endpoint=endpoint, sdk=sdk).submit(
+        plan,
+        readiness=readiness,
+        preflight=preflight,
+        acknowledged=True,
+    )
+    print(json.dumps(result.to_dict(), sort_keys=True), file=stdout)
+    return (
+        0
+        if result.status == MoomooPaperOrderSubmissionStatus.VERIFIED
+        else 1
+    )
 
 
 def _read_moomoo_paper_readiness(

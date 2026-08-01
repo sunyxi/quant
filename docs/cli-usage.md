@@ -50,6 +50,14 @@ PYTHONPATH=src python3 -m autotrade.cli moomoo-paper-account-preflight --discove
 
 The connected command accepts only loopback OpenD endpoints and an eligible US `SIMULATE` `STOCK_AND_OPTION` account. It refreshes and reads funds, positions, and orders, but prints no account or order identifiers and performs no order mutation. Reports are create-only. Exit code `0` means all reads succeeded, `1` means readiness or compatibility blocked the preflight, and `2` means configuration or report persistence failed.
 
+Preview one Moomoo paper-order submission without loading the SDK:
+
+```bash
+PYTHONPATH=src python3 -m autotrade.cli moomoo-paper-order-submit --discovery-report moomoo-discovery-reports/moomoo-readonly-discovery-report.json --preflight-report moomoo-preflight-reports/moomoo-paper-account-preflight-report.json --client-order-id paper-canary-001 --strategy-id us_paper_validation --code US.AAPL --quantity 1 --limit-price 100.00 --stop-price 95.00 --created-at 2026-08-01T14:30:00+00:00
+```
+
+Submission is disabled unless `--connect`, `--submit-paper-order`, and `--acknowledge-paper-order-side-effect` are all present. Do not add these flags until the exact paper canary has separate operator approval. Exit `0` requires fresh verification by client-order remark. Exit `1`, `submitted`, or `unknown` requires manual account inspection and must never be retried automatically.
+
 ## Setup
 
 ```bash

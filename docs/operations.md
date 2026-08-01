@@ -102,6 +102,8 @@ Run `moomoo-paper-order-dry-run` only after reviewing a retained `READY` discove
 
 Run `moomoo-paper-account-preflight` in validate-only mode first. Use `--connect` only while OpenD is logged in and only with a retained report that evaluates to `READY`. The command must find exactly one active US `SIMULATE` `STOCK_AND_OPTION` account and run fresh funds, positions, and order-list reads. Treat zero or multiple eligible accounts, any failed read, or any nonzero exit as blocking. Store create-only reports under `moomoo-preflight-reports/` and confirm they contain classifications and counts only. Never paste an account ID or raw SDK payload into an incident, log, or PR. A passed preflight proves read compatibility only and does not authorize a paper order.
 
+Run `moomoo-paper-order-submit` without confirmation flags first and review the preview. A real paper canary requires separate approval of symbol, quantity, limit, stop, timestamp, retained discovery evidence, and retained preflight evidence. Only then add all three confirmation flags. The command can call `place_order` once and has a simulated broker side effect. If the result is `UNKNOWN`, `submitted`, nonzero, or interrupted after connection, stop and inspect the Moomoo app/order list by client-order remark. Do not rerun the command, change the client order ID, or assume rejection until reconciliation is complete.
+
 ## Issue Workflow
 
 0. Read `AGENT.md`.

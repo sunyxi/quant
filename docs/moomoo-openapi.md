@@ -119,9 +119,28 @@ The selected account ID remains in memory only. The preflight calls `accinfo_que
 
 This is a read compatibility check. It does not call `unlock_trade`, place, modify, or cancel an order, subscribe to market data, expose a `REAL` environment option, or authorize Shadow Mode. A successful preflight does not authorize a paper order; submission requires a separate reviewed Issue.
 
+## Explicit Paper-order Submission
+
+ISSUE-039 adds `moomoo-paper-order-submit` for one US BUY limit order in `SIMULATE only`. The default remains preview-only and does not load the SDK:
+
+```bash
+PYTHONPATH=src python3 -m autotrade.cli moomoo-paper-order-submit \
+  --discovery-report moomoo-discovery-reports/moomoo-readonly-discovery-report.json \
+  --preflight-report moomoo-preflight-reports/moomoo-paper-account-preflight-report.json \
+  --client-order-id paper-canary-001 --strategy-id us_paper_validation \
+  --code US.AAPL --quantity 1 --limit-price 100.00 --stop-price 95.00 \
+  --created-at 2026-08-01T14:30:00+00:00
+```
+
+Actual paper submission additionally requires `--connect`, `--submit-paper-order`, and `--acknowledge-paper-order-side-effect`. Using those flags requires separate approval of the concrete symbol, quantity, and prices; repository tests never use them against real OpenD.
+
+The service reselects exactly one eligible simulated account, calls `place_order` at most once with `NORMAL`, `DAY`, `RTH`, `fill_outside_rth=False`, and the client order ID as `remark`, then runs a fresh order query. It emits no account ID or broker order ID. A verified remark produces `verified`; a broker error produces `rejected`; an exception or malformed successful response produces `UNKNOWN`. An accepted order that cannot be uniquely verified remains `submitted`. The service does not automatically retry any submission.
+
+The command has no `REAL`, SELL, market, extended-hours, option, JP, unlock, modify, cancel, or subscription path. Successful fake-SDK validation does not authorize a real OpenD canary; that requires separate approval.
+
 ## Security
 
-Repository code must never call `unlock_trade`. Any future live-trading unlock requires a separately reviewed Issue and manual action in the OpenD GUI. Dry-run and preflight output contain no account identifier or credential and have no broker order side effect.
+Repository code must never call `unlock_trade`. Any future live-trading unlock requires a separately reviewed Issue and manual action in the OpenD GUI. Dry-run, preflight, and paper-submit output contain no account identifier or credential. A confirmed paper-submit invocation has a simulated broker side effect and must be reconciled manually if its result is not `verified`.
 
 ## Official References
 

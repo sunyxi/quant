@@ -233,6 +233,14 @@ class DocumentationCatalogTests(unittest.TestCase):
 
         self.assertEqual("complete", tasks["ISSUE-038"]["status"])
 
+    def test_moomoo_paper_order_submit_issue_is_marked_complete(self) -> None:
+        source = json.loads(
+            (REPO_ROOT / "docs/task-source.json").read_text(encoding="utf-8")
+        )
+        tasks = {task["id"]: task for task in source["tasks"]}
+
+        self.assertEqual("complete", tasks["ISSUE-039"]["status"])
+
     def test_moomoo_feature_doc_captures_offline_readiness_boundary(self) -> None:
         document = (REPO_ROOT / "docs/moomoo-openapi.md").read_text(
             encoding="utf-8"
@@ -276,6 +284,22 @@ class DocumentationCatalogTests(unittest.TestCase):
             "STOCK_AND_OPTION",
             "does not include account identifiers",
             "does not authorize a paper order",
+        ]:
+            self.assertIn(term, document)
+
+    def test_moomoo_feature_doc_captures_paper_submit_boundary(self) -> None:
+        document = (REPO_ROOT / "docs/moomoo-openapi.md").read_text(
+            encoding="utf-8"
+        )
+
+        for term in [
+            "moomoo-paper-order-submit",
+            "--acknowledge-paper-order-side-effect",
+            "at most once",
+            "UNKNOWN",
+            "does not automatically retry",
+            "SIMULATE only",
+            "requires separate approval",
         ]:
             self.assertIn(term, document)
 

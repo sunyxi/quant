@@ -83,6 +83,8 @@ class MoomooTradeContext(Protocol):
 
     def order_list_query(self, **kwargs: object) -> tuple[int, object]: ...
 
+    def place_order(self, **kwargs: object) -> tuple[int, object]: ...
+
     def close(self) -> None: ...
 
 
@@ -90,6 +92,10 @@ class MoomooSdkSource(Protocol):
     version: str
     ret_ok: int
     simulate_trade_environment: object
+    buy_trade_side: object
+    normal_order_type: object
+    day_time_in_force: object
+    rth_session: object
 
     def create_quote_context(self, endpoint: MoomooEndpoint) -> MoomooQuoteContext: ...
 
@@ -144,6 +150,30 @@ class MoomooApiSdk:
         except AttributeError as exc:
             raise MoomooDependencyError(
                 "moomoo-api does not expose the simulated trade environment"
+            ) from exc
+
+    @property
+    def buy_trade_side(self) -> object:
+        return self._required_constant("TrdSide", "BUY", "buy trade side")
+
+    @property
+    def normal_order_type(self) -> object:
+        return self._required_constant("OrderType", "NORMAL", "normal order type")
+
+    @property
+    def day_time_in_force(self) -> object:
+        return self._required_constant("TimeInForce", "DAY", "day time in force")
+
+    @property
+    def rth_session(self) -> object:
+        return self._required_constant("Session", "RTH", "RTH session")
+
+    def _required_constant(self, group: str, name: str, label: str) -> object:
+        try:
+            return getattr(getattr(self.module, group), name)
+        except AttributeError as exc:
+            raise MoomooDependencyError(
+                f"moomoo-api does not expose the {label}"
             ) from exc
 
     def create_quote_context(self, endpoint: MoomooEndpoint) -> MoomooQuoteContext:
@@ -404,7 +434,9 @@ class MoomooPaperAccountPreflight:
             context = self.sdk.create_us_trade_context(self.endpoint)
             state["connection_status"] = "ok"
             accounts = _records(self._read_payload(context.get_acc_list(), "account"))
-            eligible = [row for row in accounts if self._eligible(row)]
+            eligible = [
+                row for row in accounts if is_moomoo_us_paper_account_eligible(row)
+            ]
             state["eligible_account_count"] = len(eligible)
             if len(eligible) != 1:
                 state["account_selection_status"] = "blocked"
@@ -462,14 +494,6 @@ class MoomooPaperAccountPreflight:
             return self._result(**state, sanitized_failure_category="system")
         finally:
             _safe_close(context)
-
-    def _eligible(self, row: object) -> bool:
-        return (
-            _enum_name(_field(row, "trd_env")) == "SIMULATE"
-            and _enum_name(_field(row, "sim_acc_type")) == "STOCK_AND_OPTION"
-            and "US" in _market_names(_field(row, "trdmarket_auth"))
-            and _enum_name(_field(row, "acc_status")) == "ACTIVE"
-        )
 
     def _read_payload(self, response: tuple[int, object], category: str) -> object:
         if not isinstance(response, tuple) or len(response) != 2:
@@ -659,7 +683,6 @@ def _validate_report_payload(payload: Mapping[str, object]) -> None:
     }
     if any(not isinstance(payload[field], str) for field in string_fields):
         raise MoomooConfigurationError("invalid Moomoo discovery report payload")
-
     if not _safe_report_endpoint(payload["endpoint"]):
         raise MoomooConfigurationError("invalid Moomoo discovery report payload")
     if payload["sdk_version"] != "UNKNOWN" and not _VERSION_PATTERN.fullmatch(
@@ -711,6 +734,15 @@ def _validate_report_payload(payload: Mapping[str, object]) -> None:
         "system",
     }:
         raise MoomooConfigurationError("invalid Moomoo discovery report payload")
+
+
+def is_moomoo_us_paper_account_eligible(row: object) -> bool:
+    return (
+        _enum_name(_field(row, "trd_env")) == "SIMULATE"
+        and _enum_name(_field(row, "sim_acc_type")) == "STOCK_AND_OPTION"
+        and "US" in _market_names(_field(row, "trdmarket_auth"))
+        and _enum_name(_field(row, "acc_status")) == "ACTIVE"
+    )
 
 
 def _safe_report_endpoint(value: str) -> bool:
@@ -818,3 +850,23 @@ def _safe_close(context: object | None) -> None:
         context.close()
     except Exception:
         pass
+
+
+def moomoo_records(payload: object) -> list[object]:
+    return _records(payload)
+
+
+def moomoo_field(row: object, name: str) -> object:
+    return _field(row, name)
+
+
+def normalize_moomoo_version(value: object) -> str:
+    return _safe_version(value)
+
+
+def is_moomoo_version_at_least(current: str, minimum: str) -> bool:
+    return _version_at_least(current, minimum)
+
+
+def close_moomoo_context(context: object | None) -> None:
+    _safe_close(context)
