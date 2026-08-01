@@ -14,6 +14,7 @@ from autotrade.execution.moomoo import (
     MoomooDiscoveryResult,
 )
 from tests.test_moomoo_discovery import FakeSdk
+from tests.test_moomoo_readiness import ready_discovery
 
 
 class KabuStationCliTests(unittest.TestCase):
@@ -286,23 +287,9 @@ class MoomooPaperReadinessCliTests(unittest.TestCase):
 class MoomooPaperOrderDryRunCliTests(unittest.TestCase):
     def test_creates_offline_dry_run_without_sdk_or_order_call(self) -> None:
         stdout = io.StringIO()
-        discovery = MoomooDiscoveryResult(
-            endpoint="127.0.0.1:11111",
-            sdk_version="10.9.6908",
-            server_version="1009",
-            quote_connection_status="ok",
-            trade_connection_status="ok",
-            qot_logged_in=True,
-            trd_logged_in=True,
-            us_quote_entitlement="LV1",
-            account_count=1,
-            paper_account_count=1,
-            paper_account_available=True,
-            us_market_authorized=True,
-        )
         with tempfile.TemporaryDirectory() as tmpdir:
             report_path = Path(tmpdir) / "discovery.json"
-            MoomooDiscoveryReportWriter().write(report_path, discovery)
+            MoomooDiscoveryReportWriter().write(report_path, ready_discovery())
             with patch(
                 "autotrade.cli.MoomooApiSdk.load",
                 side_effect=AssertionError("SDK loaded"),
@@ -342,20 +329,7 @@ class MoomooPaperOrderDryRunCliTests(unittest.TestCase):
             report_path = Path(tmpdir) / "discovery.json"
             MoomooDiscoveryReportWriter().write(
                 report_path,
-                MoomooDiscoveryResult(
-                    endpoint="127.0.0.1:11111",
-                    sdk_version="10.9.6908",
-                    server_version="1009",
-                    quote_connection_status="ok",
-                    trade_connection_status="ok",
-                    qot_logged_in=True,
-                    trd_logged_in=True,
-                    us_quote_entitlement="LV1",
-                    account_count=1,
-                    paper_account_count=1,
-                    paper_account_available=True,
-                    us_market_authorized=True,
-                ),
+                ready_discovery(),
             )
             args = self._args(report_path)
             args[1:1] = ["--order-style", "AGGRESSIVE_LIMIT"]
@@ -369,34 +343,26 @@ class MoomooPaperOrderDryRunCliTests(unittest.TestCase):
         )
 
     def test_non_finite_price_is_invalid_input(self) -> None:
-        discovery = MoomooDiscoveryResult(
-            endpoint="127.0.0.1:11111",
-            sdk_version="10.9.6908",
-            server_version="1009",
-            quote_connection_status="ok",
-            trade_connection_status="ok",
-            qot_logged_in=True,
-            trd_logged_in=True,
-            us_quote_entitlement="LV1",
-            account_count=1,
-            paper_account_count=1,
-            paper_account_available=True,
-            us_market_authorized=True,
-        )
         with tempfile.TemporaryDirectory() as tmpdir:
             report_path = Path(tmpdir) / "discovery.json"
-            MoomooDiscoveryReportWriter().write(report_path, discovery)
-            for invalid_price in ["nan", "inf"]:
-                args = self._args(report_path)
-                args[args.index("--limit-price") + 1] = invalid_price
-                stderr = io.StringIO()
-                with self.subTest(invalid_price=invalid_price), redirect_stderr(
-                    stderr
-                ):
-                    exit_code = main(args)
-                self.assertEqual(2, exit_code)
-                self.assertIn("invalid paper-order fields", stderr.getvalue())
-                self.assertNotIn("Traceback", stderr.getvalue())
+            MoomooDiscoveryReportWriter().write(report_path, ready_discovery())
+            for price_flag in [
+                "--limit-price",
+                "--stop-price",
+                "--take-profit-price",
+            ]:
+                for invalid_price in ["nan", "inf"]:
+                    args = self._args(report_path, include_take_profit=True)
+                    args[args.index(price_flag) + 1] = invalid_price
+                    stderr = io.StringIO()
+                    with self.subTest(
+                        price_flag=price_flag,
+                        invalid_price=invalid_price,
+                    ), redirect_stderr(stderr):
+                        exit_code = main(args)
+                    self.assertEqual(2, exit_code)
+                    self.assertIn("invalid paper-order fields", stderr.getvalue())
+                    self.assertNotIn("Traceback", stderr.getvalue())
 
     def test_blocked_readiness_and_invalid_timestamp_fail_cleanly(self) -> None:
         blocked = MoomooDiscoveryResult(
@@ -425,7 +391,8 @@ class MoomooPaperOrderDryRunCliTests(unittest.TestCase):
 
             stderr = io.StringIO()
             invalid_args = self._args(report_path)
-            invalid_args[-1] = "not-a-timestamp"
+            created_at_index = invalid_args.index("--created-at") + 1
+            invalid_args[created_at_index] = "not-a-timestamp"
             with redirect_stderr(stderr):
                 invalid_exit = main(invalid_args)
             self.assertEqual(2, invalid_exit)
@@ -433,8 +400,12 @@ class MoomooPaperOrderDryRunCliTests(unittest.TestCase):
             self.assertNotIn("Traceback", stderr.getvalue())
 
     @staticmethod
-    def _args(report_path: Path) -> list[str]:
-        return [
+    def _args(
+        report_path: Path,
+        *,
+        include_take_profit: bool = False,
+    ) -> list[str]:
+        args = [
             "moomoo-paper-order-dry-run",
             "--discovery-report",
             str(report_path),
@@ -450,9 +421,12 @@ class MoomooPaperOrderDryRunCliTests(unittest.TestCase):
             "150.25",
             "--stop-price",
             "148.0",
-            "--created-at",
-            "2026-08-01T14:30:00+00:00",
         ]
+        if include_take_profit:
+            args.extend(["--take-profit-price", "154.0"])
+        args.extend(["--created-at", "2026-08-01T14:30:00+00:00"])
+        return args
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import math
 import re
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from enum import StrEnum
 
 from autotrade.core.models import Market, OrderIntent, OrderStyle, Side
@@ -61,23 +61,7 @@ class MoomooPaperOrderPlan:
     session: str = "RTH"
 
     def to_dict(self) -> dict[str, object]:
-        return {
-            "schema_version": self.schema_version,
-            "dry_run": self.dry_run,
-            "client_order_id": self.client_order_id,
-            "code": self.code,
-            "side": self.side,
-            "quantity": self.quantity,
-            "price": self.price,
-            "order_type": self.order_type,
-            "trd_env": self.trd_env,
-            "time_in_force": self.time_in_force,
-            "session": self.session,
-            "source_order_style": self.source_order_style,
-            "stop_price": self.stop_price,
-            "take_profit_price": self.take_profit_price,
-            "notional_usd": self.notional_usd,
-        }
+        return asdict(self)
 
 
 @dataclass(frozen=True)

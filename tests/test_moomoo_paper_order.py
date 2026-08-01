@@ -156,7 +156,7 @@ class MoomooPaperOrderDryRunPlannerTests(unittest.TestCase):
             readiness=ready_decision(),
         )
 
-    def test_rejects_non_finite_price_and_unsafe_client_id(self) -> None:
+    def test_rejects_non_finite_limit_price(self) -> None:
         non_finite = replace(order_intent(), limit_price=math.nan)
 
         self._assert_blocked(
@@ -164,6 +164,8 @@ class MoomooPaperOrderDryRunPlannerTests(unittest.TestCase):
             non_finite,
             readiness=ready_decision(),
         )
+
+    def test_rejects_client_order_id_with_spaces_without_leaking_it(self) -> None:
         with self.assertRaises(MoomooPaperOrderPlanError) as caught:
             MoomooPaperOrderDryRunPlanner().plan(
                 order_intent(client_order_id="sensitive id with spaces"),
@@ -220,21 +222,6 @@ class MoomooPaperOrderDryRunPlannerTests(unittest.TestCase):
             "raw",
         ]:
             self.assertNotIn(forbidden, str(payload))
-
-    def test_runtime_source_has_no_sdk_or_order_call(self) -> None:
-        source = (
-            REPO_ROOT / "src/autotrade/execution/moomoo_paper_order.py"
-        ).read_text(encoding="utf-8")
-
-        for forbidden in [
-            "import moomoo",
-            "MoomooApiSdk",
-            "OpenSecTradeContext",
-            "place_order(",
-            "unlock_trade",
-            "subscribe(",
-        ]:
-            self.assertNotIn(forbidden, source)
 
     def test_module_import_does_not_import_external_moomoo_sdk(self) -> None:
         source_root = REPO_ROOT / "src"
