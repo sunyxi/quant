@@ -4,7 +4,21 @@ Current commands are local research utilities only. They must not place real bro
 
 ## Moomoo OpenAPI Status
 
-Moomoo OpenAPI is the prioritized broker API proof of concept, but this repository does not yet expose a Moomoo CLI command. ISSUE-035 will add only a macOS-capable read-only discovery command using an injected fake SDK in tests. Its implementation baseline is OpenD and `moomoo-api` `>=10.4.6408`, with the package imported as `moomoo` and the loopback endpoint defaulting to `127.0.0.1:11111`. Until that Issue is reviewed and merged, do not install an SDK as an undeclared repository dependency, connect credentials through ad hoc scripts, or place live orders. The planned command must make no live orders and must not call `unlock_trade`.
+Moomoo OpenAPI is the prioritized broker API proof of concept. ISSUE-035 exposes a macOS-capable read-only discovery command, with fake SDKs used for repository tests. Its implementation baseline is OpenD and `moomoo-api` `>=10.4.6408`, with the package imported as `moomoo` and the loopback endpoint defaulting to `127.0.0.1:11111`. The SDK remains an optional dependency.
+
+Validate configuration only, without importing the SDK or connecting:
+
+```bash
+PYTHONPATH=src python3 -m autotrade.cli moomoo-readonly-discovery
+```
+
+After OpenD is running and logged in, explicitly run sanitized read-only discovery:
+
+```bash
+PYTHONPATH=src python3 -m autotrade.cli moomoo-readonly-discovery --connect --report-output moomoo-discovery-reports/moomoo-readonly-discovery-report.json
+```
+
+The command must make no live orders or paper orders and must not call `unlock_trade`. It queries only global state, quote-entitlement metadata, and account-list shape. Reports are create-only and exclude raw account data. Sanitized JSON is printed to stdout before an optional report write; a write failure still returns exit code `2`, even though discovery output remains available.
 
 ## Setup
 

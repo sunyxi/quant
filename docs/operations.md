@@ -88,11 +88,13 @@ The kabu Station read-only reconciler may orchestrate an injected read-only clie
 
 ## Moomoo OpenAPI Discovery Handling
 
-Moomoo OpenAPI is now the first broker API proof of concept because OpenD and the Python SDK can run on macOS. No repository Moomoo command exists in ISSUE-034. ISSUE-035 may add an explicit read-only discovery path using OpenD and `moomoo-api` `>=10.4.6408`, imported as `moomoo`, for configurable loopback reachability at `127.0.0.1:11111`, version, account-list shape, US capability, JP equity market-data entitlement metadata, and paper-account availability.
+Moomoo OpenAPI is now the first broker API proof of concept because OpenD and the Python SDK can run on macOS. ISSUE-035 provides `moomoo-readonly-discovery` using OpenD and the optional `moomoo-api` dependency `>=10.4.6408`, imported as `moomoo`, for configurable loopback reachability at `127.0.0.1:11111`, version, sanitized account-list shape, US capability, JP equity market-data entitlement metadata, and paper-account availability.
 
 The discovery path must make no live orders, must not call `unlock_trade`, must not log account identifiers or credentials, and must fail closed when OpenD, authentication, account capability, or response compatibility is unknown. Trading must not be unlocked through SDK code in any environment. Any future real-trading unlock requires a separately approved workflow and manual action in the OpenD GUI. A successful discovery report is compatibility evidence only; it does not authorize Shadow Mode, paper orders, or live orders.
 
-Install the SDK only as an isolated optional dependency or in a dedicated virtual environment. `moomoo-api` may constrain `protobuf` to major version 3, so ISSUE-035 must verify dependency resolution without silently changing unrelated runtime packages.
+Install the SDK only as an isolated optional dependency or in a dedicated virtual environment. Verify the resolved `protobuf` dependency without silently changing unrelated runtime packages; the tested `moomoo-api` 10.9.6908 environment resolved `protobuf` 7.35.1 successfully.
+
+Run validate-only mode before installing or importing the SDK. Use `--connect` only after OpenD is running and logged in. Store reports under `moomoo-discovery-reports/`, inspect only sanitized fields, and treat any nonzero exit as blocking. Discovery JSON is emitted before the optional report write, so exit code `2` means persistence failed even when stdout contains a successful result. Do not use a successful discovery as permission to enable paper or live order code.
 
 ## Issue Workflow
 

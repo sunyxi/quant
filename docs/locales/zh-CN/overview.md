@@ -2,7 +2,9 @@
 
 本仓库是研究优先的日内交易平台骨架。首期目标是日股研究与模拟闭环；在风控、订单管理、对账和 Shadow Mode 验证通过前，不接入真实券商下单。
 
-首期范围仍是日股、只做多、不隔夜，并在任何实盘前先通过 Shadow Mode。现优先在 macOS 上使用 Moomoo OpenAPI 完成账户、美股能力和日股行情权限的脱敏只读 PoC，不下实盘订单。日股现货行情在账户具备权限时可用，但 Moomoo JP 当前不支持日股现货实盘 API 交易。ISSUE-035 将要求 OpenD 和 `moomoo-api` `>=10.4.6408`，隔离 SDK 依赖，并禁止 `unlock_trade`。kabu Station 仍作为日股未来通道，IBKR 作为美股备选。
+首期范围仍是日股、只做多、不隔夜，并在任何实盘前先通过 Shadow Mode。现优先在 macOS 上使用 Moomoo OpenAPI 完成账户、美股能力和日股行情权限的脱敏只读 PoC，不下实盘订单。日股现货行情在账户具备权限时可用，但 Moomoo JP 当前不支持日股现货实盘 API 交易。ISSUE-035 要求 OpenD 和 `moomoo-api` `>=10.4.6408`，隔离 SDK 依赖，并禁止 `unlock_trade`。kabu Station 仍作为日股未来通道，IBKR 作为美股备选。
+
+ISSUE-035 现已实现可选 `moomoo-api` 边界和 `moomoo-readonly-discovery` CLI。validate-only 不导入 SDK，也不打开 socket；只有显式 `--connect` 才会读取 OpenD 全局状态、行情权限元数据和脱敏账户列表形状。可选报告写入失败时，脱敏 JSON 仍保留在 stdout，但退出码 `2` 仍表示阻断。它不提供行情订阅、模拟订单、实盘订单、撤单或交易解锁。
 
 当前日历层已覆盖日股普通交易时段、午休、周末过滤、手工假日和收盘前停止新开仓 cutoff，用于研究和回测过滤。
 
@@ -68,4 +70,4 @@ kabu Station read-only reconciler 可以基于注入的只读 client 数据、OM
 
 仓库 CI 会在 PR 和推送到 `main` 时运行 Python 单元测试、Task Catalog 漂移检查、Markdown 链接/样式检查和基础密钥扫描。
 
-请阅读 `docs/roadmap.md`、`docs/task-catalog.md`、`docs/scope.md`、`docs/risk-policy.md`、`docs/broker-decision.md`、`docs/implementation-plan.md`、`docs/market-calendar.md`、`docs/order-book-intelligence.md`、`docs/backtest-fill-cost.md`、`docs/strategy-market-quality.md`、`docs/oms.md`、`docs/execution-ledger.md`、`docs/risk-paused-state.md`、`docs/reconciliation.md`、`docs/simulated-broker.md`、`docs/replay-execution.md`、`docs/kabu-station-mapper.md`、`docs/operations.md`、`docs/limitations.md` 和 `docs/rollback.md`。
+请阅读 `docs/roadmap.md`、`docs/task-catalog.md`、`docs/scope.md`、`docs/risk-policy.md`、`docs/broker-decision.md`、`docs/implementation-plan.md`、`docs/market-calendar.md`、`docs/order-book-intelligence.md`、`docs/backtest-fill-cost.md`、`docs/strategy-market-quality.md`、`docs/oms.md`、`docs/execution-ledger.md`、`docs/risk-paused-state.md`、`docs/reconciliation.md`、`docs/simulated-broker.md`、`docs/replay-execution.md`、`docs/kabu-station-mapper.md`、`docs/moomoo-openapi.md`、`docs/operations.md`、`docs/limitations.md` 和 `docs/rollback.md`。

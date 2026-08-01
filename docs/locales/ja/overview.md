@@ -2,7 +2,9 @@
 
 このリポジトリは、研究を先行する日中取引プラットフォームの骨格です。初期対象は日本株であり、リスク管理、注文管理、照合、シャドーモードの検証が完了するまで、実際の証券会社への発注は対象外です。
 
-初期リリースの範囲は、日本株、買いのみ、持ち越しなし、実取引前の Shadow Mode のままです。macOS 上の Moomoo OpenAPI を、口座、米国株機能、日本株相場権限のサニタイズ済み参照専用 PoC として最優先し、実注文は行いません。日本株現物の相場情報は必要な権限があれば利用できますが、Moomoo JP は現在、日本株現物の実取引 API に対応していません。ISSUE-035 は OpenD と `moomoo-api` `>=10.4.6408` を要件とし、依存関係を分離し、`unlock_trade` を禁止します。kabu Station を将来の日本株接続先、IBKR を米国株の代替候補とします。
+初期リリースの範囲は、日本株、買いのみ、持ち越しなし、実取引前の Shadow Mode のままです。macOS 上の Moomoo OpenAPI を、口座、米国株機能、日本株相場権限のサニタイズ済み参照専用 PoC として最優先し、実注文は行いません。日本株現物の相場情報は必要な権限があれば利用できますが、Moomoo JP は現在、日本株現物の実取引 API に対応していません。ISSUE-035 は OpenD と `moomoo-api` `>=10.4.6408` を要件とし、依存関係を分離して `unlock_trade` を禁止しています。kabu Station を将来の日本株接続先、IBKR を米国株の代替候補とします。
+
+ISSUE-035 は、任意の `moomoo-api` 境界と `moomoo-readonly-discovery` CLI を実装します。validate-only は SDK を import せず socket も開きません。明示的な `--connect` では、OpenD のグローバル状態、相場権限メタデータ、サニタイズ済み口座一覧形状だけを参照します。任意レポートの保存に失敗してもサニタイズ済み JSON は stdout に残りますが、終了コード `2` はブロッキング扱いです。購読、デモ注文、実注文、取消、取引アンロックは提供しません。
 
 現在のカレンダー層は、日本株の通常取引時間、昼休み、週末除外、手動祝日、引け前の新規エントリー停止時刻を研究用フィルターとして扱います。
 
@@ -68,4 +70,4 @@ kabu Station 参照専用リコンサイラーは、注入された参照専用�
 
 リポジトリ CI は、プルリクエストと `main` への push に対して Python 単体テスト、Task Catalog の差分チェック、Markdown リンク・スタイルチェック、基本的なシークレットスキャンを実行します。
 
-詳細は `docs/roadmap.md`、`docs/task-catalog.md`、`docs/scope.md`、`docs/risk-policy.md`、`docs/broker-decision.md`、`docs/implementation-plan.md`、`docs/market-calendar.md`、`docs/order-book-intelligence.md`、`docs/backtest-fill-cost.md`、`docs/strategy-market-quality.md`、`docs/oms.md`、`docs/execution-ledger.md`、`docs/risk-paused-state.md`、`docs/reconciliation.md`、`docs/simulated-broker.md`、`docs/replay-execution.md`、`docs/kabu-station-mapper.md`、`docs/operations.md`、`docs/limitations.md`、`docs/rollback.md` を参照してください。
+詳細は `docs/roadmap.md`、`docs/task-catalog.md`、`docs/scope.md`、`docs/risk-policy.md`、`docs/broker-decision.md`、`docs/implementation-plan.md`、`docs/market-calendar.md`、`docs/order-book-intelligence.md`、`docs/backtest-fill-cost.md`、`docs/strategy-market-quality.md`、`docs/oms.md`、`docs/execution-ledger.md`、`docs/risk-paused-state.md`、`docs/reconciliation.md`、`docs/simulated-broker.md`、`docs/replay-execution.md`、`docs/kabu-station-mapper.md`、`docs/moomoo-openapi.md`、`docs/operations.md`、`docs/limitations.md`、`docs/rollback.md` を参照してください。

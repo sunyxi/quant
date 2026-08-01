@@ -1544,7 +1544,7 @@ Rollback: Revert the ISSUE-034 decision branch, remove dependent ISSUE-035 from 
 
 ## ISSUE-035: Add Moomoo OpenD read-only discovery boundary
 
-- Status: `pending`
+- Status: `complete`
 - Phase: `Phase 4`
 - Dependencies: ISSUE-034
 - Roadmap: see `docs/roadmap.md#phase-4`
@@ -1554,7 +1554,7 @@ Rollback: Revert the ISSUE-034 decision branch, remove dependent ISSUE-035 from 
 
 - A broker-specific boundary checks configurable loopback OpenD reachability at 127.0.0.1:11111 without coupling strategy code to the Moomoo SDK.
 - OpenD and the moomoo-api Python distribution must be version 10.4.6408 or newer; the distribution is imported as moomoo.
-- The moomoo-api dependency is isolated as an optional extra or dedicated environment because protobuf major-version compatibility must be verified without changing unrelated dependencies.
+- The moomoo-api dependency is isolated as an optional extra or dedicated environment so its resolved protobuf compatibility can be verified without changing unrelated dependencies.
 - The discovery boundary reads only API version, sanitized account-list shape, US market capability, JP equity market data and quote-entitlement metadata, and paper-account availability needed for compatibility decisions.
 - The discovery boundary does not unlock trading, place paper orders, place live orders, cancel orders, or subscribe to paid data automatically.
 - Repository code never calls unlock_trade; any future real-trading unlock requires separate approval and manual action in the OpenD GUI.
@@ -1575,12 +1575,17 @@ Rollback: Revert the ISSUE-034 decision branch, remove dependent ISSUE-035 from 
 
 ### Changed Assets
 
+- `.gitignore`
+- `README.md`
 - `pyproject.toml`
 - `src/autotrade/cli.py`
 - `src/autotrade/execution/moomoo.py`
 - `tests/test_moomoo_discovery.py`
 - `tests/test_cli.py`
 - `tests/test_documentation_catalog.py`
+- `tests/test_issue_034_moomoo_broker_decision.py`
+- `docs/task-source.json`
+- `docs/task-catalog.md`
 - `docs/moomoo-openapi.md`
 - `docs/cli-usage.md`
 - `docs/operations.md`
