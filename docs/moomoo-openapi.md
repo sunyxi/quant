@@ -86,9 +86,26 @@ The gate creates no SDK Context or socket and performs no broker request. A `REA
 
 The decision is an immutable, hashable snapshot containing only readiness schema version 1, status, fixed reason codes, discovery schema version, booleans, paper-account count, and the sanitized US entitlement enum. Login evidence preserves `true`, `false`, or `null`; `null` means the check was not reached. Exit code `0` means `READY`, `1` means `BLOCKED`, and `2` means the report is invalid, non-UTF-8, or unreadable. `READY` allows only consideration of a separately reviewed US paper-order adapter Issue; it does not authorize paper orders, Shadow Mode, live orders, or JP cash-equity trading.
 
+## Offline Paper-order Dry Run
+
+ISSUE-037 adds `moomoo-paper-order-dry-run`. It combines a retained discovery report with explicit broker-independent order fields and produces an immutable, sanitized plan without importing the SDK or contacting OpenD:
+
+```bash
+PYTHONPATH=src python3 -m autotrade.cli moomoo-paper-order-dry-run \
+  --discovery-report moomoo-discovery-reports/moomoo-readonly-discovery-report.json \
+  --client-order-id paper-dry-run-001 \
+  --strategy-id us_paper_validation \
+  --code US.AAPL --quantity 10 \
+  --limit-price 150.25 --stop-price 148.00 \
+  --take-profit-price 154.00 \
+  --created-at 2026-08-01T14:30:00+00:00
+```
+
+The planner requires `READY`, US `BUY`, a canonical `US.<ticker>` code, whole shares, and a passive or aggressive limit intent. Defaults cap quantity at 100 and notional at USD 25,000. Its fixed contract uses `SIMULATE`, `NORMAL`, `DAY`, and `RTH`. It does not select an account, inspect buying power, call the SDK, or submit an order. The output is design evidence only and does not authorize a paper order, Shadow Mode, or live trading.
+
 ## Security
 
-Repository code must never call `unlock_trade`. Any future live-trading unlock requires a separately reviewed Issue and manual action in the OpenD GUI. The default for any future order experiment remains paper trading, but ISSUE-035 and ISSUE-036 expose no order path.
+Repository code must never call `unlock_trade`. Any future live-trading unlock requires a separately reviewed Issue and manual action in the OpenD GUI. The dry-run plan contains no account identifier or credential and has no broker side effect.
 
 ## Official References
 

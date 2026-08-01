@@ -8,6 +8,8 @@ ISSUE-035 now implements the optional `moomoo-api` boundary and `moomoo-readonly
 
 ISSUE-036 adds `moomoo-paper-readiness`, which evaluates a validated discovery report offline and emits an immutable deterministic `READY` or `BLOCKED` snapshot. Login evidence preserves `null` for "not checked" and `false` for "checked but not logged in". It creates no SDK Context or broker request. `READY` only permits consideration of a later reviewed US paper-order Issue and does not authorize paper orders, Shadow Mode, live orders, or JP trading.
 
+ISSUE-037 adds an offline `moomoo-paper-order-dry-run` contract for a ready US long limit intent. It emits fixed `SIMULATE`, `NORMAL`, `DAY`, and `RTH` values with quantity and notional caps. It does not import the SDK, select an account, submit an order, or authorize paper or live trading.
+
 The current calendar layer covers JP regular sessions, lunch break, weekend rejection, manual holidays, and close-entry cutoff for research filtering.
 
 The current order book layer covers immutable snapshots, spread, visible depth, OBI, microprice, freshness, and stale-book health status for research fixtures.

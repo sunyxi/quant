@@ -8,6 +8,8 @@ ISSUE-035 现已实现可选 `moomoo-api` 边界和 `moomoo-readonly-discovery` 
 
 ISSUE-036 新增 `moomoo-paper-readiness`，离线评估已验证的 discovery report，并输出不可变且确定性的 `READY` 或 `BLOCKED` 快照。登录证据中的 `null` 表示尚未检查，`false` 表示已检查但未登录。它不创建 SDK Context，也不发起券商请求。`READY` 仅允许考虑后续经过审查的美股模拟订单 Issue，不授权模拟订单、Shadow Mode、实盘订单或日股交易。
 
+ISSUE-037 新增离线 `moomoo-paper-order-dry-run` 契约，用于已就绪的美股买入限价 intent。输出固定的 `SIMULATE`、`NORMAL`、`DAY` 和 `RTH` 值，并限制数量与名义金额。它不导入 SDK、不选择账户、不发送订单，也不授权模拟或实盘交易。
+
 当前日历层已覆盖日股普通交易时段、午休、周末过滤、手工假日和收盘前停止新开仓 cutoff，用于研究和回测过滤。
 
 当前板情报层已覆盖不可变订单簿快照、价差、可见深度、OBI、microprice、数据新鲜度和 stale book health，用于研究 fixture。

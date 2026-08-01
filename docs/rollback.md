@@ -26,6 +26,10 @@ ISSUE-035 has no order or market-data subscription side effects. Revert its bran
 
 ISSUE-036 is offline and has no SDK, broker, subscription, order, or position side effects. Revert its branch through a reviewed PR and remove the readiness CLI and immutable decision model. Tri-state readiness output is transient and needs no cleanup. Existing sanitized discovery reports remain valid ISSUE-035 evidence and require no broker reconciliation.
 
+## Moomoo Paper-order Dry-run Rollback
+
+ISSUE-037 is offline and has no SDK, account-selection, broker, subscription, order, fill, or position side effects. Revert its branch through a reviewed PR and remove the planner and CLI command. Dry-run stdout is transient design evidence; no order requires cancellation and no broker state requires reconciliation.
+
 ## Strategy Filter Rollback
 
 If market quality filters suppress expected research signals, remove `max_spread_bps` and `require_fresh_order_book` from strategy configuration first. If the issue is code-level behavior, revert the ISSUE-007 branch in a new PR.

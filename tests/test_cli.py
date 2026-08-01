@@ -282,5 +282,115 @@ class MoomooPaperReadinessCliTests(unittest.TestCase):
         self.assertIn("could not read", stderr.getvalue())
         self.assertNotIn("Traceback", stderr.getvalue())
 
+
+class MoomooPaperOrderDryRunCliTests(unittest.TestCase):
+    def test_creates_offline_dry_run_without_sdk_or_order_call(self) -> None:
+        stdout = io.StringIO()
+        discovery = MoomooDiscoveryResult(
+            endpoint="127.0.0.1:11111",
+            sdk_version="10.9.6908",
+            server_version="1009",
+            quote_connection_status="ok",
+            trade_connection_status="ok",
+            qot_logged_in=True,
+            trd_logged_in=True,
+            us_quote_entitlement="LV1",
+            account_count=1,
+            paper_account_count=1,
+            paper_account_available=True,
+            us_market_authorized=True,
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            report_path = Path(tmpdir) / "discovery.json"
+            MoomooDiscoveryReportWriter().write(report_path, discovery)
+            with patch(
+                "autotrade.cli.MoomooApiSdk.load",
+                side_effect=AssertionError("SDK loaded"),
+            ), redirect_stdout(stdout):
+                exit_code = main(
+                    [
+                        "moomoo-paper-order-dry-run",
+                        "--discovery-report",
+                        str(report_path),
+                        "--client-order-id",
+                        "paper-dry-run-001",
+                        "--strategy-id",
+                        "us_paper_validation",
+                        "--code",
+                        "US.AAPL",
+                        "--quantity",
+                        "10",
+                        "--limit-price",
+                        "150.25",
+                        "--stop-price",
+                        "148.0",
+                        "--take-profit-price",
+                        "154.0",
+                        "--created-at",
+                        "2026-08-01T14:30:00+00:00",
+                    ]
+                )
+
+        self.assertEqual(0, exit_code)
+        self.assertIn('"dry_run": true', stdout.getvalue())
+        self.assertIn('"trd_env": "SIMULATE"', stdout.getvalue())
+        self.assertNotIn("acc_id", stdout.getvalue())
+
+    def test_blocked_readiness_and_invalid_timestamp_fail_cleanly(self) -> None:
+        blocked = MoomooDiscoveryResult(
+            endpoint="127.0.0.1:11111",
+            sdk_version="10.9.6908",
+            server_version="1009",
+            quote_connection_status="ok",
+            trade_connection_status="ok",
+            qot_logged_in=True,
+            trd_logged_in=True,
+            us_quote_entitlement="UNKNOWN",
+            account_count=1,
+            paper_account_count=1,
+            paper_account_available=True,
+            us_market_authorized=True,
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            report_path = Path(tmpdir) / "discovery.json"
+            MoomooDiscoveryReportWriter().write(report_path, blocked)
+            stderr = io.StringIO()
+            with redirect_stderr(stderr):
+                blocked_exit = main(self._args(report_path))
+            self.assertEqual(1, blocked_exit)
+            self.assertIn("READINESS_NOT_READY", stderr.getvalue())
+            self.assertNotIn("Traceback", stderr.getvalue())
+
+            stderr = io.StringIO()
+            invalid_args = self._args(report_path)
+            invalid_args[-1] = "not-a-timestamp"
+            with redirect_stderr(stderr):
+                invalid_exit = main(invalid_args)
+            self.assertEqual(2, invalid_exit)
+            self.assertIn("created-at", stderr.getvalue())
+            self.assertNotIn("Traceback", stderr.getvalue())
+
+    @staticmethod
+    def _args(report_path: Path) -> list[str]:
+        return [
+            "moomoo-paper-order-dry-run",
+            "--discovery-report",
+            str(report_path),
+            "--client-order-id",
+            "paper-dry-run-001",
+            "--strategy-id",
+            "us_paper_validation",
+            "--code",
+            "US.AAPL",
+            "--quantity",
+            "10",
+            "--limit-price",
+            "150.25",
+            "--stop-price",
+            "148.0",
+            "--created-at",
+            "2026-08-01T14:30:00+00:00",
+        ]
+
 if __name__ == "__main__":
     unittest.main()

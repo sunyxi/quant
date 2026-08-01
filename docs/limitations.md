@@ -9,6 +9,7 @@
 - JP quote entitlement is reported as `UNKNOWN` when the SDK does not expose `jp_qot_right`; the discovery does not infer permission by subscribing or requesting paid data.
 - Sanitized discovery JSON may be available on stdout when an optional report write fails. Exit code `2` remains authoritative and means no durable report should be assumed.
 - The ISSUE-036 offline readiness gate checks only discovery evidence. `READY` does not validate order permissions, buying power, symbol eligibility, execution, reconnect behavior, or risk controls and does not authorize a paper order.
+- ISSUE-037 builds an offline US long limit dry-run plan only. It does not select a paper account, check buying power or tick size, load the SDK, call OpenD, place/cancel/modify an order, model fills, or prove that Moomoo will accept the contract.
 - Readiness login evidence is tri-state: `null` means the check was not reached, while `false` means the check ran without a logged-in result. The immutable decision remains a point-in-time snapshot and can still become stale.
 - Repository code must not call `unlock_trade` in any environment. Any later real-trading unlock must be performed manually in the OpenD GUI after separate approval.
 - The backtest engine now has conservative limit-order fills and cost attribution, but does not yet model queue position, minute high/low touch logic, or calibrated fill probability.

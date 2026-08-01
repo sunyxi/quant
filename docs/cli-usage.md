@@ -28,6 +28,14 @@ PYTHONPATH=src python3 -m autotrade.cli moomoo-paper-readiness --discovery-repor
 
 This command creates no SDK Context, socket, or broker request. It returns `0` for `READY`, `1` for `BLOCKED`, and `2` for an invalid, non-UTF-8, or unreadable report without a traceback. Login evidence retains `null` when a check was never reached. `READY` does not authorize paper orders or live trading.
 
+Build a sanitized US paper-order plan offline:
+
+```bash
+PYTHONPATH=src python3 -m autotrade.cli moomoo-paper-order-dry-run --discovery-report moomoo-discovery-reports/moomoo-readonly-discovery-report.json --client-order-id paper-dry-run-001 --strategy-id us_paper_validation --code US.AAPL --quantity 10 --limit-price 150.25 --stop-price 148.00 --take-profit-price 154.00 --created-at 2026-08-01T14:30:00+00:00
+```
+
+Exit code `0` means a deterministic `SIMULATE` plan was built, `1` means readiness or order policy blocked it, and `2` means the input or report was invalid. The command does not import the SDK, select an account, or submit an order.
+
 ## Setup
 
 ```bash

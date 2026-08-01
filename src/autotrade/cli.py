@@ -5,8 +5,11 @@ import getpass
 import json
 import os
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Sequence, TextIO
+
+from autotrade.core.models import Market, OrderIntent, OrderStyle, Side
 
 from autotrade.execution.kabu_station import (
     KabuStationClientError,
@@ -27,6 +30,10 @@ from autotrade.execution.moomoo import (
     MoomooReadOnlyDiscovery,
 )
 from autotrade.execution.moomoo_readiness import MoomooPaperReadinessGate
+from autotrade.execution.moomoo_paper_order import (
+    MoomooPaperOrderDryRunPlanner,
+    MoomooPaperOrderPlanError,
+)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -45,6 +52,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
     if args.command == "moomoo-paper-readiness":
         return _run_moomoo_paper_readiness(
+            args,
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+        )
+    if args.command == "moomoo-paper-order-dry-run":
+        return _run_moomoo_paper_order_dry_run(
             args,
             stdout=sys.stdout,
             stderr=sys.stderr,
@@ -116,6 +129,19 @@ def _build_parser() -> argparse.ArgumentParser:
         required=True,
         help="Path to a sanitized Moomoo discovery schema version 1 report.",
     )
+    paper_order = subparsers.add_parser(
+        "moomoo-paper-order-dry-run",
+        description="Build a sanitized Moomoo US paper-order plan offline.",
+    )
+    paper_order.add_argument("--discovery-report", type=Path, required=True)
+    paper_order.add_argument("--client-order-id", required=True)
+    paper_order.add_argument("--strategy-id", required=True)
+    paper_order.add_argument("--code", required=True)
+    paper_order.add_argument("--quantity", type=int, required=True)
+    paper_order.add_argument("--limit-price", type=float, required=True)
+    paper_order.add_argument("--stop-price", type=float, required=True)
+    paper_order.add_argument("--take-profit-price", type=float)
+    paper_order.add_argument("--created-at", required=True)
     return parser
 
 
@@ -249,6 +275,58 @@ def _run_moomoo_paper_readiness(
     decision = MoomooPaperReadinessGate().evaluate(discovery)
     print(json.dumps(decision.to_dict(), sort_keys=True), file=stdout)
     return 0 if decision.is_ready else 1
+
+
+def _run_moomoo_paper_order_dry_run(
+    args: argparse.Namespace,
+    *,
+    stdout: TextIO,
+    stderr: TextIO,
+) -> int:
+    try:
+        created_at = datetime.fromisoformat(args.created_at)
+    except ValueError:
+        print("error: created-at must be an ISO 8601 timestamp", file=stderr)
+        return 2
+    if created_at.tzinfo is None:
+        print("error: created-at must include a timezone offset", file=stderr)
+        return 2
+
+    try:
+        discovery = MoomooDiscoveryReportReader().read(args.discovery_report)
+    except MoomooConfigurationError as exc:
+        print(f"error: {exc}", file=stderr)
+        return 2
+
+    try:
+        intent = OrderIntent(
+            client_order_id=args.client_order_id,
+            strategy_id=args.strategy_id,
+            symbol=args.code,
+            market=Market.US,
+            side=Side.BUY,
+            quantity=args.quantity,
+            order_style=OrderStyle.PASSIVE_LIMIT,
+            limit_price=args.limit_price,
+            stop_price=args.stop_price,
+            take_profit_price=args.take_profit_price,
+            created_at=created_at,
+        )
+    except ValueError:
+        print("error: invalid paper-order fields", file=stderr)
+        return 2
+
+    readiness = MoomooPaperReadinessGate().evaluate(discovery)
+    try:
+        plan = MoomooPaperOrderDryRunPlanner().plan(
+            intent,
+            readiness=readiness,
+        )
+    except MoomooPaperOrderPlanError as exc:
+        print(f"error: {exc.reason.value}", file=stderr)
+        return 1
+    print(json.dumps(plan.to_dict(), sort_keys=True), file=stdout)
+    return 0
 
 
 if __name__ == "__main__":
