@@ -4,6 +4,7 @@ import inspect
 import unittest
 from dataclasses import FrozenInstanceError, replace
 
+from autotrade.execution import moomoo_paper_submit
 from autotrade.execution.moomoo import (
     MIN_MOOMOO_API_VERSION,
     MoomooEndpoint,
@@ -122,6 +123,22 @@ class NonListFrame:
 
 
 class MoomooPaperOrderSubmitterTests(unittest.TestCase):
+    def test_uses_public_shared_moomoo_contracts(self) -> None:
+        source = inspect.getsource(moomoo_paper_submit)
+
+        for private_import in [
+            "    _field,",
+            "    _records,",
+            "    _safe_close,",
+            "    _safe_version,",
+            "    _version_at_least,",
+        ]:
+            self.assertNotIn(private_import, source)
+        self.assertNotIn("class MoomooPaperSubmitSdk", source)
+        self.assertNotIn("class MoomooPaperSubmitContext", source)
+        self.assertIn("sdk: MoomooSdkSource", source)
+        self.assertIn("context: MoomooTradeContext | None", source)
+
     def test_submits_once_and_verifies_by_client_remark(self) -> None:
         context = FakeSubmitContext()
         result = MoomooPaperOrderSubmitter(

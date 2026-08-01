@@ -2,19 +2,20 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 from enum import StrEnum
-from typing import Protocol
 
 from autotrade.execution.moomoo import (
     MIN_MOOMOO_API_VERSION,
     MoomooEndpoint,
     MoomooPaperAccountPreflightResult,
     MoomooResponseError,
-    _field,
-    _records,
-    _safe_close,
-    _safe_version,
-    _version_at_least,
+    MoomooSdkSource,
+    MoomooTradeContext,
+    close_moomoo_context,
+    is_moomoo_version_at_least,
     is_moomoo_us_paper_account_eligible,
+    moomoo_field,
+    moomoo_records,
+    normalize_moomoo_version,
 )
 from autotrade.execution.moomoo_paper_order import MoomooPaperOrderPlan
 from autotrade.execution.moomoo_readiness import MoomooPaperReadinessDecision
@@ -30,31 +31,6 @@ class MoomooPaperOrderSubmissionStatus(StrEnum):
     UNKNOWN = "unknown"
     SUBMITTED = "submitted"
     VERIFIED = "verified"
-
-
-class MoomooPaperSubmitContext(Protocol):
-    def get_acc_list(self) -> tuple[int, object]: ...
-
-    def place_order(self, **kwargs: object) -> tuple[int, object]: ...
-
-    def order_list_query(self, **kwargs: object) -> tuple[int, object]: ...
-
-    def close(self) -> None: ...
-
-
-class MoomooPaperSubmitSdk(Protocol):
-    version: str
-    ret_ok: int
-    simulate_trade_environment: object
-    buy_trade_side: object
-    normal_order_type: object
-    day_time_in_force: object
-    rth_session: object
-
-    def create_us_trade_context(
-        self,
-        endpoint: MoomooEndpoint,
-    ) -> MoomooPaperSubmitContext: ...
 
 
 @dataclass(frozen=True)
@@ -84,7 +60,7 @@ class MoomooPaperOrderSubmissionResult:
 @dataclass(frozen=True)
 class MoomooPaperOrderSubmitter:
     endpoint: MoomooEndpoint
-    sdk: MoomooPaperSubmitSdk
+    sdk: MoomooSdkSource
 
     def submit(
         self,
@@ -109,8 +85,8 @@ class MoomooPaperOrderSubmitter:
                 sanitized_failure_category=failure,
             )
 
-        sdk_version = _safe_version(self.sdk.version)
-        if not _version_at_least(sdk_version, MIN_MOOMOO_API_VERSION):
+        sdk_version = normalize_moomoo_version(self.sdk.version)
+        if not is_moomoo_version_at_least(sdk_version, MIN_MOOMOO_API_VERSION):
             return MoomooPaperOrderSubmissionResult(
                 **base,
                 sdk_version=sdk_version,
@@ -118,7 +94,7 @@ class MoomooPaperOrderSubmitter:
             )
         base["sdk_version"] = sdk_version
 
-        context: MoomooPaperSubmitContext | None = None
+        context: MoomooTradeContext | None = None
         state: dict[str, object] = dict(base)
         try:
             context = self.sdk.create_us_trade_context(self.endpoint)
@@ -133,7 +109,7 @@ class MoomooPaperOrderSubmitter:
                     **state,
                     sanitized_failure_category="account",
                 )
-            account_id = _field(eligible[0], "acc_id")
+            account_id = moomoo_field(eligible[0], "acc_id")
             if not (
                 isinstance(account_id, int)
                 and not isinstance(account_id, bool)
@@ -198,7 +174,7 @@ class MoomooPaperOrderSubmitter:
             matches = [
                 row
                 for row in orders
-                if _field(row, "remark") == plan.client_order_id
+                if moomoo_field(row, "remark") == plan.client_order_id
             ]
             state["verification_match_count"] = len(matches)
             if len(matches) != 1:
@@ -219,7 +195,7 @@ class MoomooPaperOrderSubmitter:
                 sanitized_failure_category=category,
             )
         finally:
-            _safe_close(context)
+            close_moomoo_context(context)
 
     def _evidence_failure(
         self,
@@ -260,7 +236,7 @@ class MoomooPaperOrderSubmitter:
         status, payload = response
         if status != self.sdk.ret_ok:
             raise ValueError("request failed")
-        return _records(payload)
+        return moomoo_records(payload)
 
     def _submission_outcome(self, response: tuple[int, object]) -> str:
         if not isinstance(response, tuple) or len(response) != 2:
@@ -268,6 +244,6 @@ class MoomooPaperOrderSubmitter:
         if response[0] != self.sdk.ret_ok:
             return "rejected"
         try:
-            return "accepted" if _records(response[1]) else "unknown"
+            return "accepted" if moomoo_records(response[1]) else "unknown"
         except MoomooResponseError:
             return "unknown"

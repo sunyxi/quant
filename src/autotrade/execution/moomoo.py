@@ -850,3 +850,23 @@ def _safe_close(context: object | None) -> None:
         context.close()
     except Exception:
         pass
+
+
+def moomoo_records(payload: object) -> list[object]:
+    return _records(payload)
+
+
+def moomoo_field(row: object, name: str) -> object:
+    return _field(row, name)
+
+
+def normalize_moomoo_version(value: object) -> str:
+    return _safe_version(value)
+
+
+def is_moomoo_version_at_least(current: str, minimum: str) -> bool:
+    return _version_at_least(current, minimum)
+
+
+def close_moomoo_context(context: object | None) -> None:
+    _safe_close(context)
