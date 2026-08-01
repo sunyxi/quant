@@ -337,6 +337,20 @@ class MoomooPaperOrderReconciliationReportTests(unittest.TestCase):
             {**valid, "match_count": True},
             {**valid, "status": "absent", "match_count": 1},
             {**valid, "status": "duplicate", "match_count": 2},
+            {
+                **valid,
+                "status": "blocked",
+                "query_status": "not-run",
+                "match_count": 0,
+                "sanitized_failure_category": "account",
+            },
+            {
+                **valid,
+                "status": "unknown",
+                "query_status": "not-run",
+                "match_count": 0,
+                "sanitized_failure_category": "account",
+            },
         ]
         with tempfile.TemporaryDirectory() as tmpdir:
             for index, payload in enumerate(cases):
@@ -352,6 +366,38 @@ class MoomooPaperOrderReconciliationReportTests(unittest.TestCase):
             with self.assertRaises(MoomooConfigurationError):
                 MoomooPaperOrderReconciliationReportReader().read(malformed)
 
+    def test_reader_accepts_producer_blocked_and_unknown_states(self) -> None:
+        blocked_context = FakeReconcileContext()
+        blocked_context.accounts = (0, [])
+        results = [
+            MoomooPaperOrderReconciler(
+                endpoint=MoomooEndpoint(),
+                sdk=FakeReconcileSdk(blocked_context),
+            ).reconcile(
+                "paper-dry-run-001",
+                readiness=ready_decision(),
+                preflight=successful_preflight(),
+            ),
+            MoomooPaperOrderReconciler(
+                endpoint=MoomooEndpoint(),
+                sdk=FakeReconcileSdk(RaisingOrderQueryContext()),
+            ).reconcile(
+                "paper-dry-run-001",
+                readiness=ready_decision(),
+                preflight=successful_preflight(),
+            ),
+        ]
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            for index, result in enumerate(results):
+                path = Path(tmpdir) / f"valid-{index}.json"
+                MoomooPaperOrderReconciliationReportWriter().write(path, result)
+                with self.subTest(status=result.status):
+                    self.assertEqual(
+                        result,
+                        MoomooPaperOrderReconciliationReportReader().read(path),
+                    )
+
     def test_writer_filesystem_failure_is_sanitized(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             parent_file = Path(tmpdir) / "not-a-directory"
@@ -362,6 +408,20 @@ class MoomooPaperOrderReconciliationReportTests(unittest.TestCase):
             ):
                 MoomooPaperOrderReconciliationReportWriter().write(
                     parent_file / "report.json",
+                    self._unique_result(),
+                )
+
+    def test_writer_treats_dangling_symlink_as_create_only_conflict(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            report_path = Path(tmpdir) / "reconciliation.json"
+            report_path.symlink_to(Path(tmpdir) / "missing-target.json")
+
+            with self.assertRaisesRegex(
+                MoomooConfigurationError,
+                "already exists",
+            ):
+                MoomooPaperOrderReconciliationReportWriter().write(
+                    report_path,
                     self._unique_result(),
                 )
 

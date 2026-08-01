@@ -16,7 +16,7 @@ ISSUE-039 は、明示的に確認した米国株 BUY 指値注文一件を `SIM
 
 ISSUE-040 は、参照専用の `moomoo-paper-order-reconcile` 境界を追加します。最新化した `SIMULATE` 注文一覧を一回だけ照会し、完全一致する remark の証跡を `UNIQUE`、`ABSENT`、`DUPLICATE`、`BLOCKED`、`UNKNOWN` として、証券会社 ID なしで出力します。`ABSENT` は未送信の証明ではなく、このコマンドは再送信や注文変更を行いません。
 
-ISSUE-041 は、canary と incident の永続的な証跡向けに create-only の schema version 1 照合レポートを追加します。厳格な reader は OpenD や SDK なしでオフライン検証します。レポートはサニタイズ済み結果だけを含み、既存ファイルを上書きせず、Git から除外されたローカルパスに保持されます。
+ISSUE-041 は、canary と incident の永続的な証跡向けに create-only の schema version 1 照合レポートを追加します。厳格な reader は OpenD や SDK なしでオフライン検証します。レポートはサニタイズ済み結果だけを含み、既存ファイルを上書きせず、Git から除外されたローカルパスに保持されます。注文一覧の照会が完了しなかった場合、指定されたレポートは明示的に exit code `2` で失敗します。
 
 現在のカレンダー層は、日本株の通常取引時間、昼休み、週末除外、手動祝日、引け前の新規エントリー停止時刻を研究用フィルターとして扱います。
 

@@ -165,7 +165,7 @@ PYTHONPATH=src python3 -m autotrade.cli moomoo-paper-order-reconcile \
   --report-output moomoo-reconciliation-reports/moomoo-paper-order-reconciliation-report.json
 ```
 
-The writer creates parent directories, never overwrites, and stores only the sanitized result. The strict reader reconstructs that immutable evidence offline without the SDK or OpenD and rejects incompatible schemas, fields, types, endpoints, identifiers, and status/failure combinations. Report paths are ignored by Git. A persistence error returns exit code `2`; stdout remains transient evidence and does not prove that a report was written.
+The writer creates parent directories, never overwrites, and stores only the sanitized result. The strict reader reconstructs that immutable evidence offline without the SDK or OpenD and rejects incompatible schemas, fields, types, endpoints, identifiers, and status/failure combinations. Report paths are ignored by Git. If connected execution stops before a completed query status, the CLI creates no report and returns exit code `2`. A persistence error also returns exit code `2`; stdout remains transient evidence and does not prove that a report was written.
 
 ## Security
 

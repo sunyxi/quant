@@ -634,7 +634,13 @@ def _run_moomoo_paper_order_reconcile(
         print("error: CLIENT_ORDER_ID_INVALID", file=stderr)
         return 2
     print(json.dumps(result.to_dict(), sort_keys=True), file=stdout)
-    if args.report_output is not None and result.query_status in {"ok", "failed"}:
+    if args.report_output is not None:
+        if result.query_status not in {"ok", "failed"}:
+            print(
+                "error: --report-output requires query_status ok or failed",
+                file=stderr,
+            )
+            return 2
         try:
             MoomooPaperOrderReconciliationReportWriter().write(
                 args.report_output,

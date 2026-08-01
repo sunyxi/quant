@@ -578,7 +578,7 @@ def _write_create_only_report(
             json.dump(payload, stream, sort_keys=True)
             stream.write("\n")
     except FileExistsError as exc:
-        if output_path.exists():
+        if output_path.exists() or output_path.is_symlink():
             raise MoomooConfigurationError(
                 f"Moomoo {label} report already exists"
             ) from exc

@@ -16,7 +16,7 @@ ISSUE-039 新增默认禁用的 `moomoo-paper-order-submit` 边界，仅能把�
 
 ISSUE-040 新增只读 `moomoo-paper-order-reconcile` 边界。它只执行一次强制刷新的 `SIMULATE` 订单列表查询，把精确 remark 匹配证据输出为 `UNIQUE`、`ABSENT`、`DUPLICATE`、`BLOCKED` 或 `UNKNOWN`，且不包含券商标识。`ABSENT` 不能证明从未提交，该命令不会补单或修改订单。
 
-ISSUE-041 新增 create-only 的 schema version 1 对账报告，用于持久保存 canary 和 incident 证据。严格 reader 可在没有 OpenD 或 SDK 时离线验证。报告只包含脱敏结果字段，不覆盖已有文件，并保存在 Git 忽略的本地路径中。
+ISSUE-041 新增 create-only 的 schema version 1 对账报告，用于持久保存 canary 和 incident 证据。严格 reader 可在没有 OpenD 或 SDK 时离线验证。报告只包含脱敏结果字段，不覆盖已有文件，并保存在 Git 忽略的本地路径中。如果订单列表查询未完成，指定的报告会以 exit code `2` 明确失败。
 
 当前日历层已覆盖日股普通交易时段、午休、周末过滤、手工假日和收盘前停止新开仓 cutoff，用于研究和回测过滤。
 

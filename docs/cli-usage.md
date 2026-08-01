@@ -72,7 +72,7 @@ Persist a completed connected query as a create-only schema version 1 report:
 PYTHONPATH=src python3 -m autotrade.cli moomoo-paper-order-reconcile --discovery-report moomoo-discovery-reports/moomoo-readonly-discovery-report.json --preflight-report moomoo-preflight-reports/moomoo-paper-account-preflight-report.json --client-order-id paper-canary-001 --connect --report-output moomoo-reconciliation-reports/moomoo-paper-order-reconciliation-report.json
 ```
 
-`--report-output` is invalid without `--connect`. The report writer creates missing parent directories but never overwrites an existing file. Persistence conflicts or filesystem failures return exit code `2` without a traceback. Reports contain only the sanitized reconciliation result and can be read offline with strict schema validation.
+`--report-output` is invalid without `--connect`. If connected execution stops before the order-list query reaches `query_status=ok` or `query_status=failed`, the command creates no file and returns exit code `2`. The report writer creates missing parent directories but never overwrites an existing file. Persistence conflicts or filesystem failures also return exit code `2` without a traceback. Reports contain only the sanitized reconciliation result and can be read offline with strict schema validation.
 
 ## Setup
 

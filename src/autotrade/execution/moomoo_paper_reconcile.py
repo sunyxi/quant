@@ -279,7 +279,7 @@ def _validate_reconciliation_report_payload(
     if any(
         type(payload[field]) is not int or payload[field] < 0
         for field in count_fields
-    ) or payload["refresh_cache"] is not True:
+    ) or payload["refresh_cache"] is not _REFRESH_CACHE:
         raise MoomooConfigurationError(
             "invalid Moomoo paper-order reconciliation report payload"
         )
@@ -313,9 +313,10 @@ def _is_consistent_reconciliation_state(
     query_status = payload["query_status"]
     match_count = payload["match_count"]
     failure = payload["sanitized_failure_category"]
+    account_selection_status = payload["account_selection_status"]
+    eligible_account_count = payload["eligible_account_count"]
     account_ready = (
-        payload["account_selection_status"] == "unique"
-        and payload["eligible_account_count"] == 1
+        account_selection_status == "unique" and eligible_account_count == 1
     )
     if status == MoomooPaperOrderReconciliationStatus.UNIQUE:
         return (
@@ -341,18 +342,30 @@ def _is_consistent_reconciliation_state(
     if status == MoomooPaperOrderReconciliationStatus.UNKNOWN:
         return match_count == 0 and (
             (failure == "query" and account_ready and query_status == "failed")
-            or (failure in {"account", "connection"} and query_status == "not-run")
+            or (
+                failure in {"account", "connection"}
+                and account_selection_status == "not-run"
+                and eligible_account_count == 0
+                and query_status == "not-run"
+            )
+        )
+    if failure == "account":
+        return (
+            match_count == 0
+            and query_status == "not-run"
+            and account_selection_status == "blocked"
         )
     return (
-        match_count == 0
-        and query_status == "not-run"
-        and failure
+        failure
         in {
             "client_order_id",
             "readiness",
             "preflight",
             "dependency",
             "version",
-            "account",
         }
+        and match_count == 0
+        and query_status == "not-run"
+        and account_selection_status == "not-run"
+        and eligible_account_count == 0
     )

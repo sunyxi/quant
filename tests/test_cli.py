@@ -803,6 +803,28 @@ class MoomooPaperOrderReconcileCliTests(unittest.TestCase):
         self.assertIn("already exists", stderr.getvalue())
         self.assertNotIn("Traceback", stderr.getvalue())
 
+    def test_report_request_fails_cleanly_when_query_did_not_run(self) -> None:
+        stderr = io.StringIO()
+        sdk = FakeReconcileSdk()
+        sdk.version = "10.5"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            discovery, preflight = self._reports(tmpdir)
+            output = Path(tmpdir) / "reconciliation.json"
+            with patch(
+                "autotrade.cli.MoomooApiSdk.load",
+                return_value=sdk,
+            ), redirect_stderr(stderr):
+                exit_code = main(
+                    self._args(discovery, preflight)
+                    + ["--connect", "--report-output", str(output)]
+                )
+
+            self.assertFalse(output.exists())
+
+        self.assertEqual(2, exit_code)
+        self.assertIn("query_status", stderr.getvalue())
+        self.assertNotIn("Traceback", stderr.getvalue())
+
 
 if __name__ == "__main__":
     unittest.main()
