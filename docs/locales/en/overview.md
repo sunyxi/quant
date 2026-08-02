@@ -20,6 +20,8 @@ ISSUE-041 adds create-only schema version 1 reconciliation reports for durable c
 
 ISSUE-042 adds a create-only schema version 1 submission report after exactly one approved paper `place_order` attempt. It preserves sanitized uncertain outcomes for offline review without order parameters or broker identifiers. Pre-account network failures remain distinct as `connection`, while post-attempt failures remain `verification`. Pre-submit blocks create no report, and report persistence never authorizes or retries a canary.
 
+ISSUE-043 adds verified local five-minute RTH cache loading and long-only ORB lifecycle, PnL, actual-notional cost sensitivity, symbol attribution, and non-overlapping Walk-Forward reports. Atomic create-only schema version 2 output labels the full-period default as `default_parameter_full_period`. It does not download data, load Moomoo, contact a broker, or authorize trading.
+
 The current calendar layer covers JP regular sessions, lunch break, weekend rejection, manual holidays, and close-entry cutoff for research filtering.
 
 The current order book layer covers immutable snapshots, spread, visible depth, OBI, microprice, freshness, and stale-book health status for research fixtures.
@@ -84,4 +86,4 @@ The kabu Station read-only reconciler can run local reconciliation over injected
 
 Repository CI runs Python unit tests, Task Catalog drift checks, Markdown link/style checks, and a basic secret scan for pull requests and pushes to `main`.
 
-See `docs/roadmap.md`, `docs/task-catalog.md`, `docs/scope.md`, `docs/risk-policy.md`, `docs/broker-decision.md`, `docs/implementation-plan.md`, `docs/market-calendar.md`, `docs/order-book-intelligence.md`, `docs/backtest-fill-cost.md`, `docs/strategy-market-quality.md`, `docs/oms.md`, `docs/execution-ledger.md`, `docs/risk-paused-state.md`, `docs/reconciliation.md`, `docs/simulated-broker.md`, `docs/replay-execution.md`, `docs/kabu-station-mapper.md`, `docs/moomoo-openapi.md`, `docs/operations.md`, `docs/limitations.md`, and `docs/rollback.md`.
+See `docs/roadmap.md`, `docs/task-catalog.md`, `docs/scope.md`, `docs/risk-policy.md`, `docs/broker-decision.md`, `docs/implementation-plan.md`, `docs/market-calendar.md`, `docs/order-book-intelligence.md`, `docs/backtest-fill-cost.md`, `docs/historical-orb-backtest.md`, `docs/strategy-market-quality.md`, `docs/oms.md`, `docs/execution-ledger.md`, `docs/risk-paused-state.md`, `docs/reconciliation.md`, `docs/simulated-broker.md`, `docs/replay-execution.md`, `docs/kabu-station-mapper.md`, `docs/moomoo-openapi.md`, `docs/operations.md`, `docs/limitations.md`, and `docs/rollback.md`.

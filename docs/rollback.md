@@ -169,3 +169,7 @@ Live trading is not supported yet. Future live rollback must follow this order:
 5. Reconcile local and broker state.
 6. Flatten positions only through approved emergency procedures.
 7. Lock automatic restart until human review is complete.
+
+## Historical ORB Backtest Rollback
+
+Disable `historical-orb-backtest`, preserve any local schema version 1 or 2 report needed for research review, and remove ignored cache, temporary, or report artifacts only after confirming they are no longer required. Revert ISSUE-043 through a reviewed PR. Do not reinterpret an older `baseline` key as the schema version 2 `default_parameter_full_period` key. This rollback has no broker order, account, or position side effect.

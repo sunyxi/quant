@@ -20,6 +20,8 @@ ISSUE-041 新增 create-only 的 schema version 1 对账报告，用于持久保
 
 ISSUE-042 在一次经过批准的 paper `place_order` 尝试后生成 create-only 的 schema version 1 submission report。它不保存订单参数或券商标识，只保留脱敏的不确定结果供离线审查。账户选择前的网络故障保留为 `connection`，提交尝试后的故障则保留为 `verification`。提交前被阻断时不创建报告，报告持久化也不会批准或重试 canary。
 
+ISSUE-043 新增经过验证的本地 5 分钟 RTH 缓存读取，以及 long-only ORB 的完整生命周期、PnL、按每条成交腿实际名义金额计算的成本敏感性、逐标的归因和不重叠的 Walk-Forward 报告。原子 create-only 的 schema version 2 输出使用 `default_parameter_full_period` 标记全周期默认参数结果。它不会下载数据、加载 Moomoo、连接券商或授权交易。
+
 当前日历层已覆盖日股普通交易时段、午休、周末过滤、手工假日和收盘前停止新开仓 cutoff，用于研究和回测过滤。
 
 当前板情报层已覆盖不可变订单簿快照、价差、可见深度、OBI、microprice、数据新鲜度和 stale book health，用于研究 fixture。
@@ -84,4 +86,4 @@ kabu Station read-only reconciler 可以基于注入的只读 client 数据、OM
 
 仓库 CI 会在 PR 和推送到 `main` 时运行 Python 单元测试、Task Catalog 漂移检查、Markdown 链接/样式检查和基础密钥扫描。
 
-请阅读 `docs/roadmap.md`、`docs/task-catalog.md`、`docs/scope.md`、`docs/risk-policy.md`、`docs/broker-decision.md`、`docs/implementation-plan.md`、`docs/market-calendar.md`、`docs/order-book-intelligence.md`、`docs/backtest-fill-cost.md`、`docs/strategy-market-quality.md`、`docs/oms.md`、`docs/execution-ledger.md`、`docs/risk-paused-state.md`、`docs/reconciliation.md`、`docs/simulated-broker.md`、`docs/replay-execution.md`、`docs/kabu-station-mapper.md`、`docs/moomoo-openapi.md`、`docs/operations.md`、`docs/limitations.md` 和 `docs/rollback.md`。
+请阅读 `docs/roadmap.md`、`docs/task-catalog.md`、`docs/scope.md`、`docs/risk-policy.md`、`docs/broker-decision.md`、`docs/implementation-plan.md`、`docs/market-calendar.md`、`docs/order-book-intelligence.md`、`docs/backtest-fill-cost.md`、`docs/historical-orb-backtest.md`、`docs/strategy-market-quality.md`、`docs/oms.md`、`docs/execution-ledger.md`、`docs/risk-paused-state.md`、`docs/reconciliation.md`、`docs/simulated-broker.md`、`docs/replay-execution.md`、`docs/kabu-station-mapper.md`、`docs/moomoo-openapi.md`、`docs/operations.md`、`docs/limitations.md` 和 `docs/rollback.md`。

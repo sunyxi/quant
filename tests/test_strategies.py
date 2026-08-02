@@ -81,6 +81,70 @@ class StrategyTests(unittest.TestCase):
 
         self.assertIsNone(strategy.on_snapshot(snapshot))
 
+    def test_opening_range_breakout_is_long_only_by_default(self) -> None:
+        strategy = OpeningRangeBreakout(atr=20)
+        strategy.set_opening_range(high=1000, low=980)
+        snapshot = MarketSnapshot(
+            symbol="7203.T",
+            market=Market.JP,
+            timestamp=datetime(2026, 7, 28, 9, 16, tzinfo=ZoneInfo("Asia/Tokyo")),
+            bid=975,
+            ask=976,
+            last=975,
+            volume=100_000,
+            vwap=990,
+            features={"relative_volume": 2.0},
+        )
+
+        self.assertIsNone(strategy.on_snapshot(snapshot))
+
+    def test_opening_range_breakout_rejects_non_positive_stop_fraction(self) -> None:
+        with self.assertRaisesRegex(ValueError, "stop fraction"):
+            OpeningRangeBreakout(opening_range_stop_fraction=0.0)
+
+    def test_opening_range_breakout_can_opt_in_to_short_signals(self) -> None:
+        strategy = OpeningRangeBreakout(atr=20, long_only=False)
+        strategy.set_opening_range(high=1000, low=980)
+        snapshot = MarketSnapshot(
+            symbol="7203.T",
+            market=Market.JP,
+            timestamp=datetime(2026, 7, 28, 9, 16, tzinfo=ZoneInfo("Asia/Tokyo")),
+            bid=975,
+            ask=976,
+            last=975,
+            volume=100_000,
+            vwap=990,
+            features={"relative_volume": 2.0},
+        )
+
+        signal = strategy.on_snapshot(snapshot)
+
+        self.assertIsNotNone(signal)
+        self.assertEqual(Side.SELL, signal.side)
+        self.assertEqual(985.0, signal.stop_price)
+        self.assertEqual(960.0, signal.take_profit_price)
+
+    def test_opening_range_stop_is_capped_by_opening_range_width(self) -> None:
+        strategy = OpeningRangeBreakout(atr=20)
+        strategy.set_opening_range(high=1000, low=980)
+        snapshot = MarketSnapshot(
+            symbol="7203.T",
+            market=Market.JP,
+            timestamp=datetime(2026, 7, 28, 9, 16, tzinfo=ZoneInfo("Asia/Tokyo")),
+            bid=1001,
+            ask=1002,
+            last=1002,
+            volume=100_000,
+            vwap=995,
+            features={"relative_volume": 2.0},
+        )
+
+        signal = strategy.on_snapshot(snapshot)
+
+        self.assertIsNotNone(signal)
+        self.assertEqual(992.0, signal.stop_price)
+        self.assertEqual(1017.0, signal.take_profit_price)
+
     def test_vwap_reversion_ignores_trending_market(self) -> None:
         strategy = VwapReversion()
         snapshot = MarketSnapshot(

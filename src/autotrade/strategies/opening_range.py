@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 from autotrade.core.models import MarketSnapshot, Side, Signal
@@ -14,8 +15,19 @@ class OpeningRangeBreakout(Strategy):
     opening_range_low: float | None = None
     atr: float = 1.0
     min_relative_volume: float = 1.5
+    opening_range_stop_fraction: float = 0.5
+    long_only: bool = True
     max_spread_bps: float | None = None
     require_fresh_order_book: bool = False
+
+    def __post_init__(self) -> None:
+        if (
+            isinstance(self.opening_range_stop_fraction, bool)
+            or not isinstance(self.opening_range_stop_fraction, (int, float))
+            or not math.isfinite(self.opening_range_stop_fraction)
+            or self.opening_range_stop_fraction <= 0
+        ):
+            raise ValueError("opening range stop fraction must be positive")
 
     def set_opening_range(self, high: float, low: float) -> None:
         if high <= low:
@@ -42,8 +54,13 @@ class OpeningRangeBreakout(Strategy):
         if snapshot.last > self.opening_range_high + breakout_buffer:
             if snapshot.vwap is not None and snapshot.last < snapshot.vwap:
                 return None
-            stop = snapshot.last - 0.6 * self.atr
-            target = snapshot.last + 1.5 * (snapshot.last - stop)
+            stop_distance = min(
+                0.6 * self.atr,
+                self.opening_range_stop_fraction
+                * (self.opening_range_high - self.opening_range_low),
+            )
+            stop = snapshot.last - stop_distance
+            target = snapshot.last + 1.5 * stop_distance
             return Signal(
                 strategy_id=self.strategy_id,
                 symbol=snapshot.symbol,
@@ -57,11 +74,19 @@ class OpeningRangeBreakout(Strategy):
                 reason="opening range upside breakout",
             )
 
-        if snapshot.last < self.opening_range_low - breakout_buffer:
+        if (
+            not self.long_only
+            and snapshot.last < self.opening_range_low - breakout_buffer
+        ):
             if snapshot.vwap is not None and snapshot.last > snapshot.vwap:
                 return None
-            stop = snapshot.last + 0.6 * self.atr
-            target = snapshot.last - 1.5 * (stop - snapshot.last)
+            stop_distance = min(
+                0.6 * self.atr,
+                self.opening_range_stop_fraction
+                * (self.opening_range_high - self.opening_range_low),
+            )
+            stop = snapshot.last + stop_distance
+            target = snapshot.last - 1.5 * stop_distance
             return Signal(
                 strategy_id=self.strategy_id,
                 symbol=snapshot.symbol,

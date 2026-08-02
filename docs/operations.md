@@ -12,6 +12,8 @@
 
 When evaluating ORB or VWAP signals, include spread and order book health fields in fixtures. A stale or unhealthy book should suppress signals before any risk or execution decision is built.
 
+For ISSUE-043 historical ORB research, retain gzip CSV bars and their manifest under ignored `historical-data/`. Run validate-only first and stop on any required-schema, hash, row-count, date-range, or symbol-set mismatch; additive manifest metadata is permitted. Use `--run` only after validation, preserve atomic create-only schema version 2 reports under `historical-backtest-reports/`, and review `default_parameter_full_period`, baseline and doubled cost scenarios, per-symbol attribution, and every Walk-Forward test fold. Require `test_days <= step_days <= train_days`. Keep the default training promotion gates at non-negative Sharpe and Profit Factor `>= 1.0`; a fold with no eligible candidate is a No-Go, not permission to select the least negative parameter. A positive aggregate result does not override a failed fold or authorize paper submission.
+
 ## OMS State Handling
 
 Treat `UNKNOWN` as a blocking operational state. It means the system cannot safely infer whether the broker accepted, rejected, filled, or cancelled an order until reconciliation confirms the broker state.
