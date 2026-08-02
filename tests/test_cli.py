@@ -721,6 +721,25 @@ class MoomooPaperOrderReconcileCliTests(unittest.TestCase):
         self.assertIn('"reconciliation_status": "not-run"', stdout.getvalue())
         self.assertNotIn("acc_id", stdout.getvalue())
 
+    def test_validate_only_rejects_report_output_without_writing(self) -> None:
+        stderr = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            discovery, preflight = self._reports(tmpdir)
+            output = Path(tmpdir) / "reconciliation.json"
+            with patch(
+                "autotrade.cli.MoomooApiSdk.load",
+                side_effect=AssertionError("SDK loaded"),
+            ), redirect_stderr(stderr):
+                exit_code = main(
+                    self._args(discovery, preflight)
+                    + ["--report-output", str(output)]
+                )
+
+            self.assertFalse(output.exists())
+
+        self.assertEqual(2, exit_code)
+        self.assertIn("--connect", stderr.getvalue())
+
     def test_connect_runs_one_sanitized_read_only_query(self) -> None:
         stdout = io.StringIO()
         sdk = FakeReconcileSdk()
@@ -743,6 +762,68 @@ class MoomooPaperOrderReconcileCliTests(unittest.TestCase):
         self.assertNotIn('"order_id":', stdout.getvalue())
         self.assertEqual(1, len(sdk.context.order_query_calls))
         self.assertEqual([], sdk.context.place_calls)
+
+    def test_connect_writes_create_only_sanitized_report(self) -> None:
+        stdout = io.StringIO()
+        sdk = FakeReconcileSdk()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            discovery, preflight = self._reports(tmpdir)
+            output = Path(tmpdir) / "reports" / "reconciliation.json"
+            with patch(
+                "autotrade.cli.MoomooApiSdk.load",
+                return_value=sdk,
+            ), redirect_stdout(stdout):
+                exit_code = main(
+                    self._args(discovery, preflight)
+                    + ["--connect", "--report-output", str(output)]
+                )
+            report = output.read_text(encoding="utf-8")
+
+        self.assertEqual(0, exit_code)
+        self.assertIn('"status": "unique"', report)
+        self.assertNotIn("acc_id", report)
+        self.assertNotIn('"order_id":', report)
+
+    def test_report_conflict_returns_two_without_traceback(self) -> None:
+        stderr = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            discovery, preflight = self._reports(tmpdir)
+            output = Path(tmpdir) / "reconciliation.json"
+            output.write_text("occupied", encoding="utf-8")
+            with patch(
+                "autotrade.cli.MoomooApiSdk.load",
+                return_value=FakeReconcileSdk(),
+            ), redirect_stderr(stderr):
+                exit_code = main(
+                    self._args(discovery, preflight)
+                    + ["--connect", "--report-output", str(output)]
+                )
+
+        self.assertEqual(2, exit_code)
+        self.assertIn("already exists", stderr.getvalue())
+        self.assertNotIn("Traceback", stderr.getvalue())
+
+    def test_report_request_fails_cleanly_when_query_did_not_run(self) -> None:
+        stderr = io.StringIO()
+        sdk = FakeReconcileSdk()
+        sdk.version = "10.5"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            discovery, preflight = self._reports(tmpdir)
+            output = Path(tmpdir) / "reconciliation.json"
+            with patch(
+                "autotrade.cli.MoomooApiSdk.load",
+                return_value=sdk,
+            ), redirect_stderr(stderr):
+                exit_code = main(
+                    self._args(discovery, preflight)
+                    + ["--connect", "--report-output", str(output)]
+                )
+
+            self.assertFalse(output.exists())
+
+        self.assertEqual(2, exit_code)
+        self.assertIn("query_status", stderr.getvalue())
+        self.assertNotIn("Traceback", stderr.getvalue())
 
 
 if __name__ == "__main__":

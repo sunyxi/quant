@@ -578,8 +578,12 @@ def _write_create_only_report(
             json.dump(payload, stream, sort_keys=True)
             stream.write("\n")
     except FileExistsError as exc:
+        if output_path.exists() or output_path.is_symlink():
+            raise MoomooConfigurationError(
+                f"Moomoo {label} report already exists"
+            ) from exc
         raise MoomooConfigurationError(
-            f"Moomoo {label} report already exists"
+            f"could not write the Moomoo {label} report"
         ) from exc
     except OSError as exc:
         raise MoomooConfigurationError(
@@ -900,3 +904,15 @@ def is_moomoo_paper_preflight_successful(
         and preflight.orders_query_status == "ok"
         and preflight.endpoint == endpoint.display
     )
+
+
+def write_moomoo_create_only_report(
+    path: str | Path,
+    payload: Mapping[str, object],
+    label: str,
+) -> Path:
+    return _write_create_only_report(path, payload, label)
+
+
+def is_valid_moomoo_report_endpoint(value: object) -> bool:
+    return isinstance(value, str) and _safe_report_endpoint(value)

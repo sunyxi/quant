@@ -43,6 +43,7 @@ from autotrade.execution.moomoo_paper_order import (
 )
 from autotrade.execution.moomoo_paper_reconcile import (
     MoomooPaperOrderReconciler,
+    MoomooPaperOrderReconciliationReportWriter,
     MoomooPaperOrderReconciliationStatus,
     validate_moomoo_paper_reconciliation_evidence,
 )
@@ -218,6 +219,7 @@ def _build_parser() -> argparse.ArgumentParser:
     reconcile.add_argument("--host", default="127.0.0.1")
     reconcile.add_argument("--port", type=int, default=11111)
     reconcile.add_argument("--connect", action="store_true")
+    reconcile.add_argument("--report-output", type=Path)
     return parser
 
 
@@ -586,6 +588,9 @@ def _run_moomoo_paper_order_reconcile(
         return 2
 
     if not args.connect:
+        if args.report_output is not None:
+            print("error: --report-output requires --connect", file=stderr)
+            return 2
         failure = validate_moomoo_paper_reconciliation_evidence(
             args.client_order_id,
             endpoint=endpoint,
@@ -629,6 +634,21 @@ def _run_moomoo_paper_order_reconcile(
         print("error: CLIENT_ORDER_ID_INVALID", file=stderr)
         return 2
     print(json.dumps(result.to_dict(), sort_keys=True), file=stdout)
+    if args.report_output is not None:
+        if result.query_status not in {"ok", "failed"}:
+            print(
+                "error: --report-output requires query_status ok or failed",
+                file=stderr,
+            )
+            return 2
+        try:
+            MoomooPaperOrderReconciliationReportWriter().write(
+                args.report_output,
+                result,
+            )
+        except MoomooConfigurationError as exc:
+            print(f"error: {exc}", file=stderr)
+            return 2
     return 0 if result.status == MoomooPaperOrderReconciliationStatus.UNIQUE else 1
 
 
