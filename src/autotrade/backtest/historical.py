@@ -91,12 +91,24 @@ class OrbResearchParameters:
     side_cost_bps: float = 2.5
     notional_per_trade: float = 10_000.0
     long_only: bool = True
+    max_signal_minutes_after_open: int | None = None
+    min_breakout_close_location: float = 0.0
+    require_rising_vwap: bool = False
 
     def __post_init__(self) -> None:
         if self.opening_range_minutes <= 0 or self.opening_range_minutes % 5:
             raise ValueError("opening range minutes must be a positive multiple of five")
         if self.max_holding_minutes <= 0 or self.max_holding_minutes % 5:
             raise ValueError("holding minutes must be a positive multiple of five")
+        if self.max_signal_minutes_after_open is not None and (
+            type(self.max_signal_minutes_after_open) is not int
+            or self.max_signal_minutes_after_open < self.opening_range_minutes
+            or self.max_signal_minutes_after_open % 5
+        ):
+            raise ValueError(
+                "maximum signal minutes must be a five-minute multiple no earlier "
+                "than the opening range"
+            )
         positive = (
             self.min_relative_volume,
             self.daily_atr_stop_multiple,
@@ -113,15 +125,29 @@ class OrbResearchParameters:
             or self.side_cost_bps < 0
         ):
             raise ValueError("ORB buffer and costs must be non-negative")
+        if (
+            not math.isfinite(self.min_breakout_close_location)
+            or not 0 <= self.min_breakout_close_location <= 1
+        ):
+            raise ValueError("breakout close location must be in [0, 1]")
+        if type(self.require_rising_vwap) is not bool:
+            raise ValueError("rising VWAP setting must be boolean")
 
     @property
     def key(self) -> str:
         direction = "long" if self.long_only else "both"
+        signal_cutoff = (
+            "all"
+            if self.max_signal_minutes_after_open is None
+            else str(self.max_signal_minutes_after_open)
+        )
         return (
             f"or{self.opening_range_minutes}-rv{self.min_relative_volume:g}"
             f"-buf{self.breakout_buffer_atr:g}-atr{self.daily_atr_stop_multiple:g}"
             f"-orstop{self.opening_range_stop_fraction:g}-r{self.target_r_multiple:g}"
-            f"-hold{self.max_holding_minutes}-{direction}"
+            f"-hold{self.max_holding_minutes}-cut{signal_cutoff}"
+            f"-clv{self.min_breakout_close_location:g}"
+            f"-vwapslope{int(self.require_rising_vwap)}-{direction}"
         )
 
 
@@ -330,22 +356,43 @@ class HistoricalOrbBacktester:
                 trades.append(trade)
         trades_tuple = tuple(sorted(trades, key=lambda item: item.entry_at))
         symbols = sorted({item.symbol for item in bars})
-        metrics = _calculate_metrics(
-            trades_tuple, parameters.side_cost_bps, max(len(symbols), 1)
+        trading_dates = tuple(sorted({item.timestamp.date() for item in bars}))
+        metrics = calculate_performance_metrics(
+            trades_tuple,
+            parameters.side_cost_bps,
+            max(len(symbols), 1),
+            trading_dates=trading_dates,
         )
         by_symbol = {
-            symbol: _calculate_metrics(
+            symbol: calculate_performance_metrics(
                 tuple(item for item in trades_tuple if item.symbol == symbol),
                 parameters.side_cost_bps,
                 1,
+                trading_dates=tuple(
+                    sorted(
+                        {
+                            item.timestamp.date()
+                            for item in bars
+                            if item.symbol == symbol
+                        }
+                    )
+                ),
             )
             for symbol in symbols
         }
         cost_scenarios = {
-            "zero": _calculate_metrics(trades_tuple, 0.0, max(len(symbols), 1)),
+            "zero": calculate_performance_metrics(
+                trades_tuple,
+                0.0,
+                max(len(symbols), 1),
+                trading_dates=trading_dates,
+            ),
             "baseline": metrics,
-            "double": _calculate_metrics(
-                trades_tuple, parameters.side_cost_bps * 2, max(len(symbols), 1)
+            "double": calculate_performance_metrics(
+                trades_tuple,
+                parameters.side_cost_bps * 2,
+                max(len(symbols), 1),
+                trading_dates=trading_dates,
             ),
         }
         return HistoricalBacktestResult(
@@ -377,11 +424,30 @@ class HistoricalOrbBacktester:
         signal_index = None
         for index in range(opening_count, len(bars) - 1):
             item = bars[index]
+            elapsed_minutes = int(
+                (item.timestamp - bars[0].timestamp).total_seconds() // 60
+            )
+            if (
+                parameters.max_signal_minutes_after_open is not None
+                and elapsed_minutes > parameters.max_signal_minutes_after_open
+            ):
+                break
             buffer = parameters.breakout_buffer_atr * item.atr
+            bar_range = item.high - item.low
+            long_close_location = (
+                (item.close - item.low) / bar_range if bar_range > 0 else 0.0
+            )
+            short_close_location = (
+                (item.high - item.close) / bar_range if bar_range > 0 else 0.0
+            )
+            rising_vwap = index > 0 and item.vwap > bars[index - 1].vwap
             if (
                 item.relative_volume >= parameters.min_relative_volume
                 and item.close > opening_high + buffer
                 and item.close >= item.vwap
+                and long_close_location
+                >= parameters.min_breakout_close_location
+                and (not parameters.require_rising_vwap or rising_vwap)
             ):
                 direction = 1
                 signal_index = index
@@ -391,6 +457,12 @@ class HistoricalOrbBacktester:
                 and item.relative_volume >= parameters.min_relative_volume
                 and item.close < opening_low - buffer
                 and item.close <= item.vwap
+                and short_close_location
+                >= parameters.min_breakout_close_location
+                and (
+                    not parameters.require_rising_vwap
+                    or (index > 0 and item.vwap < bars[index - 1].vwap)
+                )
             ):
                 direction = -1
                 signal_index = index
@@ -745,16 +817,25 @@ def _trade_cost(
     return (entry_price + exit_price) * quantity * side_cost_bps / 10_000
 
 
-def _calculate_metrics(
+def calculate_performance_metrics(
     trades: Sequence[HistoricalTrade],
     side_cost_bps: float,
     symbol_count: int,
+    *,
+    trading_dates: Iterable[date] | None = None,
 ) -> PerformanceMetrics:
+    if not math.isfinite(side_cost_bps) or side_cost_bps < 0:
+        raise ValueError("performance side cost must be non-negative")
+    if type(symbol_count) is not int or symbol_count <= 0:
+        raise ValueError("performance symbol count must be a positive integer")
     if not trades:
         return PerformanceMetrics(0, 0.0, 0.0, None, 0.0, 0.0, 0.0, 0.0)
     net_pnls = []
     net_returns = []
     daily_returns: dict[date, float] = defaultdict(float)
+    if trading_dates is not None:
+        for trading_date in trading_dates:
+            daily_returns[trading_date] = 0.0
     for trade in trades:
         cost = _trade_cost(
             trade.entry_price, trade.exit_price, trade.quantity, side_cost_bps

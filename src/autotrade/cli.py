@@ -6,6 +6,7 @@ import json
 import math
 import os
 import sys
+from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
 from typing import Sequence, TextIO
@@ -13,6 +14,7 @@ from typing import Sequence, TextIO
 from autotrade.backtest.historical import (
     HISTORICAL_REPORT_SCHEMA_VERSION,
     HistoricalCacheError,
+    HistoricalDataset,
     HistoricalOrbBacktester,
     HistoricalOrbReportWriter,
     HistoricalOrbWalkForward,
@@ -20,6 +22,12 @@ from autotrade.backtest.historical import (
     VerifiedHistoricalCsvLoader,
     WalkForwardConfig,
     default_orb_candidates,
+)
+from autotrade.backtest.tuning import (
+    HISTORICAL_TUNING_REPORT_SCHEMA_VERSION,
+    HistoricalOrbParameterTuner,
+    OrbTuningConfig,
+    bounded_orb_candidates,
 )
 from autotrade.core.models import Market, OrderIntent, OrderStyle, Side
 
@@ -253,6 +261,33 @@ def _build_parser() -> argparse.ArgumentParser:
     historical.add_argument("--min-trades", type=int, default=20)
     historical.add_argument("--min-train-sharpe", type=float, default=0.0)
     historical.add_argument("--min-train-profit-factor", type=float, default=1.0)
+    historical.add_argument("--tune", action="store_true")
+    historical.add_argument("--inner-train-days", type=int, default=60)
+    historical.add_argument("--inner-validation-days", type=int, default=20)
+    historical.add_argument("--inner-step-days", type=int, default=20)
+    historical.add_argument("--tuning-min-validation-trades", type=int, default=20)
+    historical.add_argument("--tuning-min-validation-sharpe", type=float, default=0.0)
+    historical.add_argument(
+        "--tuning-min-validation-profit-factor", type=float, default=1.0
+    )
+    historical.add_argument(
+        "--tuning-min-double-cost-mean-bps", type=float, default=0.0
+    )
+    historical.add_argument(
+        "--tuning-min-worst-fold-mean-bps", type=float, default=0.0
+    )
+    historical.add_argument(
+        "--tuning-max-positive-symbol-share", type=float, default=0.6
+    )
+    historical.add_argument("--tuning-min-positive-neighbors", type=int, default=1)
+    historical.add_argument("--tuning-min-outer-trades", type=int, default=20)
+    historical.add_argument("--tuning-min-outer-sharpe", type=float, default=0.8)
+    historical.add_argument(
+        "--tuning-min-outer-profit-factor", type=float, default=1.1
+    )
+    historical.add_argument(
+        "--tuning-min-outer-double-cost-mean-bps", type=float, default=0.0
+    )
     return parser
 
 
@@ -727,6 +762,10 @@ def _run_historical_orb_backtest(
         print(f"error: {exc}", file=stderr)
         return 2
 
+    if args.tune and not args.run:
+        print("error: --tune requires --run", file=stderr)
+        return 2
+
     if not args.run:
         if args.report_output is not None:
             print("error: --report-output requires --run", file=stderr)
@@ -751,6 +790,70 @@ def _run_historical_orb_backtest(
     default_parameter_full_period = HistoricalOrbBacktester().run(
         dataset.bars, parameters
     )
+    if args.tune:
+        try:
+            tuning_config = OrbTuningConfig(
+                outer_walk_forward=walk_forward_config,
+                inner_train_days=args.inner_train_days,
+                inner_validation_days=args.inner_validation_days,
+                inner_step_days=args.inner_step_days,
+                min_validation_trades=args.tuning_min_validation_trades,
+                min_validation_sharpe=args.tuning_min_validation_sharpe,
+                min_validation_profit_factor=(
+                    args.tuning_min_validation_profit_factor
+                ),
+                min_double_cost_mean_net_bps=(
+                    args.tuning_min_double_cost_mean_bps
+                ),
+                min_worst_fold_mean_net_bps=(
+                    args.tuning_min_worst_fold_mean_bps
+                ),
+                max_positive_symbol_share=(
+                    args.tuning_max_positive_symbol_share
+                ),
+                min_positive_neighbors=args.tuning_min_positive_neighbors,
+                min_outer_test_trades=args.tuning_min_outer_trades,
+                min_outer_test_sharpe=args.tuning_min_outer_sharpe,
+                min_outer_test_profit_factor=(
+                    args.tuning_min_outer_profit_factor
+                ),
+                min_outer_double_cost_mean_net_bps=(
+                    args.tuning_min_outer_double_cost_mean_bps
+                ),
+            )
+            tuning = HistoricalOrbParameterTuner().run(
+                dataset.bars,
+                bounded_orb_candidates(args.side_cost_bps),
+                tuning_config,
+            )
+        except ValueError as exc:
+            print(f"error: {exc}", file=stderr)
+            return 2
+        report = {
+            "schema_version": HISTORICAL_TUNING_REPORT_SCHEMA_VERSION,
+            "mode": "tuning-completed",
+            "dataset": _historical_dataset_report(dataset),
+            "default_parameter_full_period": default_parameter_full_period.to_dict(),
+            "tuning": tuning.to_dict(),
+        }
+        return _finish_historical_report(
+            report,
+            args.report_output,
+            stdout=stdout,
+            stderr=stderr,
+            summary={
+                "candidate_count": tuning.candidate_count,
+                "decision": tuning.decision,
+                "decision_reasons": list(tuning.decision_reasons),
+                "fold_count": len(tuning.folds),
+                "metrics": asdict(tuning.aggregate_outer_test.metrics),
+                "mode": "tuning-completed",
+                "selected_fold_count": sum(
+                    fold.selected_parameters is not None for fold in tuning.folds
+                ),
+            },
+        )
+
     walk_forward = HistoricalOrbWalkForward().run(
         dataset.bars,
         default_orb_candidates(args.side_cost_bps),
@@ -759,36 +862,54 @@ def _run_historical_orb_backtest(
     report = {
         "schema_version": HISTORICAL_REPORT_SCHEMA_VERSION,
         "mode": "completed",
-        "dataset": {
-            "bar_count": len(dataset.bars),
-            "bar_size": dataset.bar_size,
-            "date_end": dataset.date_end.isoformat(),
-            "date_start": dataset.date_start.isoformat(),
-            "session": dataset.session,
-            "sha256": dataset.sha256,
-            "symbols": list(dataset.symbols),
-        },
+        "dataset": _historical_dataset_report(dataset),
         "default_parameter_full_period": default_parameter_full_period.to_dict(),
         "walk_forward": walk_forward.to_dict(),
     }
-    if args.report_output is not None:
+    return _finish_historical_report(
+        report,
+        args.report_output,
+        stdout=stdout,
+        stderr=stderr,
+        summary={
+            "fold_count": len(walk_forward.folds),
+            "metrics": report["default_parameter_full_period"]["metrics"],
+            "mode": "completed",
+        },
+    )
+
+
+def _historical_dataset_report(dataset: HistoricalDataset) -> dict[str, object]:
+    return {
+        "bar_count": len(dataset.bars),
+        "bar_size": dataset.bar_size,
+        "date_end": dataset.date_end.isoformat(),
+        "date_start": dataset.date_start.isoformat(),
+        "session": dataset.session,
+        "sha256": dataset.sha256,
+        "symbols": list(dataset.symbols),
+    }
+
+
+def _finish_historical_report(
+    report: dict[str, object],
+    report_output: Path | None,
+    *,
+    stdout: TextIO,
+    stderr: TextIO,
+    summary: dict[str, object],
+) -> int:
+    if report_output is not None:
         try:
-            HistoricalOrbReportWriter().write(args.report_output, report)
+            HistoricalOrbReportWriter().write(report_output, report)
         except HistoricalCacheError as exc:
             print(f"error: {exc}", file=stderr)
             return 2
+    summary["report_output"] = (
+        str(report_output) if report_output is not None else None
+    )
     print(
-        json.dumps(
-            {
-                "fold_count": len(walk_forward.folds),
-                "metrics": report["default_parameter_full_period"]["metrics"],
-                "mode": "completed",
-                "report_output": (
-                    str(args.report_output) if args.report_output is not None else None
-                ),
-            },
-            sort_keys=True,
-        ),
+        json.dumps(summary, sort_keys=True),
         file=stdout,
     )
     return 0

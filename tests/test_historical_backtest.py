@@ -214,6 +214,51 @@ class HistoricalOrbLifecycleTests(unittest.TestCase):
         self.assertEqual("target", trade.exit_reason)
         self.assertGreater(trade.gross_pnl, 0)
 
+    def test_sharpe_includes_market_dates_without_a_trade(self) -> None:
+        bars = target_fixture(day=1) + target_fixture(day=2, rvol=0.5)
+
+        result = HistoricalOrbBacktester().run(bars, OrbResearchParameters())
+
+        self.assertEqual(1, result.metrics.trade_count)
+        self.assertGreater(result.metrics.daily_sharpe, 0.0)
+
+    def test_signal_time_cutoff_blocks_a_late_breakout(self) -> None:
+        bars = target_fixture()[:3]
+        bars.extend(
+            [
+                bar(15, open_price=99, high=100, low=98, close=99, vwap=98),
+                bar(20, open_price=100, high=102, low=99, close=101, vwap=98),
+                bar(25, open_price=102, high=103, low=101, close=102, vwap=99),
+                bar(30, open_price=102, high=110, low=101, close=109, vwap=100),
+            ]
+        )
+
+        result = HistoricalOrbBacktester().run(
+            bars,
+            OrbResearchParameters(max_signal_minutes_after_open=15),
+        )
+
+        self.assertEqual((), result.trades)
+
+    def test_breakout_close_location_filter_blocks_a_weak_close(self) -> None:
+        result = HistoricalOrbBacktester().run(
+            target_fixture(),
+            OrbResearchParameters(min_breakout_close_location=0.8),
+        )
+
+        self.assertEqual((), result.trades)
+
+    def test_rising_vwap_filter_blocks_a_flat_vwap(self) -> None:
+        bars = target_fixture()
+        bars[3] = HistoricalBar(**{**bars[3].__dict__, "vwap": bars[2].vwap})
+
+        result = HistoricalOrbBacktester().run(
+            bars,
+            OrbResearchParameters(require_rising_vwap=True),
+        )
+
+        self.assertEqual((), result.trades)
+
 
 class WalkForwardTests(unittest.TestCase):
     def test_config_rejects_overlapping_test_windows(self) -> None:
@@ -482,6 +527,54 @@ class HistoricalCacheTests(unittest.TestCase):
         self.assertEqual(2, exit_code)
         self.assertIn("already exists", stderr.getvalue())
         self.assertNotIn("Traceback", stderr.getvalue())
+
+    def test_cli_tuning_requires_run_and_writes_schema_three(self) -> None:
+        stderr = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            manifest, _ = self.write_cache(Path(tmpdir))
+            report = Path(tmpdir) / "tuning.json"
+            with redirect_stderr(stderr):
+                blocked_exit = main(
+                    ["historical-orb-backtest", "--manifest", str(manifest), "--tune"]
+                )
+            completed_exit = main(
+                [
+                    "historical-orb-backtest",
+                    "--manifest",
+                    str(manifest),
+                    "--run",
+                    "--tune",
+                    "--train-days",
+                    "4",
+                    "--test-days",
+                    "2",
+                    "--step-days",
+                    "2",
+                    "--inner-train-days",
+                    "2",
+                    "--inner-validation-days",
+                    "1",
+                    "--inner-step-days",
+                    "1",
+                    "--tuning-min-positive-neighbors",
+                    "0",
+                    "--report-output",
+                    str(report),
+                ]
+            )
+            payload = json.loads(report.read_text(encoding="utf-8"))
+
+        self.assertEqual(2, blocked_exit)
+        self.assertIn("--tune requires --run", stderr.getvalue())
+        self.assertEqual(0, completed_exit)
+        self.assertEqual(4, payload["schema_version"])
+        self.assertEqual("tuning-completed", payload["mode"])
+        self.assertEqual(192, payload["tuning"]["candidate_count"])
+        self.assertEqual("no-go", payload["tuning"]["decision"])
+        self.assertIn(
+            "outer_folds_missing", payload["tuning"]["decision_reasons"]
+        )
+        self.assertNotIn("walk_forward", payload)
 
 
 if __name__ == "__main__":

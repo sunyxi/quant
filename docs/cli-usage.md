@@ -127,6 +127,30 @@ PYTHONPATH=src python3 -m autotrade.cli historical-orb-backtest \
 
 `--report-output` requires `--run`. The report labels its full-period reference as `default_parameter_full_period`; it must not be compared as though it used each fold's selected parameters. Historical cache validation and research are offline and never load the Moomoo SDK or call a broker API.
 
+Run bounded nested ORB parameter tuning with the predeclared robustness gates:
+
+```bash
+PYTHONPATH=src python3 -m autotrade.cli historical-orb-backtest \
+  --manifest historical-data/moomoo-us-rth-5m-manifest.json \
+  --run --tune --side-cost-bps 2.5 \
+  --train-days 100 --test-days 20 --step-days 20 \
+  --inner-train-days 60 --inner-validation-days 20 --inner-step-days 20 \
+  --tuning-min-validation-trades 20 \
+  --tuning-min-validation-sharpe 0 \
+  --tuning-min-validation-profit-factor 1.0 \
+  --tuning-min-double-cost-mean-bps 0 \
+  --tuning-min-worst-fold-mean-bps 0 \
+  --tuning-max-positive-symbol-share 0.6 \
+  --tuning-min-positive-neighbors 1 \
+  --tuning-min-outer-trades 20 \
+  --tuning-min-outer-sharpe 0.8 \
+  --tuning-min-outer-profit-factor 1.1 \
+  --tuning-min-outer-double-cost-mean-bps 0 \
+  --report-output historical-backtest-reports/orb-tuning.json
+```
+
+`--tune` requires `--run`. It evaluates exactly 192 bounded combinations and writes schema version 4 output: 96 original combinations plus the same 96 with a 90-minute signal cutoff, 0.7 minimum breakout close location, and same-direction VWAP slope. The structure-filter extension is exploratory because it reused previously observed dates. Do not alter gates after observing outer-test results; freeze any future design in a new Issue with newly reserved data instead.
+
 ## Strategy Tests
 
 ```bash

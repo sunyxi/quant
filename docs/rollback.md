@@ -173,3 +173,7 @@ Live trading is not supported yet. Future live rollback must follow this order:
 ## Historical ORB Backtest Rollback
 
 Disable `historical-orb-backtest`, preserve any local schema version 1 or 2 report needed for research review, and remove ignored cache, temporary, or report artifacts only after confirming they are no longer required. Revert ISSUE-043 through a reviewed PR. Do not reinterpret an older `baseline` key as the schema version 2 `default_parameter_full_period` key. This rollback has no broker order, account, or position side effect.
+
+## ORB Parameter Tuning Rollback
+
+Disable `historical-orb-backtest --tune`, preserve schema version 3 and 4 tuning reports required for research audit, and revert ISSUE-044 through a reviewed PR. To roll back only the exploratory structure filters, remove `max_signal_minutes_after_open`, `min_breakout_close_location`, and `require_rising_vwap`, restore the 96-candidate bound and schema version 3, and retain the schema version 4 report as historical evidence. Removing the tuner does not restore the prior Sharpe values because ISSUE-044 also corrects zero-trade date accounting; explicitly revert that metrics change only if reviewers accept the older biased calculation. No broker order, account, or position side effect exists.
