@@ -330,22 +330,43 @@ class HistoricalOrbBacktester:
                 trades.append(trade)
         trades_tuple = tuple(sorted(trades, key=lambda item: item.entry_at))
         symbols = sorted({item.symbol for item in bars})
-        metrics = _calculate_metrics(
-            trades_tuple, parameters.side_cost_bps, max(len(symbols), 1)
+        trading_dates = tuple(sorted({item.timestamp.date() for item in bars}))
+        metrics = calculate_performance_metrics(
+            trades_tuple,
+            parameters.side_cost_bps,
+            max(len(symbols), 1),
+            trading_dates=trading_dates,
         )
         by_symbol = {
-            symbol: _calculate_metrics(
+            symbol: calculate_performance_metrics(
                 tuple(item for item in trades_tuple if item.symbol == symbol),
                 parameters.side_cost_bps,
                 1,
+                trading_dates=tuple(
+                    sorted(
+                        {
+                            item.timestamp.date()
+                            for item in bars
+                            if item.symbol == symbol
+                        }
+                    )
+                ),
             )
             for symbol in symbols
         }
         cost_scenarios = {
-            "zero": _calculate_metrics(trades_tuple, 0.0, max(len(symbols), 1)),
+            "zero": calculate_performance_metrics(
+                trades_tuple,
+                0.0,
+                max(len(symbols), 1),
+                trading_dates=trading_dates,
+            ),
             "baseline": metrics,
-            "double": _calculate_metrics(
-                trades_tuple, parameters.side_cost_bps * 2, max(len(symbols), 1)
+            "double": calculate_performance_metrics(
+                trades_tuple,
+                parameters.side_cost_bps * 2,
+                max(len(symbols), 1),
+                trading_dates=trading_dates,
             ),
         }
         return HistoricalBacktestResult(
@@ -745,16 +766,25 @@ def _trade_cost(
     return (entry_price + exit_price) * quantity * side_cost_bps / 10_000
 
 
-def _calculate_metrics(
+def calculate_performance_metrics(
     trades: Sequence[HistoricalTrade],
     side_cost_bps: float,
     symbol_count: int,
+    *,
+    trading_dates: Iterable[date] | None = None,
 ) -> PerformanceMetrics:
+    if not math.isfinite(side_cost_bps) or side_cost_bps < 0:
+        raise ValueError("performance side cost must be non-negative")
+    if type(symbol_count) is not int or symbol_count <= 0:
+        raise ValueError("performance symbol count must be a positive integer")
     if not trades:
         return PerformanceMetrics(0, 0.0, 0.0, None, 0.0, 0.0, 0.0, 0.0)
     net_pnls = []
     net_returns = []
     daily_returns: dict[date, float] = defaultdict(float)
+    if trading_dates is not None:
+        for trading_date in trading_dates:
+            daily_returns[trading_date] = 0.0
     for trade in trades:
         cost = _trade_cost(
             trade.entry_price, trade.exit_price, trade.quantity, side_cost_bps

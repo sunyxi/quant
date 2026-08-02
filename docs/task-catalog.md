@@ -2066,3 +2066,62 @@ Rollback: Disable submission report output, preserve any artifact needed for can
 - Refactor: optional, but must keep gates accurate.
 
 Rollback: Disable the historical ORB command, preserve local research evidence when needed, remove ignored local cache and report files only after review, and revert ISSUE-043 through a reviewed PR; no broker order or position side effect exists.
+
+## ISSUE-044: Add robust ORB parameter tuning
+
+- Status: `complete`
+- Phase: `Phase 2`
+- Dependencies: ISSUE-043
+- Roadmap: see `docs/roadmap.md#phase-2`
+- Summary: Add bounded nested ORB parameter tuning that freezes selection before outer tests and rejects candidates on cost stress, worst-fold behavior, symbol concentration, and parameter-neighbor stability.
+
+### Acceptance Criteria
+
+- A deterministic bounded grid contains exactly 96 unique long-only ORB parameter combinations with one shared side-cost assumption and rejects empty, duplicate, mixed-cost, or oversized candidate sets.
+- Every outer training window contains chronological non-overlapping inner validation folds; candidate selection reads only inner validation evidence and never outer test bars.
+- Candidate evaluation reports validation metrics, doubled-cost metrics, worst inner-fold basis points, positive-profit symbol concentration, positive parameter-neighbor count, deterministic robustness rank, eligibility, and explicit rejection reasons.
+- Candidates must pass predeclared minimum validation trades, Sharpe, Profit Factor, double-cost mean return, worst-fold return, symbol concentration, and neighbor-stability gates before frozen outer-test evaluation.
+- Aggregate out-of-sample evidence contains only non-overlapping outer-test trades and reports zero, baseline, and doubled cost scenarios plus complete symbol attribution; Sharpe includes market dates with no trade as zero-return dates.
+- The result applies predeclared outer trade-count, Sharpe, Profit Factor, doubled-cost, concentration, selected-fold, and fold-positivity gates and emits an explicit candidate or no-go decision with reasons.
+- The historical-orb-backtest CLI requires --run with --tune, exposes inner-window and robustness thresholds, emits schema version 3 tuning reports through the existing atomic create-only writer, and preserves schema version 2 for non-tuning runs.
+- The tuning path reuses only the verified local cache and never downloads data, imports Moomoo, contacts OpenD, queries an account, or calls an order API.
+- Tests cover candidate bounds, inner/outer isolation, cost and concentration rejection, parameter-neighbor stability, frozen aggregate OOS trades, no-go decisions, zero-trade date Sharpe, and CLI schema behavior.
+- English, Japanese, Simplified Chinese, CLI, operations, limitations, rollback, feature documentation, implementation plan, Source of Truth, and generated Task Catalog output are synchronized.
+
+### Gates
+
+- Python Unit Tests
+- Fixture / E2E Design Tests
+- Documentation Localization
+- Markdown Links/Style
+- Secret Scan
+- Task Catalog Generation
+
+### Changed Assets
+
+- `README.md`
+- `src/autotrade/backtest/historical.py`
+- `src/autotrade/backtest/tuning.py`
+- `src/autotrade/cli.py`
+- `tests/test_historical_backtest.py`
+- `tests/test_orb_tuning.py`
+- `tests/test_documentation_catalog.py`
+- `docs/task-source.json`
+- `docs/task-catalog.md`
+- `docs/orb-parameter-tuning.md`
+- `docs/implementation-plan.md`
+- `docs/cli-usage.md`
+- `docs/operations.md`
+- `docs/limitations.md`
+- `docs/rollback.md`
+- `docs/locales/en/overview.md`
+- `docs/locales/ja/overview.md`
+- `docs/locales/zh-CN/overview.md`
+
+### Test-first Evidence
+
+- Red: required before implementation starts.
+- Green: required after implementation.
+- Refactor: optional, but must keep gates accurate.
+
+Rollback: Disable historical-orb-backtest --tune, preserve schema version 3 research evidence, and revert ISSUE-044 through a reviewed PR; no broker order, account, or position side effect exists.

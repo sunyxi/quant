@@ -431,6 +431,35 @@ class DocumentationCatalogTests(unittest.TestCase):
             self.assertIn("ISSUE-043", overview)
             self.assertIn("Walk-Forward", overview)
 
+    def test_orb_parameter_tuning_issue_is_complete_and_documented(self) -> None:
+        source = json.loads(
+            (REPO_ROOT / "docs/task-source.json").read_text(encoding="utf-8")
+        )
+        tasks = {task["id"]: task for task in source["tasks"]}
+        feature_doc = (REPO_ROOT / "docs/orb-parameter-tuning.md").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertEqual("complete", tasks["ISSUE-044"]["status"])
+        for term in [
+            "historical-orb-backtest",
+            "--tune",
+            "96",
+            "nested",
+            "double-cost",
+            "positive_parameter_neighbors",
+            "default_parameter_full_period",
+            "no-go",
+            "does not download",
+        ]:
+            self.assertIn(term, feature_doc)
+        for locale in ["en", "ja", "zh-CN"]:
+            overview = (
+                REPO_ROOT / f"docs/locales/{locale}/overview.md"
+            ).read_text(encoding="utf-8")
+            self.assertIn("ISSUE-044", overview)
+            self.assertIn("no-go", overview)
+
     def test_task_catalog_links_first_issue_to_roadmap_and_gates(self) -> None:
         task_catalog = (REPO_ROOT / "docs/task-catalog.md").read_text(encoding="utf-8")
 

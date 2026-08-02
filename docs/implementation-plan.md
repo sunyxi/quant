@@ -97,6 +97,7 @@ Moomoo OpenAPI discovery before Windows-dependent broker work.
 - ISSUE-041: persist sanitized reconciliation evidence as create-only schema version 1 JSON and support strict offline restart validation.
 - ISSUE-042: persist sanitized post-attempt paper-order submission evidence as create-only schema version 1 JSON and validate it offline without another broker call.
 - ISSUE-043: reuse verified local RTH bars for long-only ORB lifecycle, PnL, actual-notional cost sensitivity, complete symbol attribution, non-overlapping Walk-Forward validation, and atomic schema version 2 research reports.
+- ISSUE-044: tune a bounded 96-combination ORB grid with nested validation, double-cost stress, symbol concentration, parameter-neighbor stability, frozen outer tests, and explicit candidate/no-go reporting.
 - Require OpenD and `moomoo-api` `>=10.4.6408`; keep the SDK in an isolated optional dependency and verify its transitive `protobuf` compatibility without changing unrelated runtime packages.
 - Validate only loopback OpenD reachability at configurable `127.0.0.1:11111`, SDK/API version, account-list shape, US market capability, JP equity market-data entitlement metadata, and paper-account availability.
 - Place no live orders, do not unlock trading, and do not treat discovery output as Shadow Mode approval.
