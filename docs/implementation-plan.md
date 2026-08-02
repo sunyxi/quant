@@ -95,6 +95,7 @@ Moomoo OpenAPI discovery before Windows-dependent broker work.
 - ISSUE-039: add a disabled-by-default, single-call Moomoo US paper-order submission boundary with explicit side-effect acknowledgement and fresh remark verification.
 - ISSUE-040: add a separately connected, read-only Moomoo paper-order reconciliation query by exact client-order remark before any canary retry is considered.
 - ISSUE-041: persist sanitized reconciliation evidence as create-only schema version 1 JSON and support strict offline restart validation.
+- ISSUE-042: persist sanitized post-attempt paper-order submission evidence as create-only schema version 1 JSON and validate it offline without another broker call.
 - Require OpenD and `moomoo-api` `>=10.4.6408`; keep the SDK in an isolated optional dependency and verify its transitive `protobuf` compatibility without changing unrelated runtime packages.
 - Validate only loopback OpenD reachability at configurable `127.0.0.1:11111`, SDK/API version, account-list shape, US market capability, JP equity market-data entitlement metadata, and paper-account availability.
 - Place no live orders, do not unlock trading, and do not treat discovery output as Shadow Mode approval.

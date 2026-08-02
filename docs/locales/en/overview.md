@@ -18,6 +18,8 @@ ISSUE-040 adds the read-only `moomoo-paper-order-reconcile` boundary. It runs on
 
 ISSUE-041 adds create-only schema version 1 reconciliation reports for durable canary and incident evidence. The strict reader validates them offline without OpenD or the SDK. Reports contain only sanitized result fields, never overwrite an existing artifact, and remain local under ignored paths. A requested report fails explicitly with exit code `2` if no order-list query completed.
 
+ISSUE-042 adds a create-only schema version 1 submission report after exactly one approved paper `place_order` attempt. It preserves sanitized uncertain outcomes for offline review without order parameters or broker identifiers. Pre-submit blocks create no report, and report persistence never authorizes or retries a canary.
+
 The current calendar layer covers JP regular sessions, lunch break, weekend rejection, manual holidays, and close-entry cutoff for research filtering.
 
 The current order book layer covers immutable snapshots, spread, visible depth, OBI, microprice, freshness, and stale-book health status for research fixtures.

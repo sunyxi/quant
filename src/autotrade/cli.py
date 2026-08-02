@@ -48,6 +48,7 @@ from autotrade.execution.moomoo_paper_reconcile import (
     validate_moomoo_paper_reconciliation_evidence,
 )
 from autotrade.execution.moomoo_paper_submit import (
+    MoomooPaperOrderSubmissionReportWriter,
     MoomooPaperOrderSubmissionStatus,
     MoomooPaperOrderSubmitter,
 )
@@ -209,6 +210,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "--acknowledge-paper-order-side-effect",
         action="store_true",
     )
+    submit.add_argument("--report-output", type=Path)
     reconcile = subparsers.add_parser(
         "moomoo-paper-order-reconcile",
         description="Validate or run read-only Moomoo paper-order reconciliation.",
@@ -523,6 +525,12 @@ def _run_moomoo_paper_order_submit(
         args.submit_paper_order,
         args.acknowledge_paper_order_side_effect,
     )
+    if args.report_output is not None and not all(confirmations):
+        print(
+            "error: --report-output requires all paper-order confirmation flags",
+            file=stderr,
+        )
+        return 2
     if not any(confirmations):
         print(
             json.dumps(
@@ -548,7 +556,7 @@ def _run_moomoo_paper_order_submit(
         sdk = MoomooApiSdk.load()
     except MoomooClientError:
         print("error: Moomoo paper-order submission failed (dependency)", file=stderr)
-        return 1
+        return 2 if args.report_output is not None else 1
 
     result = MoomooPaperOrderSubmitter(endpoint=endpoint, sdk=sdk).submit(
         plan,
@@ -557,6 +565,21 @@ def _run_moomoo_paper_order_submit(
         acknowledged=True,
     )
     print(json.dumps(result.to_dict(), sort_keys=True), file=stdout)
+    if args.report_output is not None:
+        if result.place_order_call_count != 1:
+            print(
+                "error: --report-output requires one place_order attempt",
+                file=stderr,
+            )
+            return 2
+        try:
+            MoomooPaperOrderSubmissionReportWriter().write(
+                args.report_output,
+                result,
+            )
+        except MoomooConfigurationError as exc:
+            print(f"error: {exc}", file=stderr)
+            return 2
     return (
         0
         if result.status == MoomooPaperOrderSubmissionStatus.VERIFIED

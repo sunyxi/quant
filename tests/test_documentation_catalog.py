@@ -257,6 +257,14 @@ class DocumentationCatalogTests(unittest.TestCase):
 
         self.assertEqual("complete", tasks["ISSUE-041"]["status"])
 
+    def test_moomoo_submission_report_issue_is_marked_complete(self) -> None:
+        source = json.loads(
+            (REPO_ROOT / "docs/task-source.json").read_text(encoding="utf-8")
+        )
+        tasks = {task["id"]: task for task in source["tasks"]}
+
+        self.assertEqual("complete", tasks["ISSUE-042"]["status"])
+
     def test_moomoo_feature_doc_captures_offline_readiness_boundary(self) -> None:
         document = (REPO_ROOT / "docs/moomoo-openapi.md").read_text(
             encoding="utf-8"
@@ -360,6 +368,29 @@ class DocumentationCatalogTests(unittest.TestCase):
                 REPO_ROOT / f"docs/locales/{locale}/overview.md"
             ).read_text(encoding="utf-8")
             self.assertIn("schema version 1", overview)
+            self.assertIn("create-only", overview)
+
+    def test_moomoo_docs_capture_submission_report_boundary(self) -> None:
+        feature_doc = (REPO_ROOT / "docs/moomoo-openapi.md").read_text(
+            encoding="utf-8"
+        )
+        for term in [
+            "moomoo-submission-reports",
+            "submission report",
+            "place_order_call_count",
+            "create-only",
+            "offline",
+        ]:
+            self.assertIn(term, feature_doc)
+
+        gitignore = (REPO_ROOT / ".gitignore").read_text(encoding="utf-8")
+        self.assertIn("moomoo-submission-reports/", gitignore)
+
+        for locale in ["en", "ja", "zh-CN"]:
+            overview = (
+                REPO_ROOT / f"docs/locales/{locale}/overview.md"
+            ).read_text(encoding="utf-8")
+            self.assertIn("submission report", overview)
             self.assertIn("create-only", overview)
 
     def test_task_catalog_links_first_issue_to_roadmap_and_gates(self) -> None:
