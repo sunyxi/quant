@@ -21,8 +21,8 @@ from autotrade.backtest.historical import (
 )
 
 
-HISTORICAL_TUNING_REPORT_SCHEMA_VERSION = 3
-MAX_BOUNDED_ORB_CANDIDATES = 96
+HISTORICAL_TUNING_REPORT_SCHEMA_VERSION = 4
+MAX_BOUNDED_ORB_CANDIDATES = 192
 
 
 @dataclass(frozen=True)
@@ -201,7 +201,7 @@ class OrbTuningResult:
 def bounded_orb_candidates(
     side_cost_bps: float = 2.5,
 ) -> tuple[OrbResearchParameters, ...]:
-    candidates = tuple(
+    base_candidates = tuple(
         OrbResearchParameters(
             opening_range_minutes=opening_range_minutes,
             min_relative_volume=min_relative_volume,
@@ -227,6 +227,16 @@ def bounded_orb_candidates(
             (30, 60),
         )
     )
+    structured_candidates = tuple(
+        replace(
+            candidate,
+            max_signal_minutes_after_open=90,
+            min_breakout_close_location=0.7,
+            require_rising_vwap=True,
+        )
+        for candidate in base_candidates
+    )
+    candidates = base_candidates + structured_candidates
     if len(candidates) != MAX_BOUNDED_ORB_CANDIDATES:
         raise AssertionError("bounded ORB candidate count changed")
     return candidates
@@ -568,5 +578,8 @@ def _are_parameter_neighbors(
         "opening_range_stop_fraction",
         "target_r_multiple",
         "max_holding_minutes",
+        "max_signal_minutes_after_open",
+        "min_breakout_close_location",
+        "require_rising_vwap",
     )
     return sum(getattr(left, field) != getattr(right, field) for field in dimensions) == 1

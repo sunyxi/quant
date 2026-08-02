@@ -121,9 +121,21 @@ class CandidateGridTests(unittest.TestCase):
         second = bounded_orb_candidates(side_cost_bps=2.5)
 
         self.assertEqual(first, second)
-        self.assertEqual(96, len(first))
-        self.assertEqual(96, len({candidate.key for candidate in first}))
+        self.assertEqual(192, len(first))
+        self.assertEqual(192, len({candidate.key for candidate in first}))
         self.assertTrue(all(candidate.long_only for candidate in first))
+        structured = [
+            candidate
+            for candidate in first
+            if candidate.require_rising_vwap
+        ]
+        self.assertEqual(96, len(structured))
+        self.assertTrue(
+            all(candidate.max_signal_minutes_after_open == 90 for candidate in structured)
+        )
+        self.assertTrue(
+            all(candidate.min_breakout_close_location == 0.7 for candidate in structured)
+        )
 
 
 class NestedTuningTests(unittest.TestCase):

@@ -22,7 +22,7 @@ ISSUE-042 在一次经过批准的 paper `place_order` 尝试后生成 create-on
 
 ISSUE-043 新增经过验证的本地 5 分钟 RTH 缓存读取，以及 long-only ORB 的完整生命周期、PnL、按每条成交腿实际名义金额计算的成本敏感性、逐标的归因和不重叠的 Walk-Forward 报告。原子 create-only 的 schema version 2 输出使用 `default_parameter_full_period` 标记全周期默认参数结果。它不会下载数据、加载 Moomoo、连接券商或授权交易。
 
-ISSUE-044 新增限定为 96 个组合的 nested ORB 调参，并加入 double-cost、最差 fold、标的集中度和参数邻域 gate。保留缓存的结果为 `no-go`，所有外层 fold 都没有选中候选参数，不得在观察结果后放宽 gate。
+ISSUE-044 新增限定为 192 个组合的 nested ORB 调参，并加入 double-cost、最差 fold、标的集中度和参数邻域 gate。后 96 个组合在已观察日期上探索性加入开盘后 90 分钟信号截止、突破 K 线收盘位置阈值和同向 VWAP 斜率。保留缓存的结果仍为 `no-go`：仅 1/4 个外层 fold 选中候选参数，其冻结测试也为负。这是受污染的探索性证据，不是独立验证。
 
 当前日历层已覆盖日股普通交易时段、午休、周末过滤、手工假日和收盘前停止新开仓 cutoff，用于研究和回测过滤。
 

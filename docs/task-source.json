@@ -1348,17 +1348,18 @@
       "status": "complete",
       "phase": "Phase 2",
       "dependencies": ["ISSUE-043"],
-      "summary": "Add bounded nested ORB parameter tuning that freezes selection before outer tests and rejects candidates on cost stress, worst-fold behavior, symbol concentration, and parameter-neighbor stability.",
+      "summary": "Add bounded nested ORB parameter tuning that freezes selection before outer tests, rejects fragile candidates, and exploratorily evaluates signal timing, breakout close location, and VWAP slope filters without treating reused dates as independent evidence.",
       "acceptance_criteria": [
-        "A deterministic bounded grid contains exactly 96 unique long-only ORB parameter combinations with one shared side-cost assumption and rejects empty, duplicate, mixed-cost, or oversized candidate sets.",
+        "A deterministic bounded grid contains exactly 192 unique long-only ORB parameter combinations: 96 original combinations and 96 with a 90-minute signal cutoff, 0.7 breakout close-location threshold, and same-direction VWAP slope; all share one side-cost assumption and the engine rejects empty, duplicate, mixed-cost, or oversized candidate sets.",
         "Every outer training window contains chronological non-overlapping inner validation folds; candidate selection reads only inner validation evidence and never outer test bars.",
         "Candidate evaluation reports validation metrics, doubled-cost metrics, worst inner-fold basis points, positive-profit symbol concentration, positive parameter-neighbor count, deterministic robustness rank, eligibility, and explicit rejection reasons.",
         "Candidates must pass predeclared minimum validation trades, Sharpe, Profit Factor, double-cost mean return, worst-fold return, symbol concentration, and neighbor-stability gates before frozen outer-test evaluation.",
         "Aggregate out-of-sample evidence contains only non-overlapping outer-test trades and reports zero, baseline, and doubled cost scenarios plus complete symbol attribution; Sharpe includes market dates with no trade as zero-return dates.",
         "The result applies predeclared outer trade-count, Sharpe, Profit Factor, doubled-cost, concentration, selected-fold, and fold-positivity gates and emits an explicit candidate or no-go decision with reasons.",
-        "The historical-orb-backtest CLI requires --run with --tune, exposes inner-window and robustness thresholds, emits schema version 3 tuning reports through the existing atomic create-only writer, and preserves schema version 2 for non-tuning runs.",
+        "The historical-orb-backtest CLI requires --run with --tune, exposes inner-window and robustness thresholds, emits schema version 4 tuning reports through the existing atomic create-only writer, and preserves schema version 2 for non-tuning runs.",
         "The tuning path reuses only the verified local cache and never downloads data, imports Moomoo, contacts OpenD, queries an account, or calls an order API.",
-        "Tests cover candidate bounds, inner/outer isolation, cost and concentration rejection, parameter-neighbor stability, frozen aggregate OOS trades, no-go decisions, zero-trade date Sharpe, and CLI schema behavior.",
+        "Tests cover candidate bounds, signal cutoff, breakout close location, VWAP slope, inner/outer isolation, cost and concentration rejection, parameter-neighbor stability, frozen aggregate OOS trades, no-go decisions, zero-trade date Sharpe, and CLI schema behavior.",
+        "The preserved-cache result is documented as exploratory and no-go: 1 of 4 outer folds selected a structure-filtered candidate, while nine frozen outer-test trades produced negative mean net basis points, Sharpe, and total PnL.",
         "English, Japanese, Simplified Chinese, CLI, operations, limitations, rollback, feature documentation, implementation plan, Source of Truth, and generated Task Catalog output are synchronized."
       ],
       "gates": [
@@ -1389,7 +1390,7 @@
         "docs/locales/ja/overview.md",
         "docs/locales/zh-CN/overview.md"
       ],
-      "rollback": "Disable historical-orb-backtest --tune, preserve schema version 3 research evidence, and revert ISSUE-044 through a reviewed PR; no broker order, account, or position side effect exists."
+      "rollback": "Disable historical-orb-backtest --tune, preserve schema version 3 and 4 research evidence, and revert ISSUE-044 through a reviewed PR; the exploratory structure filters can be removed independently by restoring the 96-candidate bound and schema version 3, and no broker order, account, or position side effect exists."
     }
   ]
 }

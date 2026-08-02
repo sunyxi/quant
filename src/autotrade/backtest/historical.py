@@ -91,12 +91,24 @@ class OrbResearchParameters:
     side_cost_bps: float = 2.5
     notional_per_trade: float = 10_000.0
     long_only: bool = True
+    max_signal_minutes_after_open: int | None = None
+    min_breakout_close_location: float = 0.0
+    require_rising_vwap: bool = False
 
     def __post_init__(self) -> None:
         if self.opening_range_minutes <= 0 or self.opening_range_minutes % 5:
             raise ValueError("opening range minutes must be a positive multiple of five")
         if self.max_holding_minutes <= 0 or self.max_holding_minutes % 5:
             raise ValueError("holding minutes must be a positive multiple of five")
+        if self.max_signal_minutes_after_open is not None and (
+            type(self.max_signal_minutes_after_open) is not int
+            or self.max_signal_minutes_after_open < self.opening_range_minutes
+            or self.max_signal_minutes_after_open % 5
+        ):
+            raise ValueError(
+                "maximum signal minutes must be a five-minute multiple no earlier "
+                "than the opening range"
+            )
         positive = (
             self.min_relative_volume,
             self.daily_atr_stop_multiple,
@@ -113,15 +125,29 @@ class OrbResearchParameters:
             or self.side_cost_bps < 0
         ):
             raise ValueError("ORB buffer and costs must be non-negative")
+        if (
+            not math.isfinite(self.min_breakout_close_location)
+            or not 0 <= self.min_breakout_close_location <= 1
+        ):
+            raise ValueError("breakout close location must be in [0, 1]")
+        if type(self.require_rising_vwap) is not bool:
+            raise ValueError("rising VWAP setting must be boolean")
 
     @property
     def key(self) -> str:
         direction = "long" if self.long_only else "both"
+        signal_cutoff = (
+            "all"
+            if self.max_signal_minutes_after_open is None
+            else str(self.max_signal_minutes_after_open)
+        )
         return (
             f"or{self.opening_range_minutes}-rv{self.min_relative_volume:g}"
             f"-buf{self.breakout_buffer_atr:g}-atr{self.daily_atr_stop_multiple:g}"
             f"-orstop{self.opening_range_stop_fraction:g}-r{self.target_r_multiple:g}"
-            f"-hold{self.max_holding_minutes}-{direction}"
+            f"-hold{self.max_holding_minutes}-cut{signal_cutoff}"
+            f"-clv{self.min_breakout_close_location:g}"
+            f"-vwapslope{int(self.require_rising_vwap)}-{direction}"
         )
 
 
@@ -398,11 +424,30 @@ class HistoricalOrbBacktester:
         signal_index = None
         for index in range(opening_count, len(bars) - 1):
             item = bars[index]
+            elapsed_minutes = int(
+                (item.timestamp - bars[0].timestamp).total_seconds() // 60
+            )
+            if (
+                parameters.max_signal_minutes_after_open is not None
+                and elapsed_minutes > parameters.max_signal_minutes_after_open
+            ):
+                break
             buffer = parameters.breakout_buffer_atr * item.atr
+            bar_range = item.high - item.low
+            long_close_location = (
+                (item.close - item.low) / bar_range if bar_range > 0 else 0.0
+            )
+            short_close_location = (
+                (item.high - item.close) / bar_range if bar_range > 0 else 0.0
+            )
+            rising_vwap = index > 0 and item.vwap > bars[index - 1].vwap
             if (
                 item.relative_volume >= parameters.min_relative_volume
                 and item.close > opening_high + buffer
                 and item.close >= item.vwap
+                and long_close_location
+                >= parameters.min_breakout_close_location
+                and (not parameters.require_rising_vwap or rising_vwap)
             ):
                 direction = 1
                 signal_index = index
@@ -412,6 +457,12 @@ class HistoricalOrbBacktester:
                 and item.relative_volume >= parameters.min_relative_volume
                 and item.close < opening_low - buffer
                 and item.close <= item.vwap
+                and short_close_location
+                >= parameters.min_breakout_close_location
+                and (
+                    not parameters.require_rising_vwap
+                    or (index > 0 and item.vwap < bars[index - 1].vwap)
+                )
             ):
                 direction = -1
                 signal_index = index

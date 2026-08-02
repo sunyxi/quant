@@ -4,7 +4,7 @@ ISSUE-044 adds explicit bounded nested `--tune` research to `historical-orb-back
 
 ## Candidate Boundary
 
-`bounded_orb_candidates` creates exactly 96 deterministic, unique, long-only combinations:
+`bounded_orb_candidates` creates exactly 192 deterministic, unique, long-only combinations. The first 96 retain the original price/volume boundary:
 
 ```text
 opening range minutes:       15, 30
@@ -15,7 +15,15 @@ target R multiple:           1.0, 1.5
 maximum holding minutes:     30, 60
 ```
 
-Daily ATR stop multiple remains `0.6`, notional remains fixed at the research default, and all candidates use the same side-cost assumption. The engine rejects an empty grid, duplicate keys, mixed side costs, or more candidates than the declared bound.
+The other 96 apply one predeclared structure-filter profile to the same combinations:
+
+```text
+max_signal_minutes_after_open: 90
+min_breakout_close_location:   0.7
+require_rising_vwap:           true
+```
+
+The signal cutoff excludes late breakouts, close location requires a long breakout bar to close in its upper 30%, and rising VWAP requires signal-bar VWAP to exceed the preceding bar. Daily ATR stop multiple remains `0.6`, notional remains fixed at the research default, and all candidates use the same side-cost assumption. The engine rejects an empty grid, duplicate keys, mixed side costs, or more candidates than the declared bound.
 
 ## Nested Validation
 
@@ -35,7 +43,7 @@ Every candidate receives a deterministic robustness rank. Only an eligible candi
 
 ## Decision
 
-The schema version 3 report retains `default_parameter_full_period` as context and adds `tuning`. The tuning result includes all candidate evaluations, selected parameters, frozen outer-test results, aggregate symbol attribution, zero/baseline/double-cost scenarios, and an explicit `candidate` or `no-go` decision with reasons.
+The schema version 4 report retains `default_parameter_full_period` as context and adds `tuning`. The tuning result includes all candidate evaluations, selected parameters, frozen outer-test results, aggregate symbol attribution, zero/baseline/double-cost scenarios, and an explicit `candidate` or `no-go` decision with reasons.
 
 The default decision gates require at least 20 outer-test trades, Sharpe `>= 0.8`, Profit Factor `>= 1.1`, non-negative double-cost mean basis points, acceptable positive-profit symbol concentration, a selected candidate in every outer fold, and positive mean net basis points in every outer fold. A `candidate` result is still research evidence and does not authorize paper or live trading.
 
@@ -68,19 +76,26 @@ PYTHONPATH=src python3 -m autotrade.cli historical-orb-backtest \
 The preserved local cache run covers 76,860 five-minute RTH bars for AAPL, MSFT, NVDA, QQQ, and SPY from 2025-10-16 through 2026-07-31. With all default gates frozen before the run:
 
 ```text
-candidates:            96
+candidates:            192
 outer folds:           4
-selected folds:        0
+selected folds:        1 of 4
 decision:              no-go
-aggregate OOS trades:  0
+aggregate OOS trades:  9
+mean net bps:          -5.912413
+Profit Factor:         0.767845
+daily Sharpe:          -0.541354
+double-cost mean bps:  -10.912185
 ```
 
-All 96 candidates in every outer fold failed the double-cost mean-return gate. Some candidates were slightly positive under baseline cost in isolated inner windows, but they failed double-cost, worst-fold, symbol-concentration, or neighbor-stability checks. Relaxing those gates after seeing this result would be data snooping, not valid tuning.
+The first three outer folds selected no candidate. In the fourth fold, 31 structure-filtered candidates passed the inner gates and the selected parameters used `max_signal_minutes_after_open=90`, `min_breakout_close_location=0.7`, and `require_rising_vwap=true`. Its frozen outer test lost 53.72 on nine trades, and the aggregate failed trade-count, Sharpe, Profit Factor, double-cost, symbol-concentration, selected-fold, and fold-positivity gates.
+
+This extension is exploratory because the structure filters were added after inspecting the earlier result and rerun over the same preserved dates. It is useful for rejecting the proposed structure on known data, but it is not independent out-of-sample proof. A future promotion attempt must freeze the complete strategy and use newly reserved dates. Relaxing gates or reporting the fourth fold's strong inner-validation metrics as performance would be data snooping.
 
 ## Limitations
 
 - The cache contains five current, high-liquidity US symbols and has selection and survivorship bias.
-- Ninety-six combinations still create multiple-comparison risk.
+- One hundred ninety-two combinations increase multiple-comparison risk.
 - Five-minute bars do not model bid/ask, queue position, partial fills, or true intrabar order.
 - Cost assumptions are scenarios rather than calibrated broker execution evidence.
-- The current no-go result indicates that parameter tuning alone does not recover a robust ORB edge; a later Issue should test predeclared strategy-structure filters with a newly reserved outer sample.
+- The structure-filter extension reused observed dates, so it is contaminated exploratory evidence and cannot authorize paper or live trading.
+- The current no-go result indicates that neither bounded parameter tuning nor this structure-filter profile recovers a robust ORB edge on the preserved cache.

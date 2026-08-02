@@ -149,7 +149,7 @@ PYTHONPATH=src python3 -m autotrade.cli historical-orb-backtest \
   --report-output historical-backtest-reports/orb-tuning.json
 ```
 
-`--tune` requires `--run`. It evaluates exactly 96 bounded combinations and writes schema version 3 output. Do not alter gates after observing outer-test results; start a new Issue with newly reserved data instead.
+`--tune` requires `--run`. It evaluates exactly 192 bounded combinations and writes schema version 4 output: 96 original combinations plus the same 96 with a 90-minute signal cutoff, 0.7 minimum breakout close location, and same-direction VWAP slope. The structure-filter extension is exploratory because it reused previously observed dates. Do not alter gates after observing outer-test results; freeze any future design in a new Issue with newly reserved data instead.
 
 ## Strategy Tests
 

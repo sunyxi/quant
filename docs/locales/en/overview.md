@@ -22,7 +22,7 @@ ISSUE-042 adds a create-only schema version 1 submission report after exactly on
 
 ISSUE-043 adds verified local five-minute RTH cache loading and long-only ORB lifecycle, PnL, actual-notional cost sensitivity, symbol attribution, and non-overlapping Walk-Forward reports. Atomic create-only schema version 2 output labels the full-period default as `default_parameter_full_period`. It does not download data, load Moomoo, contact a broker, or authorize trading.
 
-ISSUE-044 adds bounded 96-combination nested ORB tuning with double-cost, worst-fold, symbol-concentration, and parameter-neighbor gates. The preserved-cache result is `no-go`; no outer fold selected a candidate, and gates must not be weakened after observing that result.
+ISSUE-044 adds bounded 192-combination nested ORB tuning with double-cost, worst-fold, symbol-concentration, and parameter-neighbor gates. The second 96 combinations exploratorily add a 90-minute signal cutoff, breakout close-location threshold, and same-direction VWAP slope on already observed dates. The preserved-cache result remains `no-go`; only 1 of 4 outer folds selected a candidate and its frozen test was negative. This is contaminated exploratory evidence, not independent validation.
 
 The current calendar layer covers JP regular sessions, lunch break, weekend rejection, manual holidays, and close-entry cutoff for research filtering.
 

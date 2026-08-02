@@ -444,12 +444,18 @@ class DocumentationCatalogTests(unittest.TestCase):
         for term in [
             "historical-orb-backtest",
             "--tune",
-            "96",
+            "192",
             "nested",
             "double-cost",
             "positive_parameter_neighbors",
+            "max_signal_minutes_after_open",
+            "min_breakout_close_location",
+            "require_rising_vwap",
             "default_parameter_full_period",
+            "schema version 4",
+            "selected folds:        1 of 4",
             "no-go",
+            "exploratory",
             "does not download",
         ]:
             self.assertIn(term, feature_doc)
