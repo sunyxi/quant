@@ -20,7 +20,7 @@ ISSUE-041 新增 create-only 的 schema version 1 对账报告，用于持久保
 
 ISSUE-042 在一次经过批准的 paper `place_order` 尝试后生成 create-only 的 schema version 1 submission report。它不保存订单参数或券商标识，只保留脱敏的不确定结果供离线审查。账户选择前的网络故障保留为 `connection`，提交尝试后的故障则保留为 `verification`。提交前被阻断时不创建报告，报告持久化也不会批准或重试 canary。
 
-ISSUE-043 新增经过验证的本地 5 分钟 RTH 缓存读取，以及 long-only ORB 的完整生命周期、PnL、成本敏感性、逐标的归因和冻结参数的 Walk-Forward 报告。它不会下载数据、加载 Moomoo、连接券商或授权交易。
+ISSUE-043 新增经过验证的本地 5 分钟 RTH 缓存读取，以及 long-only ORB 的完整生命周期、PnL、按每条成交腿实际名义金额计算的成本敏感性、逐标的归因和不重叠的 Walk-Forward 报告。原子 create-only 的 schema version 2 输出使用 `default_parameter_full_period` 标记全周期默认参数结果。它不会下载数据、加载 Moomoo、连接券商或授权交易。
 
 当前日历层已覆盖日股普通交易时段、午休、周末过滤、手工假日和收盘前停止新开仓 cutoff，用于研究和回测过滤。
 

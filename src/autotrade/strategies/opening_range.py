@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 from autotrade.core.models import MarketSnapshot, Side, Signal
@@ -18,6 +19,15 @@ class OpeningRangeBreakout(Strategy):
     long_only: bool = True
     max_spread_bps: float | None = None
     require_fresh_order_book: bool = False
+
+    def __post_init__(self) -> None:
+        if (
+            isinstance(self.opening_range_stop_fraction, bool)
+            or not isinstance(self.opening_range_stop_fraction, (int, float))
+            or not math.isfinite(self.opening_range_stop_fraction)
+            or self.opening_range_stop_fraction <= 0
+        ):
+            raise ValueError("opening range stop fraction must be positive")
 
     def set_opening_range(self, high: float, low: float) -> None:
         if high <= low:

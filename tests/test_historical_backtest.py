@@ -84,6 +84,16 @@ def target_fixture(
     return bars
 
 
+def short_target_fixture() -> list[HistoricalBar]:
+    return [
+        bar(0, high=98, low=90, close=95),
+        bar(5, high=100, low=92, close=98),
+        bar(10, high=99, low=93, close=97),
+        bar(15, open_price=90, high=91, low=88, close=89, vwap=95),
+        bar(20, open_price=88, high=89, low=80, close=81, vwap=90),
+    ]
+
+
 class HistoricalOrbLifecycleTests(unittest.TestCase):
     def test_next_bar_entry_and_target_exit_produce_net_pnl(self) -> None:
         result = HistoricalOrbBacktester().run(
@@ -167,8 +177,53 @@ class HistoricalOrbLifecycleTests(unittest.TestCase):
             result.cost_scenarios["double"].mean_net_bps,
         )
 
+    def test_side_cost_uses_each_execution_legs_actual_notional(self) -> None:
+        result = HistoricalOrbBacktester().run(
+            target_fixture(), OrbResearchParameters(side_cost_bps=2.5)
+        )
+        trade = result.trades[0]
+
+        expected = (
+            (trade.entry_price + trade.exit_price)
+            * trade.quantity
+            * 2.5
+            / 10_000
+        )
+
+        self.assertAlmostEqual(expected, trade.cost)
+
+    def test_stop_uses_signal_bar_atr_without_entry_bar_lookahead(self) -> None:
+        bars = target_fixture()
+        bars[3] = HistoricalBar(**{**bars[3].__dict__, "atr": 1.0})
+        bars[4] = HistoricalBar(**{**bars[4].__dict__, "atr": 100.0})
+
+        result = HistoricalOrbBacktester().run(bars, OrbResearchParameters())
+
+        self.assertAlmostEqual(101.4, result.trades[0].stop_price)
+
+    def test_opted_in_short_trade_uses_short_stop_target_and_pnl(self) -> None:
+        result = HistoricalOrbBacktester().run(
+            short_target_fixture(), OrbResearchParameters(long_only=False)
+        )
+
+        self.assertEqual(1, len(result.trades))
+        trade = result.trades[0]
+        self.assertEqual("SELL", trade.side)
+        self.assertEqual(93.0, trade.stop_price)
+        self.assertEqual(80.5, trade.target_price)
+        self.assertEqual("target", trade.exit_reason)
+        self.assertGreater(trade.gross_pnl, 0)
+
 
 class WalkForwardTests(unittest.TestCase):
+    def test_config_rejects_overlapping_test_windows(self) -> None:
+        with self.assertRaisesRegex(ValueError, "overlapping test windows"):
+            WalkForwardConfig(train_days=100, test_days=20, step_days=10)
+
+    def test_config_rejects_training_coverage_gaps(self) -> None:
+        with self.assertRaisesRegex(ValueError, "training coverage"):
+            WalkForwardConfig(train_days=20, test_days=10, step_days=40)
+
     def test_rolling_folds_are_ordered_and_non_overlapping(self) -> None:
         dates = [date(2026, 1, day) for day in range(1, 13)]
 
@@ -299,6 +354,17 @@ class HistoricalCacheTests(unittest.TestCase):
         self.assertEqual(("US.TEST",), dataset.symbols)
         self.assertEqual("5m", dataset.bar_size)
 
+    def test_manifest_allows_additive_metadata_fields(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            manifest, _ = self.write_cache(Path(tmpdir))
+            payload = json.loads(manifest.read_text(encoding="utf-8"))
+            payload["created_at"] = "2026-08-02T00:00:00Z"
+            manifest.write_text(json.dumps(payload), encoding="utf-8")
+
+            dataset = VerifiedHistoricalCsvLoader().read(manifest)
+
+        self.assertEqual(6, len(dataset.bars))
+
     def test_hash_mismatch_and_artifact_escape_fail_closed(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             manifest, cache = self.write_cache(Path(tmpdir))
@@ -341,6 +407,19 @@ class HistoricalCacheTests(unittest.TestCase):
 
             self.assertFalse(output.exists())
 
+    def test_report_publish_failure_leaves_no_output_or_temporary_file(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output = Path(tmpdir) / "reports" / "report.json"
+            with patch(
+                "autotrade.backtest.historical.os.link",
+                side_effect=OSError("simulated publish failure"),
+            ):
+                with self.assertRaises(HistoricalCacheError):
+                    HistoricalOrbReportWriter().write(output, {"valid": True})
+
+            self.assertFalse(output.exists())
+            self.assertEqual([], list(output.parent.glob(".report.json.*.tmp")))
+
     def test_cli_validate_and_run_never_load_moomoo_sdk(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             manifest, _ = self.write_cache(Path(tmpdir))
@@ -368,13 +447,19 @@ class HistoricalCacheTests(unittest.TestCase):
                         str(report),
                     ]
                 )
-            report_content = report.read_text(encoding="utf-8")
+            report_content = json.loads(report.read_text(encoding="utf-8"))
 
         self.assertEqual(0, validate_exit)
         self.assertIn('"mode": "validate-only"', validate_stdout.getvalue())
         self.assertEqual(0, run_exit)
         self.assertIn('"mode": "completed"', run_stdout.getvalue())
-        self.assertIn('"trade_count": 1', report_content)
+        self.assertEqual(2, report_content["schema_version"])
+        self.assertIn("default_parameter_full_period", report_content)
+        self.assertNotIn("baseline", report_content)
+        self.assertEqual(
+            1,
+            report_content["default_parameter_full_period"]["metrics"]["trade_count"],
+        )
 
     def test_cli_report_conflict_returns_two_without_traceback(self) -> None:
         stderr = io.StringIO()

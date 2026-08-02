@@ -748,7 +748,9 @@ def _run_historical_orb_backtest(
         )
         return 0
 
-    baseline = HistoricalOrbBacktester().run(dataset.bars, parameters)
+    default_parameter_full_period = HistoricalOrbBacktester().run(
+        dataset.bars, parameters
+    )
     walk_forward = HistoricalOrbWalkForward().run(
         dataset.bars,
         default_orb_candidates(args.side_cost_bps),
@@ -766,7 +768,7 @@ def _run_historical_orb_backtest(
             "sha256": dataset.sha256,
             "symbols": list(dataset.symbols),
         },
-        "baseline": baseline.to_dict(),
+        "default_parameter_full_period": default_parameter_full_period.to_dict(),
         "walk_forward": walk_forward.to_dict(),
     }
     if args.report_output is not None:
@@ -779,7 +781,7 @@ def _run_historical_orb_backtest(
         json.dumps(
             {
                 "fold_count": len(walk_forward.folds),
-                "metrics": report["baseline"]["metrics"],
+                "metrics": report["default_parameter_full_period"]["metrics"],
                 "mode": "completed",
                 "report_output": (
                     str(args.report_output) if args.report_output is not None else None

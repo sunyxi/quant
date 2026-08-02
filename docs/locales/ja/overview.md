@@ -20,7 +20,7 @@ ISSUE-041 は、canary と incident の永続的な証跡向けに create-only �
 
 ISSUE-042 は、承認済みの paper `place_order` を一回実行した後に create-only の schema version 1 submission report を作成します。注文パラメータや証券会社 ID なしで、サニタイズ済みの不確定な結果をオフライン確認用に保存します。アカウント選択前のネットワーク失敗は `connection`、送信後の失敗は `verification` として区別されます。送信前のブロックではレポートを作成せず、レポート保存は canary の承認や再送を行いません。
 
-ISSUE-043 は、検証済みローカル 5 分 RTH キャッシュを読み込み、long-only ORB のライフサイクル、PnL、コスト感応度、銘柄別帰属、および固定された Walk-Forward レポートを追加します。データのダウンロード、Moomoo の読み込み、証券会社への接続、取引承認は行いません。
+ISSUE-043 は、検証済みローカル 5 分 RTH キャッシュを読み込み、long-only ORB のライフサイクル、PnL、各約定脚の実際名目額に基づくコスト感応度、銘柄別帰属、および重複しない Walk-Forward レポートを追加します。atomic create-only の schema version 2 出力は全期間のデフォルト結果を `default_parameter_full_period` として明示します。データのダウンロード、Moomoo の読み込み、証券会社への接続、取引承認は行いません。
 
 現在のカレンダー層は、日本株の通常取引時間、昼休み、週末除外、手動祝日、引け前の新規エントリー停止時刻を研究用フィルターとして扱います。
 

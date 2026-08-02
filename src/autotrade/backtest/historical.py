@@ -5,6 +5,8 @@ import gzip
 import hashlib
 import json
 import math
+import os
+import tempfile
 from collections import defaultdict
 from dataclasses import asdict, dataclass, replace
 from datetime import date, datetime
@@ -14,7 +16,7 @@ from typing import Iterable, Mapping, Sequence
 
 
 HISTORICAL_CACHE_SCHEMA_VERSION = 1
-HISTORICAL_REPORT_SCHEMA_VERSION = 1
+HISTORICAL_REPORT_SCHEMA_VERSION = 2
 HISTORICAL_CACHE_COLUMNS = (
     "timestamp",
     "symbol",
@@ -198,6 +200,16 @@ class WalkForwardConfig:
     def __post_init__(self) -> None:
         if min(self.train_days, self.test_days, self.step_days) <= 0:
             raise ValueError("walk-forward windows must be positive")
+        if self.step_days < self.test_days:
+            raise ValueError(
+                "walk-forward step_days must be >= test_days to avoid "
+                "overlapping test windows"
+            )
+        if self.step_days > self.train_days:
+            raise ValueError(
+                "walk-forward step_days must be <= train_days to preserve "
+                "training coverage"
+            )
         if self.min_trades < 0:
             raise ValueError("walk-forward minimum trades must be non-negative")
         if (
@@ -557,7 +569,7 @@ class VerifiedHistoricalCsvLoader:
             "symbols",
             "columns",
         }
-        if not isinstance(payload, dict) or set(payload) != required:
+        if not isinstance(payload, dict) or not required.issubset(payload):
             raise HistoricalCacheError("invalid historical cache manifest fields")
         self._validate_manifest(payload)
 
@@ -640,19 +652,37 @@ class VerifiedHistoricalCsvLoader:
 class HistoricalOrbReportWriter:
     def write(self, path: str | Path, report: Mapping[str, object]) -> Path:
         output = Path(path)
+        temporary: Path | None = None
         try:
             content = json.dumps(
                 report, sort_keys=True, indent=2, allow_nan=False
             ) + "\n"
             output.parent.mkdir(parents=True, exist_ok=True)
-            with output.open("x", encoding="utf-8") as stream:
+            with tempfile.NamedTemporaryFile(
+                mode="w",
+                encoding="utf-8",
+                dir=output.parent,
+                prefix=f".{output.name}.",
+                suffix=".tmp",
+                delete=False,
+            ) as stream:
+                temporary = Path(stream.name)
                 stream.write(content)
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.link(temporary, output)
         except FileExistsError as exc:
             raise HistoricalCacheError(
                 f"historical ORB report already exists: {output}"
             ) from exc
         except (OSError, TypeError, ValueError) as exc:
             raise HistoricalCacheError("could not write historical ORB report") from exc
+        finally:
+            if temporary is not None:
+                try:
+                    temporary.unlink(missing_ok=True)
+                except OSError:
+                    pass
         return output
 
 

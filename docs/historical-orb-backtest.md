@@ -4,7 +4,7 @@ ISSUE-043 adds `historical-orb-backtest`, a broker-independent research boundary
 
 ## Cache Contract
 
-The loader accepts schema version 1 JSON manifests with an adjacent, non-symlink `gzip-csv` artifact. Before parsing bars it validates the exact filename, format, columns, row count, date range, sorted symbol set, and SHA-256 digest. Pickle is intentionally unsupported because loading an untrusted pickle can execute code.
+The loader accepts schema version 1 JSON manifests with an adjacent, non-symlink `gzip-csv` artifact. Before parsing bars it validates every required manifest field plus the filename, format, exact CSV columns, row count, date range, sorted symbol set, and SHA-256 digest. Additive manifest metadata is allowed for forward compatibility but cannot replace or weaken a required field. Pickle is intentionally unsupported because loading an untrusted pickle can execute code.
 
 Required CSV columns are:
 
@@ -27,13 +27,15 @@ Stop distance is the smaller of:
 
 The default target remains `1.5R`. Every position exits by target, stop, maximum holding time, or session close. If one bar touches both target and stop, the simulator resolves the ambiguity as stop first. This is conservative but still cannot model the true intrabar event order.
 
+Stop sizing uses the signal bar ATR because it is the latest ATR known before the next-bar-open entry. Using the entry bar ATR would consume that bar's high, low, and close before they are known and introduce lookahead. The optional short path remains available only with `long_only=False`; both live-strategy and historical short stop, target, exit, and PnL paths have regression fixtures.
+
 ## Metrics
 
-The report includes gross and net PnL per trade plus aggregate trade count, win rate, mean net basis points, profit factor, annualized daily Sharpe, compounded return, maximum drawdown, and total net PnL. The cost sensitivity section reports zero, baseline, and doubled side-cost assumptions. Symbol attribution uses the same baseline-cost calculation.
+The schema version 2 report includes gross and net PnL per trade plus aggregate trade count, win rate, mean net basis points, profit factor, annualized daily Sharpe, compounded return, maximum drawdown, and total net PnL. `default_parameter_full_period` explicitly labels the default-parameter run over the complete dataset; it is not presented as a parameter-matched comparison with out-of-sample folds. The cost sensitivity section reports zero, baseline, and doubled side-cost assumptions. Each side cost is applied to that execution leg's actual notional, so entry and exit charges can differ when price moves. Symbol attribution uses the same baseline-cost calculation and includes symbols with zero trades.
 
 ## Walk-Forward
 
-Walk-Forward folds use ordered trading dates. Each fold selects one candidate from its training dates only, requires a configurable minimum trade count, non-negative training Sharpe, and training Profit Factor of at least `1.0`, freezes the selected parameters, and then reports the following test window. Train and test dates never overlap. A fold with no eligible training candidate is reported without selected parameters or test metrics; the engine never promotes a merely "least bad" losing candidate. Evaluated and eligible counts plus the best observed rejected training metrics remain in the report for audit.
+Walk-Forward folds use ordered trading dates and require `test_days <= step_days <= train_days`, preventing overlapping out-of-sample windows and gaps in rolling training coverage. Each fold selects one candidate from its training dates only, requires a configurable minimum trade count, non-negative training Sharpe, and training Profit Factor of at least `1.0`, freezes the selected parameters, and then reports the following test window. Train and test dates never overlap. A fold with no eligible training candidate is reported without selected parameters or test metrics; the engine never promotes a merely "least bad" losing candidate. Evaluated and eligible counts plus the best observed rejected training metrics remain in the report for audit.
 
 Walk-Forward output is research evidence, not permission to trade. Parameter search remains deliberately small and centered on the current ORB defaults to reduce overfitting.
 
@@ -46,7 +48,7 @@ PYTHONPATH=src python3 -m autotrade.cli historical-orb-backtest \
   --manifest historical-data/moomoo-us-rth-5m-manifest.json
 ```
 
-Run baseline and Walk-Forward research and write a create-only report:
+Run the default-parameter full-period reference and Walk-Forward research and write a create-only report:
 
 ```bash
 PYTHONPATH=src python3 -m autotrade.cli historical-orb-backtest \
@@ -57,7 +59,7 @@ PYTHONPATH=src python3 -m autotrade.cli historical-orb-backtest \
   --report-output historical-backtest-reports/orb-walk-forward.json
 ```
 
-An existing report path is never overwritten. The command has no connection, credential, account, order, or trading-environment option.
+An existing report path is never overwritten. Report content is serialized and flushed to a sibling temporary file, then published with an atomic create-only link; failed publication removes the temporary file and leaves no partial destination. The command has no connection, credential, account, order, or trading-environment option.
 
 ## Limitations
 

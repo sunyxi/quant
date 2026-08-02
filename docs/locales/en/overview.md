@@ -20,7 +20,7 @@ ISSUE-041 adds create-only schema version 1 reconciliation reports for durable c
 
 ISSUE-042 adds a create-only schema version 1 submission report after exactly one approved paper `place_order` attempt. It preserves sanitized uncertain outcomes for offline review without order parameters or broker identifiers. Pre-account network failures remain distinct as `connection`, while post-attempt failures remain `verification`. Pre-submit blocks create no report, and report persistence never authorizes or retries a canary.
 
-ISSUE-043 adds verified local five-minute RTH cache loading and long-only ORB lifecycle, PnL, cost sensitivity, symbol attribution, and frozen Walk-Forward reports. It does not download data, load Moomoo, contact a broker, or authorize trading.
+ISSUE-043 adds verified local five-minute RTH cache loading and long-only ORB lifecycle, PnL, actual-notional cost sensitivity, symbol attribution, and non-overlapping Walk-Forward reports. Atomic create-only schema version 2 output labels the full-period default as `default_parameter_full_period`. It does not download data, load Moomoo, contact a broker, or authorize trading.
 
 The current calendar layer covers JP regular sessions, lunch break, weekend rejection, manual holidays, and close-entry cutoff for research filtering.
 

@@ -115,7 +115,7 @@ PYTHONPATH=src python3 -m autotrade.cli historical-orb-backtest \
   --manifest historical-data/moomoo-us-rth-5m-manifest.json
 ```
 
-Run long-only ORB baseline and Walk-Forward research with create-only output:
+Run the long-only ORB default-parameter full-period reference and Walk-Forward research with atomic create-only schema version 2 output:
 
 ```bash
 PYTHONPATH=src python3 -m autotrade.cli historical-orb-backtest \
@@ -125,7 +125,7 @@ PYTHONPATH=src python3 -m autotrade.cli historical-orb-backtest \
   --report-output historical-backtest-reports/orb-walk-forward.json
 ```
 
-`--report-output` requires `--run`. Historical cache validation and research are offline and never load the Moomoo SDK or call a broker API.
+`--report-output` requires `--run`. The report labels its full-period reference as `default_parameter_full_period`; it must not be compared as though it used each fold's selected parameters. Historical cache validation and research are offline and never load the Moomoo SDK or call a broker API.
 
 ## Strategy Tests
 

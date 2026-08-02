@@ -403,6 +403,10 @@ class DocumentationCatalogTests(unittest.TestCase):
         )
 
         self.assertEqual("complete", tasks["ISSUE-043"]["status"])
+        self.assertIn(
+            "Fixture / E2E Design Tests", tasks["ISSUE-043"]["gates"]
+        )
+        self.assertNotIn("Fixture Tests", tasks["ISSUE-043"]["gates"])
         for term in [
             "historical-orb-backtest",
             "Walk-Forward",
@@ -410,6 +414,12 @@ class DocumentationCatalogTests(unittest.TestCase):
             "cost sensitivity",
             "long-only",
             "does not download",
+            "schema version 2",
+            "default_parameter_full_period",
+            "actual notional",
+            "signal bar ATR",
+            "test_days <= step_days <= train_days",
+            "atomic",
         ]:
             self.assertIn(term, feature_doc)
         gitignore = (REPO_ROOT / ".gitignore").read_text(encoding="utf-8")
