@@ -92,6 +92,11 @@ class RaisingSubmitContext(FakeSubmitContext):
         raise TimeoutError("sensitive uncertain submission")
 
 
+class RaisingAccountListContext(FakeSubmitContext):
+    def get_acc_list(self) -> tuple[int, object]:
+        raise ConnectionError("sensitive account-list network failure")
+
+
 class FakeSubmitSdk:
     version = MIN_MOOMOO_API_VERSION
     ret_ok = 0
@@ -375,6 +380,25 @@ class MoomooPaperOrderSubmitterTests(unittest.TestCase):
         self.assertTrue(context.closed)
         self.assertNotIn("sensitive", str(result.to_dict()))
 
+    def test_account_list_network_failure_has_distinct_sanitized_category(
+        self,
+    ) -> None:
+        result = MoomooPaperOrderSubmitter(
+            endpoint=MoomooEndpoint(),
+            sdk=FakeSubmitSdk(RaisingAccountListContext()),
+        ).submit(
+            paper_plan(),
+            readiness=ready_decision(),
+            preflight=successful_preflight(),
+            acknowledged=True,
+        )
+
+        self.assertEqual(MoomooPaperOrderSubmissionStatus.BLOCKED, result.status)
+        self.assertEqual("connection", result.sanitized_failure_category)
+        self.assertEqual("not-run", result.account_selection_status)
+        self.assertEqual(0, result.place_order_call_count)
+        self.assertNotIn("sensitive", str(result.to_dict()))
+
     def test_success_status_with_empty_payload_is_unknown(self) -> None:
         context = FakeSubmitContext()
         context.place_response = (0, [])
@@ -447,6 +471,7 @@ class MoomooPaperOrderSubmissionReportTests(unittest.TestCase):
             self._result(rejected),
             self._result(RaisingSubmitContext()),
             self._result(submitted),
+            self._result(RaisingAccountListContext()),
         ]
 
         with tempfile.TemporaryDirectory() as tmpdir:

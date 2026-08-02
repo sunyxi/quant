@@ -18,7 +18,7 @@ ISSUE-040 は、参照専用の `moomoo-paper-order-reconcile` 境界を追加�
 
 ISSUE-041 は、canary と incident の永続的な証跡向けに create-only の schema version 1 照合レポートを追加します。厳格な reader は OpenD や SDK なしでオフライン検証します。レポートはサニタイズ済み結果だけを含み、既存ファイルを上書きせず、Git から除外されたローカルパスに保持されます。注文一覧の照会が完了しなかった場合、指定されたレポートは明示的に exit code `2` で失敗します。
 
-ISSUE-042 は、承認済みの paper `place_order` を一回実行した後に create-only の schema version 1 submission report を作成します。注文パラメータや証券会社 ID なしで、サニタイズ済みの不確定な結果をオフライン確認用に保存します。送信前のブロックではレポートを作成せず、レポート保存は canary の承認や再送を行いません。
+ISSUE-042 は、承認済みの paper `place_order` を一回実行した後に create-only の schema version 1 submission report を作成します。注文パラメータや証券会社 ID なしで、サニタイズ済みの不確定な結果をオフライン確認用に保存します。アカウント選択前のネットワーク失敗は `connection`、送信後の失敗は `verification` として区別されます。送信前のブロックではレポートを作成せず、レポート保存は canary の承認や再送を行いません。
 
 現在のカレンダー層は、日本株の通常取引時間、昼休み、週末除外、手動祝日、引け前の新規エントリー停止時刻を研究用フィルターとして扱います。
 

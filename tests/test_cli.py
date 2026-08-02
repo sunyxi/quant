@@ -10,6 +10,7 @@ from unittest.mock import patch
 from autotrade.cli import main
 from autotrade.execution.kabu_station import KabuStationClientError
 from autotrade.execution.moomoo import (
+    MoomooClientError,
     MoomooDiscoveryReportWriter,
     MoomooDiscoveryResult,
     MoomooPaperAccountPreflightReportWriter,
@@ -777,6 +778,34 @@ class MoomooPaperOrderSubmitCliTests(unittest.TestCase):
 
         self.assertEqual(2, exit_code)
         self.assertIn("place_order", stderr.getvalue())
+
+    def test_sdk_load_failure_with_report_returns_two_and_writes_nothing(
+        self,
+    ) -> None:
+        stderr = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            discovery, preflight = self._reports(tmpdir)
+            output = Path(tmpdir) / "submission.json"
+            with patch(
+                "autotrade.cli.MoomooApiSdk.load",
+                side_effect=MoomooClientError("sensitive dependency failure"),
+            ), redirect_stderr(stderr):
+                exit_code = main(
+                    self._args(discovery, preflight)
+                    + [
+                        "--connect",
+                        "--submit-paper-order",
+                        "--acknowledge-paper-order-side-effect",
+                        "--report-output",
+                        str(output),
+                    ]
+                )
+            self.assertFalse(output.exists())
+
+        self.assertEqual(2, exit_code)
+        self.assertIn("dependency", stderr.getvalue())
+        self.assertNotIn("sensitive", stderr.getvalue())
+        self.assertNotIn("Traceback", stderr.getvalue())
 
     def test_submission_report_conflict_returns_two_without_traceback(self) -> None:
         stderr = io.StringIO()

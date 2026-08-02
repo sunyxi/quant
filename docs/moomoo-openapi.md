@@ -152,7 +152,7 @@ PYTHONPATH=src python3 -m autotrade.cli moomoo-paper-order-submit \
   --report-output moomoo-submission-reports/moomoo-paper-order-submission-report.json
 ```
 
-The report preserves sanitized `rejected`, `unknown`, `submitted`, or `verified` evidence and excludes account IDs, broker order IDs, symbols, prices, quantities, credentials, raw payloads, and exception text. Its strict reader works offline without OpenD or the SDK and rejects fields or state combinations the producer cannot emit. The writer creates parent directories and never overwrites a file or symlink. A blocked pre-submit result, path conflict, or filesystem failure returns exit code `2` and creates no report. Report persistence does not approve a canary, retry an order, or add another broker request.
+The report preserves sanitized `rejected`, `unknown`, `submitted`, or `verified` evidence and excludes account IDs, broker order IDs, symbols, prices, quantities, credentials, raw payloads, and exception text. Its strict reader works offline without OpenD or the SDK and rejects fields or state combinations the producer cannot emit. A network or response failure before account selection is classified as `connection`; the same class of failure after a submission attempt remains `verification`. The writer creates parent directories and never overwrites a file or symlink. A blocked pre-submit result, path conflict, or filesystem failure returns exit code `2` and creates no report. Report persistence does not approve a canary, retry an order, or add another broker request.
 
 ## Read-only Paper-order Reconciliation
 
