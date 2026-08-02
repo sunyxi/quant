@@ -22,3 +22,5 @@ moomoo-reconciliation-reports/
 *moomoo-paper-order-reconciliation-report*.json
 moomoo-submission-reports/
 *moomoo-paper-order-submission-report*.json
+historical-data/
+historical-backtest-reports/

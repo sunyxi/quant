@@ -2006,3 +2006,63 @@ Rollback: Disable report output, inspect retained reconciliation artifacts for s
 - Refactor: optional, but must keep gates accurate.
 
 Rollback: Disable submission report output, preserve any artifact needed for canary or incident review, inspect the paper account for every attempted client-order ID, and revert ISSUE-042 through a reviewed PR; removing local persistence does not cancel or reverse an earlier paper order.
+
+## ISSUE-043: Add historical ORB walk-forward backtesting
+
+- Status: `complete`
+- Phase: `Phase 2`
+- Dependencies: ISSUE-042
+- Roadmap: see `docs/roadmap.md#phase-2`
+- Summary: Add a broker-independent historical ORB research engine that reuses verified local bar caches and reports complete trade lifecycle, net PnL, cost sensitivity, symbol attribution, and frozen walk-forward evidence.
+
+### Acceptance Criteria
+
+- Immutable historical bar, trade lifecycle, metric, attribution, cost-scenario, fold, and report models validate their inputs and serialize deterministically.
+- The loader accepts only an adjacent non-symlink gzip CSV artifact after exact schema, filename, format, columns, row count, date range, symbol set, and SHA-256 validation; it performs no download or broker call.
+- ORB entries use the next bar open, never enter without a following bar, allow at most one trade per symbol and date, and always exit through stop, target, time, or session close.
+- When one bar touches stop and target, the simulator applies stop first; explicit round-trip costs are deducted from gross PnL and normalized return.
+- Reports include trade count, win rate, mean net basis points, profit factor, annualized daily Sharpe, compounded total return, maximum drawdown, and total net PnL.
+- The baseline result includes per-symbol attribution and zero, baseline, and doubled cost scenarios.
+- Rolling walk-forward folds keep train and test dates disjoint, select parameters from training evidence only after minimum-trade, non-negative Sharpe, and Profit Factor gates, report frozen test metrics without promoting a losing candidate, and retain rejected-candidate audit counts and metrics.
+- Opening Range Breakout is long-only by default and caps stop distance by the smaller of the daily ATR multiple and opening-range-width fraction while retaining an R-multiple target.
+- The historical-orb-backtest CLI validates offline by default and requires --run for research and create-only report output; it never loads the Moomoo SDK or accesses an account or order API.
+- Tests cover every lifecycle exit, stop-first ambiguity, no-lookahead entry, costs, attribution, cache tampering, artifact escape, walk-forward isolation, long-only behavior, report conflicts, and no-broker CLI behavior.
+- English, Japanese, Simplified Chinese, CLI, operations, limitations, rollback, feature documentation, implementation plan, ignore rules, and generated Task Catalog output are synchronized.
+
+### Gates
+
+- Python Unit Tests
+- Fixture Tests
+- Documentation Localization
+- Markdown Links/Style
+- Secret Scan
+- Task Catalog Generation
+
+### Changed Assets
+
+- `.gitignore`
+- `src/autotrade/backtest/historical.py`
+- `src/autotrade/strategies/opening_range.py`
+- `src/autotrade/cli.py`
+- `tests/test_historical_backtest.py`
+- `tests/test_strategies.py`
+- `tests/test_documentation_catalog.py`
+- `docs/task-source.json`
+- `docs/task-catalog.md`
+- `docs/historical-orb-backtest.md`
+- `docs/implementation-plan.md`
+- `docs/cli-usage.md`
+- `docs/operations.md`
+- `docs/limitations.md`
+- `docs/rollback.md`
+- `docs/locales/en/overview.md`
+- `docs/locales/ja/overview.md`
+- `docs/locales/zh-CN/overview.md`
+
+### Test-first Evidence
+
+- Red: required before implementation starts.
+- Green: required after implementation.
+- Refactor: optional, but must keep gates accurate.
+
+Rollback: Disable the historical ORB command, preserve local research evidence when needed, remove ignored local cache and report files only after review, and revert ISSUE-043 through a reviewed PR; no broker order or position side effect exists.

@@ -10,6 +10,17 @@ from datetime import datetime
 from pathlib import Path
 from typing import Sequence, TextIO
 
+from autotrade.backtest.historical import (
+    HISTORICAL_REPORT_SCHEMA_VERSION,
+    HistoricalCacheError,
+    HistoricalOrbBacktester,
+    HistoricalOrbReportWriter,
+    HistoricalOrbWalkForward,
+    OrbResearchParameters,
+    VerifiedHistoricalCsvLoader,
+    WalkForwardConfig,
+    default_orb_candidates,
+)
 from autotrade.core.models import Market, OrderIntent, OrderStyle, Side
 
 from autotrade.execution.kabu_station import (
@@ -94,6 +105,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
     if args.command == "moomoo-paper-order-reconcile":
         return _run_moomoo_paper_order_reconcile(
+            args,
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+        )
+    if args.command == "historical-orb-backtest":
+        return _run_historical_orb_backtest(
             args,
             stdout=sys.stdout,
             stderr=sys.stderr,
@@ -222,6 +239,20 @@ def _build_parser() -> argparse.ArgumentParser:
     reconcile.add_argument("--port", type=int, default=11111)
     reconcile.add_argument("--connect", action="store_true")
     reconcile.add_argument("--report-output", type=Path)
+    historical = subparsers.add_parser(
+        "historical-orb-backtest",
+        description="Validate a local historical cache or run ORB walk-forward research.",
+    )
+    historical.add_argument("--manifest", type=Path, required=True)
+    historical.add_argument("--run", action="store_true")
+    historical.add_argument("--report-output", type=Path)
+    historical.add_argument("--side-cost-bps", type=float, default=2.5)
+    historical.add_argument("--train-days", type=int, default=100)
+    historical.add_argument("--test-days", type=int, default=20)
+    historical.add_argument("--step-days", type=int, default=20)
+    historical.add_argument("--min-trades", type=int, default=20)
+    historical.add_argument("--min-train-sharpe", type=float, default=0.0)
+    historical.add_argument("--min-train-profit-factor", type=float, default=1.0)
     return parser
 
 
@@ -673,6 +704,92 @@ def _run_moomoo_paper_order_reconcile(
             print(f"error: {exc}", file=stderr)
             return 2
     return 0 if result.status == MoomooPaperOrderReconciliationStatus.UNIQUE else 1
+
+
+def _run_historical_orb_backtest(
+    args: argparse.Namespace,
+    *,
+    stdout: TextIO,
+    stderr: TextIO,
+) -> int:
+    try:
+        dataset = VerifiedHistoricalCsvLoader().read(args.manifest)
+        parameters = OrbResearchParameters(side_cost_bps=args.side_cost_bps)
+        walk_forward_config = WalkForwardConfig(
+            train_days=args.train_days,
+            test_days=args.test_days,
+            step_days=args.step_days,
+            min_trades=args.min_trades,
+            min_train_sharpe=args.min_train_sharpe,
+            min_train_profit_factor=args.min_train_profit_factor,
+        )
+    except (HistoricalCacheError, ValueError) as exc:
+        print(f"error: {exc}", file=stderr)
+        return 2
+
+    if not args.run:
+        if args.report_output is not None:
+            print("error: --report-output requires --run", file=stderr)
+            return 2
+        print(
+            json.dumps(
+                {
+                    "bar_count": len(dataset.bars),
+                    "bar_size": dataset.bar_size,
+                    "date_end": dataset.date_end.isoformat(),
+                    "date_start": dataset.date_start.isoformat(),
+                    "mode": "validate-only",
+                    "session": dataset.session,
+                    "symbols": list(dataset.symbols),
+                },
+                sort_keys=True,
+            ),
+            file=stdout,
+        )
+        return 0
+
+    baseline = HistoricalOrbBacktester().run(dataset.bars, parameters)
+    walk_forward = HistoricalOrbWalkForward().run(
+        dataset.bars,
+        default_orb_candidates(args.side_cost_bps),
+        walk_forward_config,
+    )
+    report = {
+        "schema_version": HISTORICAL_REPORT_SCHEMA_VERSION,
+        "mode": "completed",
+        "dataset": {
+            "bar_count": len(dataset.bars),
+            "bar_size": dataset.bar_size,
+            "date_end": dataset.date_end.isoformat(),
+            "date_start": dataset.date_start.isoformat(),
+            "session": dataset.session,
+            "sha256": dataset.sha256,
+            "symbols": list(dataset.symbols),
+        },
+        "baseline": baseline.to_dict(),
+        "walk_forward": walk_forward.to_dict(),
+    }
+    if args.report_output is not None:
+        try:
+            HistoricalOrbReportWriter().write(args.report_output, report)
+        except HistoricalCacheError as exc:
+            print(f"error: {exc}", file=stderr)
+            return 2
+    print(
+        json.dumps(
+            {
+                "fold_count": len(walk_forward.folds),
+                "metrics": report["baseline"]["metrics"],
+                "mode": "completed",
+                "report_output": (
+                    str(args.report_output) if args.report_output is not None else None
+                ),
+            },
+            sort_keys=True,
+        ),
+        file=stdout,
+    )
+    return 0
 
 
 if __name__ == "__main__":

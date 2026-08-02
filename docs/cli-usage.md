@@ -108,6 +108,25 @@ PYTHONPATH=src python3 -m unittest tests.test_moomoo_paper_reconcile
 PYTHONPATH=src python3 -m autotrade.backtest.demo
 ```
 
+Validate a trusted local historical cache without importing Moomoo or running a backtest:
+
+```bash
+PYTHONPATH=src python3 -m autotrade.cli historical-orb-backtest \
+  --manifest historical-data/moomoo-us-rth-5m-manifest.json
+```
+
+Run long-only ORB baseline and Walk-Forward research with create-only output:
+
+```bash
+PYTHONPATH=src python3 -m autotrade.cli historical-orb-backtest \
+  --manifest historical-data/moomoo-us-rth-5m-manifest.json \
+  --run --side-cost-bps 2.5 \
+  --min-train-sharpe 0 --min-train-profit-factor 1.0 \
+  --report-output historical-backtest-reports/orb-walk-forward.json
+```
+
+`--report-output` requires `--run`. Historical cache validation and research are offline and never load the Moomoo SDK or call a broker API.
+
 ## Strategy Tests
 
 ```bash
