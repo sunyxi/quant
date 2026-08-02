@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import json
 from dataclasses import asdict, dataclass
 from enum import StrEnum
+from pathlib import Path
+from typing import Mapping
 
 from autotrade.execution.moomoo import (
     MIN_MOOMOO_API_VERSION,
+    MoomooConfigurationError,
     MoomooEndpoint,
     MoomooPaperAccountPreflightResult,
     MoomooResponseError,
@@ -14,12 +18,17 @@ from autotrade.execution.moomoo import (
     is_moomoo_paper_preflight_successful,
     is_moomoo_version_at_least,
     is_moomoo_us_paper_account_eligible,
+    is_valid_moomoo_report_endpoint,
     moomoo_field,
     moomoo_records,
     normalize_moomoo_version,
     parse_moomoo_response_records,
+    write_moomoo_create_only_report,
 )
-from autotrade.execution.moomoo_paper_order import MoomooPaperOrderPlan
+from autotrade.execution.moomoo_paper_order import (
+    MoomooPaperOrderPlan,
+    is_valid_moomoo_client_order_id,
+)
 from autotrade.execution.moomoo_readiness import MoomooPaperReadinessDecision
 
 
@@ -57,6 +66,36 @@ class MoomooPaperOrderSubmissionResult:
         payload = asdict(self)
         payload["status"] = self.status.value
         return payload
+
+
+class MoomooPaperOrderSubmissionReportWriter:
+    def write(
+        self,
+        path: str | Path,
+        result: MoomooPaperOrderSubmissionResult,
+    ) -> Path:
+        return write_moomoo_create_only_report(
+            path,
+            result.to_dict(),
+            "paper-order submission",
+        )
+
+
+class MoomooPaperOrderSubmissionReportReader:
+    def read(self, path: str | Path) -> MoomooPaperOrderSubmissionResult:
+        try:
+            payload = json.loads(Path(path).read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            raise MoomooConfigurationError(
+                "could not read the Moomoo paper-order submission report"
+            ) from exc
+        required = set(MoomooPaperOrderSubmissionResult.__dataclass_fields__)
+        if not isinstance(payload, dict) or set(payload) != required:
+            raise MoomooConfigurationError(
+                "invalid Moomoo paper-order submission report fields"
+            )
+        payload["status"] = _validate_submission_report_payload(payload)
+        return MoomooPaperOrderSubmissionResult(**payload)
 
 
 @dataclass(frozen=True)
@@ -192,6 +231,16 @@ class MoomooPaperOrderSubmitter:
                 )
             state["status"] = MoomooPaperOrderSubmissionStatus.VERIFIED
             return MoomooPaperOrderSubmissionResult(**state)
+        except (OSError, MoomooResponseError):
+            if state.get("place_order_call_count") == 1:
+                state["status"] = MoomooPaperOrderSubmissionStatus.SUBMITTED
+                category = "verification"
+            else:
+                category = "connection"
+            return MoomooPaperOrderSubmissionResult(
+                **state,
+                sanitized_failure_category=category,
+            )
         except Exception:
             if state.get("place_order_call_count") == 1:
                 state["status"] = MoomooPaperOrderSubmissionStatus.SUBMITTED
@@ -238,3 +287,169 @@ class MoomooPaperOrderSubmitter:
             return "accepted" if moomoo_records(response[1]) else "unknown"
         except MoomooResponseError:
             return "unknown"
+
+
+def _validate_submission_report_payload(
+    payload: Mapping[str, object],
+) -> MoomooPaperOrderSubmissionStatus:
+    if (
+        type(payload["schema_version"]) is not int
+        or payload["schema_version"]
+        != MOOMOO_PAPER_ORDER_SUBMISSION_SCHEMA_VERSION
+    ):
+        raise MoomooConfigurationError(
+            "unsupported Moomoo paper-order submission report schema"
+        )
+    if not is_valid_moomoo_client_order_id(payload["client_order_id"]):
+        raise MoomooConfigurationError(
+            "invalid Moomoo paper-order submission report payload"
+        )
+    if not is_valid_moomoo_report_endpoint(payload["endpoint"]):
+        raise MoomooConfigurationError(
+            "invalid Moomoo paper-order submission report payload"
+        )
+    sdk_version = payload["sdk_version"]
+    if not isinstance(sdk_version, str) or (
+        sdk_version != "UNKNOWN"
+        and normalize_moomoo_version(sdk_version) != sdk_version
+    ):
+        raise MoomooConfigurationError(
+            "invalid Moomoo paper-order submission report payload"
+        )
+    try:
+        status = MoomooPaperOrderSubmissionStatus(payload["status"])
+    except (TypeError, ValueError) as exc:
+        raise MoomooConfigurationError(
+            "invalid Moomoo paper-order submission report status"
+        ) from exc
+    if payload["account_selection_status"] not in {
+        "not-run",
+        "blocked",
+        "unique",
+    } or payload["verification_query_status"] not in {"not-run", "ok"}:
+        raise MoomooConfigurationError(
+            "invalid Moomoo paper-order submission report payload"
+        )
+    count_fields = {
+        "readiness_schema_version",
+        "preflight_schema_version",
+        "plan_schema_version",
+        "eligible_account_count",
+        "verification_match_count",
+    }
+    if any(
+        type(payload[field]) is not int or payload[field] < 0
+        for field in count_fields
+    ):
+        raise MoomooConfigurationError(
+            "invalid Moomoo paper-order submission report payload"
+        )
+    place_order_call_count = payload["place_order_call_count"]
+    if (
+        type(place_order_call_count) is not int
+        or place_order_call_count not in {0, 1}
+    ):
+        raise MoomooConfigurationError(
+            "invalid Moomoo paper-order submission report payload"
+        )
+    if payload["refresh_cache"] is not _REFRESH_CACHE:
+        raise MoomooConfigurationError(
+            "invalid Moomoo paper-order submission report payload"
+        )
+    valid_failures = {
+        None,
+        "acknowledgement",
+        "readiness",
+        "preflight",
+        "plan",
+        "version",
+        "account",
+        "connection",
+        "dependency",
+        "submission",
+        "rejection",
+        "verification",
+    }
+    valid_state = _is_consistent_submission_report_state(payload, status)
+    if (
+        payload["sanitized_failure_category"] not in valid_failures
+        or not valid_state
+    ):
+        raise MoomooConfigurationError(
+            "invalid Moomoo paper-order submission report state"
+        )
+    return status
+
+
+def _is_consistent_submission_report_state(
+    payload: Mapping[str, object],
+    status: MoomooPaperOrderSubmissionStatus,
+) -> bool:
+    account_status = payload["account_selection_status"]
+    eligible_count = payload["eligible_account_count"]
+    place_calls = payload["place_order_call_count"]
+    query_status = payload["verification_query_status"]
+    match_count = payload["verification_match_count"]
+    failure = payload["sanitized_failure_category"]
+    no_verification = query_status == "not-run" and match_count == 0
+    account_ready = account_status == "unique" and eligible_count == 1
+
+    if status == MoomooPaperOrderSubmissionStatus.VERIFIED:
+        return (
+            account_ready
+            and place_calls == 1
+            and query_status == "ok"
+            and match_count == 1
+            and failure is None
+        )
+    if status == MoomooPaperOrderSubmissionStatus.REJECTED:
+        return (
+            account_ready
+            and place_calls == 1
+            and no_verification
+            and failure == "rejection"
+        )
+    if status == MoomooPaperOrderSubmissionStatus.UNKNOWN:
+        return (
+            account_ready
+            and place_calls == 1
+            and no_verification
+            and failure == "submission"
+        )
+    if status == MoomooPaperOrderSubmissionStatus.SUBMITTED:
+        return (
+            account_ready
+            and place_calls == 1
+            and failure == "verification"
+            and (no_verification or (query_status == "ok" and match_count != 1))
+        )
+    if failure == "account":
+        return (
+            account_status in {"not-run", "blocked"}
+            and (account_status != "not-run" or eligible_count == 0)
+            and place_calls == 0
+            and no_verification
+        )
+    if failure == "connection":
+        return (
+            account_status == "not-run"
+            and eligible_count == 0
+            and place_calls == 0
+            and no_verification
+        )
+    if failure == "dependency":
+        return account_ready and place_calls == 0 and no_verification
+    return (
+        failure
+        in {
+            "acknowledgement",
+            "readiness",
+            "preflight",
+            "plan",
+            "version",
+        }
+        and account_status == "not-run"
+        and eligible_count == 0
+        and place_calls == 0
+        and no_verification
+    )

@@ -46,6 +46,10 @@ Disable the ISSUE-040 reconciliation command and inspect every previously querie
 
 Disable ISSUE-041 `--report-output` first. Inspect every retained file under `moomoo-reconciliation-reports/` for sanitized schema version 1 fields, preserve any artifact needed by an incident review, and delete local reports only after approval. Revert the writer, reader, CLI option, and ignore rules through a reviewed PR. Report persistence is local and read-only, so it creates no broker order to cancel.
 
+## Moomoo Submission Report Rollback
+
+Disable ISSUE-042 submission `--report-output` first, but do not assume removing local persistence reverses a paper order. Preserve canary and incident artifacts, inspect the Moomoo paper account for every attempted client order ID, and resolve `unknown` or `submitted` outcomes before deleting reports under `moomoo-submission-reports/`. Revert the writer, reader, CLI option, and ignore rules only through a reviewed PR.
+
 ## Strategy Filter Rollback
 
 If market quality filters suppress expected research signals, remove `max_spread_bps` and `require_fresh_order_book` from strategy configuration first. If the issue is code-level behavior, revert the ISSUE-007 branch in a new PR.

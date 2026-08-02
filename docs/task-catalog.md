@@ -1949,3 +1949,60 @@ Rollback: Disable the reconciliation command and inspect the Moomoo paper accoun
 - Refactor: optional, but must keep gates accurate.
 
 Rollback: Disable report output, inspect retained reconciliation artifacts for sanitized fields, and delete local report files before reverting ISSUE-041 through a reviewed PR; report persistence creates no broker side effect.
+
+## ISSUE-042: Persist sanitized Moomoo paper-order submission evidence
+
+- Status: `complete`
+- Phase: `Phase 4`
+- Dependencies: ISSUE-041
+- Roadmap: see `docs/roadmap.md#phase-4`
+- Summary: Add deterministic create-only persistence and strict offline reading for sanitized Moomoo paper-order submission results so accepted, rejected, and uncertain canary outcomes survive process restart without retaining raw broker data.
+
+### Acceptance Criteria
+
+- A submission report writer persists schema version 1 result JSON deterministically, creates parent directories, and never overwrites any file or symlink.
+- A strict reader accepts only UTF-8 JSON with the exact schema version 1 field set and reconstructs the immutable submission result offline without loading the SDK or connecting to OpenD.
+- Validation rejects unknown schemas, fields, enums, endpoints, versions, client-order IDs, boolean counts, malformed JSON, and status, account-selection, submission-call, verification, refresh, or failure combinations the producer cannot emit.
+- Reports contain only the existing sanitized submission result and exclude account IDs, broker order IDs, symbols, prices, quantities, credentials, tokens, raw payloads, SDK objects, and exception text.
+- The CLI accepts --report-output only with all explicit paper-submission confirmation flags and persists only a result where place_order_call_count is exactly one, including rejected, unknown, submitted, and verified outcomes.
+- If submission is blocked before place_order, or persistence conflicts or fails, a requested report is not created and the CLI returns exit code 2 without a traceback or retry.
+- Submission report directories and matching filenames are ignored by Git.
+- Tests cover deterministic producer-state round trips, strict invalid-state rejection, create-only conflicts including dangling symlinks, filesystem failures, preview and pre-submit no-write behavior, uncertain post-call persistence, and no-SDK offline reading.
+- English, Japanese, Simplified Chinese, CLI, operations, limitations, rollback, feature documentation, implementation plan, ignore rules, and generated Task Catalog output are synchronized.
+
+### Gates
+
+- Python Unit Tests
+- Fixture Tests
+- Documentation Localization
+- Markdown Links/Style
+- Secret Scan
+- Task Catalog Generation
+
+### Changed Assets
+
+- `.gitignore`
+- `src/autotrade/cli.py`
+- `src/autotrade/execution/moomoo_paper_submit.py`
+- `tests/test_cli.py`
+- `tests/test_moomoo_paper_submit.py`
+- `tests/test_documentation_catalog.py`
+- `docs/task-source.json`
+- `docs/task-catalog.md`
+- `docs/moomoo-openapi.md`
+- `docs/implementation-plan.md`
+- `docs/cli-usage.md`
+- `docs/operations.md`
+- `docs/limitations.md`
+- `docs/rollback.md`
+- `docs/locales/en/overview.md`
+- `docs/locales/ja/overview.md`
+- `docs/locales/zh-CN/overview.md`
+
+### Test-first Evidence
+
+- Red: required before implementation starts.
+- Green: required after implementation.
+- Refactor: optional, but must keep gates accurate.
+
+Rollback: Disable submission report output, preserve any artifact needed for canary or incident review, inspect the paper account for every attempted client-order ID, and revert ISSUE-042 through a reviewed PR; removing local persistence does not cancel or reverse an earlier paper order.

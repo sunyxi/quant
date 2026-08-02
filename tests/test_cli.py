@@ -10,6 +10,7 @@ from unittest.mock import patch
 from autotrade.cli import main
 from autotrade.execution.kabu_station import KabuStationClientError
 from autotrade.execution.moomoo import (
+    MoomooClientError,
     MoomooDiscoveryReportWriter,
     MoomooDiscoveryResult,
     MoomooPaperAccountPreflightReportWriter,
@@ -18,7 +19,11 @@ from tests.test_moomoo_discovery import FakeSdk
 from tests.test_moomoo_readiness import ready_discovery
 from tests.test_moomoo_preflight import FakePreflightSdk
 from tests.test_moomoo_paper_reconcile import FakeReconcileSdk
-from tests.test_moomoo_paper_submit import FakeSubmitSdk, successful_preflight
+from tests.test_moomoo_paper_submit import (
+    FakeSubmitSdk,
+    RaisingSubmitContext,
+    successful_preflight,
+)
 
 
 class KabuStationCliTests(unittest.TestCase):
@@ -684,6 +689,148 @@ class MoomooPaperOrderSubmitCliTests(unittest.TestCase):
         self.assertEqual(0, exit_code)
         self.assertIn('"status": "verified"', stdout.getvalue())
         self.assertEqual(1, len(sdk.context.place_calls))
+
+    def test_preview_rejects_report_output_without_sdk_or_file(self) -> None:
+        stderr = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            discovery, preflight = self._reports(tmpdir)
+            output = Path(tmpdir) / "submission.json"
+            with patch(
+                "autotrade.cli.MoomooApiSdk.load",
+                side_effect=AssertionError("SDK loaded"),
+            ), redirect_stderr(stderr):
+                exit_code = main(
+                    self._args(discovery, preflight)
+                    + ["--report-output", str(output)]
+                )
+            self.assertFalse(output.exists())
+
+        self.assertEqual(2, exit_code)
+        self.assertIn("confirmation", stderr.getvalue())
+
+    def test_explicit_submission_writes_sanitized_report(self) -> None:
+        sdk = FakeSubmitSdk()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            discovery, preflight = self._reports(tmpdir)
+            output = Path(tmpdir) / "reports" / "submission.json"
+            with patch("autotrade.cli.MoomooApiSdk.load", return_value=sdk):
+                exit_code = main(
+                    self._args(discovery, preflight)
+                    + [
+                        "--connect",
+                        "--submit-paper-order",
+                        "--acknowledge-paper-order-side-effect",
+                        "--report-output",
+                        str(output),
+                    ]
+                )
+            report = output.read_text(encoding="utf-8")
+
+        self.assertEqual(0, exit_code)
+        self.assertIn('"status": "verified"', report)
+        self.assertNotIn("acc_id", report)
+        self.assertNotIn('"order_id":', report)
+
+    def test_uncertain_post_call_result_is_persisted_without_retry(self) -> None:
+        sdk = FakeSubmitSdk(RaisingSubmitContext())
+        with tempfile.TemporaryDirectory() as tmpdir:
+            discovery, preflight = self._reports(tmpdir)
+            output = Path(tmpdir) / "submission.json"
+            with patch("autotrade.cli.MoomooApiSdk.load", return_value=sdk):
+                exit_code = main(
+                    self._args(discovery, preflight)
+                    + [
+                        "--connect",
+                        "--submit-paper-order",
+                        "--acknowledge-paper-order-side-effect",
+                        "--report-output",
+                        str(output),
+                    ]
+                )
+            report = output.read_text(encoding="utf-8")
+
+        self.assertEqual(1, exit_code)
+        self.assertIn('"status": "unknown"', report)
+        self.assertEqual(1, len(sdk.context.place_calls))
+
+    def test_pre_submit_block_returns_two_and_creates_no_report(self) -> None:
+        stderr = io.StringIO()
+        sdk = FakeSubmitSdk()
+        sdk.version = "10.5"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            discovery, preflight = self._reports(tmpdir)
+            output = Path(tmpdir) / "submission.json"
+            with patch(
+                "autotrade.cli.MoomooApiSdk.load",
+                return_value=sdk,
+            ), redirect_stderr(stderr):
+                exit_code = main(
+                    self._args(discovery, preflight)
+                    + [
+                        "--connect",
+                        "--submit-paper-order",
+                        "--acknowledge-paper-order-side-effect",
+                        "--report-output",
+                        str(output),
+                    ]
+                )
+            self.assertFalse(output.exists())
+
+        self.assertEqual(2, exit_code)
+        self.assertIn("place_order", stderr.getvalue())
+
+    def test_sdk_load_failure_with_report_returns_two_and_writes_nothing(
+        self,
+    ) -> None:
+        stderr = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            discovery, preflight = self._reports(tmpdir)
+            output = Path(tmpdir) / "submission.json"
+            with patch(
+                "autotrade.cli.MoomooApiSdk.load",
+                side_effect=MoomooClientError("sensitive dependency failure"),
+            ), redirect_stderr(stderr):
+                exit_code = main(
+                    self._args(discovery, preflight)
+                    + [
+                        "--connect",
+                        "--submit-paper-order",
+                        "--acknowledge-paper-order-side-effect",
+                        "--report-output",
+                        str(output),
+                    ]
+                )
+            self.assertFalse(output.exists())
+
+        self.assertEqual(2, exit_code)
+        self.assertIn("dependency", stderr.getvalue())
+        self.assertNotIn("sensitive", stderr.getvalue())
+        self.assertNotIn("Traceback", stderr.getvalue())
+
+    def test_submission_report_conflict_returns_two_without_traceback(self) -> None:
+        stderr = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            discovery, preflight = self._reports(tmpdir)
+            output = Path(tmpdir) / "submission.json"
+            output.write_text("occupied", encoding="utf-8")
+            with patch(
+                "autotrade.cli.MoomooApiSdk.load",
+                return_value=FakeSubmitSdk(),
+            ), redirect_stderr(stderr):
+                exit_code = main(
+                    self._args(discovery, preflight)
+                    + [
+                        "--connect",
+                        "--submit-paper-order",
+                        "--acknowledge-paper-order-side-effect",
+                        "--report-output",
+                        str(output),
+                    ]
+                )
+
+        self.assertEqual(2, exit_code)
+        self.assertIn("already exists", stderr.getvalue())
+        self.assertNotIn("Traceback", stderr.getvalue())
 
 
 class MoomooPaperOrderReconcileCliTests(unittest.TestCase):

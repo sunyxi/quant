@@ -20,3 +20,5 @@ moomoo-preflight-reports/
 *moomoo-paper-account-preflight-report*.json
 moomoo-reconciliation-reports/
 *moomoo-paper-order-reconciliation-report*.json
+moomoo-submission-reports/
+*moomoo-paper-order-submission-report*.json

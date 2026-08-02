@@ -1,12 +1,17 @@
 from __future__ import annotations
 
 import inspect
+import json
+import tempfile
 import unittest
 from dataclasses import FrozenInstanceError, replace
+from pathlib import Path
+from unittest.mock import patch
 
 from autotrade.execution import moomoo_paper_submit
 from autotrade.execution.moomoo import (
     MIN_MOOMOO_API_VERSION,
+    MoomooConfigurationError,
     MoomooEndpoint,
     MoomooPaperAccountPreflightResult,
     MoomooQuoteContext,
@@ -14,6 +19,8 @@ from autotrade.execution.moomoo import (
 from autotrade.execution.moomoo_paper_order import MoomooPaperOrderDryRunPlanner
 from autotrade.execution.moomoo_paper_submit import (
     MoomooPaperOrderSubmitter,
+    MoomooPaperOrderSubmissionReportReader,
+    MoomooPaperOrderSubmissionReportWriter,
     MoomooPaperOrderSubmissionStatus,
 )
 from tests.test_moomoo_paper_order import order_intent, ready_decision
@@ -83,6 +90,11 @@ class RaisingSubmitContext(FakeSubmitContext):
     def place_order(self, **kwargs) -> tuple[int, object]:
         self.place_calls.append(kwargs)
         raise TimeoutError("sensitive uncertain submission")
+
+
+class RaisingAccountListContext(FakeSubmitContext):
+    def get_acc_list(self) -> tuple[int, object]:
+        raise ConnectionError("sensitive account-list network failure")
 
 
 class FakeSubmitSdk:
@@ -368,6 +380,25 @@ class MoomooPaperOrderSubmitterTests(unittest.TestCase):
         self.assertTrue(context.closed)
         self.assertNotIn("sensitive", str(result.to_dict()))
 
+    def test_account_list_network_failure_has_distinct_sanitized_category(
+        self,
+    ) -> None:
+        result = MoomooPaperOrderSubmitter(
+            endpoint=MoomooEndpoint(),
+            sdk=FakeSubmitSdk(RaisingAccountListContext()),
+        ).submit(
+            paper_plan(),
+            readiness=ready_decision(),
+            preflight=successful_preflight(),
+            acknowledged=True,
+        )
+
+        self.assertEqual(MoomooPaperOrderSubmissionStatus.BLOCKED, result.status)
+        self.assertEqual("connection", result.sanitized_failure_category)
+        self.assertEqual("not-run", result.account_selection_status)
+        self.assertEqual(0, result.place_order_call_count)
+        self.assertNotIn("sensitive", str(result.to_dict()))
+
     def test_success_status_with_empty_payload_is_unknown(self) -> None:
         context = FakeSubmitContext()
         context.place_response = (0, [])
@@ -415,6 +446,116 @@ class MoomooPaperOrderSubmitterTests(unittest.TestCase):
             "retry",
         ]:
             self.assertNotIn(forbidden, source)
+
+
+class MoomooPaperOrderSubmissionReportTests(unittest.TestCase):
+    @staticmethod
+    def _result(context: FakeSubmitContext | None = None):
+        return MoomooPaperOrderSubmitter(
+            endpoint=MoomooEndpoint(),
+            sdk=FakeSubmitSdk(context),
+        ).submit(
+            paper_plan(),
+            readiness=ready_decision(),
+            preflight=successful_preflight(),
+            acknowledged=True,
+        )
+
+    def test_deterministic_create_only_round_trip_for_producer_states(self) -> None:
+        rejected = FakeSubmitContext()
+        rejected.place_response = (1, "sensitive rejection")
+        submitted = FakeSubmitContext()
+        submitted.orders_response = (0, [{"remark": "different-order"}])
+        results = [
+            self._result(),
+            self._result(rejected),
+            self._result(RaisingSubmitContext()),
+            self._result(submitted),
+            self._result(RaisingAccountListContext()),
+        ]
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            for index, result in enumerate(results):
+                path = Path(tmpdir) / "nested" / f"submission-{index}.json"
+                written = MoomooPaperOrderSubmissionReportWriter().write(
+                    path,
+                    result,
+                )
+                content = path.read_text(encoding="utf-8")
+                with self.subTest(status=result.status):
+                    self.assertEqual(path, written)
+                    with patch(
+                        "autotrade.execution.moomoo.MoomooApiSdk.load",
+                        side_effect=AssertionError("SDK loaded"),
+                    ):
+                        self.assertEqual(
+                            result,
+                            MoomooPaperOrderSubmissionReportReader().read(path),
+                        )
+                    self.assertEqual(
+                        json.dumps(result.to_dict(), sort_keys=True) + "\n",
+                        content,
+                    )
+                    self.assertNotIn("acc_id", content)
+                    self.assertNotIn('"order_id":', content)
+
+                with self.assertRaises(MoomooConfigurationError):
+                    MoomooPaperOrderSubmissionReportWriter().write(path, result)
+
+    def test_reader_rejects_invalid_schema_shape_types_and_state(self) -> None:
+        valid = self._result().to_dict()
+        cases = [
+            {**valid, "schema_version": 2},
+            {**valid, "unexpected": True},
+            {key: value for key, value in valid.items() if key != "status"},
+            {**valid, "status": "filled"},
+            {**valid, "endpoint": "broker.example:11111"},
+            {**valid, "sdk_version": "10.5"},
+            {**valid, "client_order_id": "bad"},
+            {**valid, "place_order_call_count": True},
+            {**valid, "refresh_cache": False},
+            {**valid, "status": "blocked"},
+            {**valid, "status": "rejected"},
+            {**valid, "status": "unknown"},
+            {**valid, "status": "submitted"},
+        ]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            for index, payload in enumerate(cases):
+                path = Path(tmpdir) / f"invalid-{index}.json"
+                path.write_text(json.dumps(payload), encoding="utf-8")
+                with self.subTest(index=index), self.assertRaises(
+                    MoomooConfigurationError
+                ):
+                    MoomooPaperOrderSubmissionReportReader().read(path)
+
+            malformed = Path(tmpdir) / "malformed.json"
+            malformed.write_text("{", encoding="utf-8")
+            with self.assertRaises(MoomooConfigurationError):
+                MoomooPaperOrderSubmissionReportReader().read(malformed)
+
+    def test_writer_rejects_dangling_symlink_and_sanitizes_write_failure(
+        self,
+    ) -> None:
+        result = self._result()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            symlink = Path(tmpdir) / "submission.json"
+            symlink.symlink_to(Path(tmpdir) / "missing.json")
+            with self.assertRaisesRegex(
+                MoomooConfigurationError,
+                "already exists",
+            ):
+                MoomooPaperOrderSubmissionReportWriter().write(symlink, result)
+
+            parent_file = Path(tmpdir) / "not-a-directory"
+            parent_file.write_text("occupied", encoding="utf-8")
+            with self.assertRaisesRegex(
+                MoomooConfigurationError,
+                "could not write",
+            ):
+                MoomooPaperOrderSubmissionReportWriter().write(
+                    parent_file / "submission.json",
+                    result,
+                )
 
 
 if __name__ == "__main__":

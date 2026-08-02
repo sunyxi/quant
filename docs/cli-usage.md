@@ -58,6 +58,14 @@ PYTHONPATH=src python3 -m autotrade.cli moomoo-paper-order-submit --discovery-re
 
 Submission is disabled unless `--connect`, `--submit-paper-order`, and `--acknowledge-paper-order-side-effect` are all present. Do not add these flags until the exact paper canary has separate operator approval. Exit `0` requires fresh verification by client-order remark. Exit `1`, `submitted`, or `unknown` requires manual account inspection and must never be retried automatically.
 
+After separate approval of the concrete canary, persist its sanitized post-attempt submission report:
+
+```bash
+PYTHONPATH=src python3 -m autotrade.cli moomoo-paper-order-submit --discovery-report moomoo-discovery-reports/moomoo-readonly-discovery-report.json --preflight-report moomoo-preflight-reports/moomoo-paper-account-preflight-report.json --client-order-id paper-canary-001 --strategy-id us_paper_validation --code US.AAPL --quantity 1 --limit-price 100.00 --stop-price 95.00 --created-at 2026-08-01T14:30:00+00:00 --connect --submit-paper-order --acknowledge-paper-order-side-effect --report-output moomoo-submission-reports/moomoo-paper-order-submission-report.json
+```
+
+`--report-output` requires all three confirmation flags and does not provide approval by itself. The create-only schema version 1 writer runs only when `place_order_call_count` is exactly one, including `rejected`, `unknown`, `submitted`, and `verified`. A pre-submit block, conflict, or write failure creates no report and returns exit code `2`. The strict reader validates retained evidence offline without OpenD or the SDK.
+
 Validate Moomoo paper-order reconciliation inputs without loading the SDK:
 
 ```bash

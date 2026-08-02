@@ -18,6 +18,8 @@ ISSUE-040 新增只读 `moomoo-paper-order-reconcile` 边界。它只执行一�
 
 ISSUE-041 新增 create-only 的 schema version 1 对账报告，用于持久保存 canary 和 incident 证据。严格 reader 可在没有 OpenD 或 SDK 时离线验证。报告只包含脱敏结果字段，不覆盖已有文件，并保存在 Git 忽略的本地路径中。如果订单列表查询未完成，指定的报告会以 exit code `2` 明确失败。
 
+ISSUE-042 在一次经过批准的 paper `place_order` 尝试后生成 create-only 的 schema version 1 submission report。它不保存订单参数或券商标识，只保留脱敏的不确定结果供离线审查。账户选择前的网络故障保留为 `connection`，提交尝试后的故障则保留为 `verification`。提交前被阻断时不创建报告，报告持久化也不会批准或重试 canary。
+
 当前日历层已覆盖日股普通交易时段、午休、周末过滤、手工假日和收盘前停止新开仓 cutoff，用于研究和回测过滤。
 
 当前板情报层已覆盖不可变订单簿快照、价差、可见深度、OBI、microprice、数据新鲜度和 stale book health，用于研究 fixture。

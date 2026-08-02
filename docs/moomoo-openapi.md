@@ -138,6 +138,22 @@ The service reselects exactly one eligible simulated account, calls `place_order
 
 The command has no `REAL`, SELL, market, extended-hours, option, JP, unlock, modify, cancel, or subscription path. Successful fake-SDK validation does not authorize a real OpenD canary; that requires separate approval.
 
+ISSUE-042 adds a create-only schema version 1 submission report for a separately approved canary. The option is invalid unless all existing confirmation flags are present, and the writer runs only after `place_order_call_count` is exactly one:
+
+```bash
+mkdir -p moomoo-submission-reports
+PYTHONPATH=src python3 -m autotrade.cli moomoo-paper-order-submit \
+  --discovery-report moomoo-discovery-reports/moomoo-readonly-discovery-report.json \
+  --preflight-report moomoo-preflight-reports/moomoo-paper-account-preflight-report.json \
+  --client-order-id paper-canary-001 --strategy-id us_paper_validation \
+  --code US.AAPL --quantity 1 --limit-price 100.00 --stop-price 95.00 \
+  --created-at 2026-08-01T14:30:00+00:00 \
+  --connect --submit-paper-order --acknowledge-paper-order-side-effect \
+  --report-output moomoo-submission-reports/moomoo-paper-order-submission-report.json
+```
+
+The report preserves sanitized `rejected`, `unknown`, `submitted`, or `verified` evidence and excludes account IDs, broker order IDs, symbols, prices, quantities, credentials, raw payloads, and exception text. Its strict reader works offline without OpenD or the SDK and rejects fields or state combinations the producer cannot emit. A network or response failure before account selection is classified as `connection`; the same class of failure after a submission attempt remains `verification`. The writer creates parent directories and never overwrites a file or symlink. A blocked pre-submit result, path conflict, or filesystem failure returns exit code `2` and creates no report. Report persistence does not approve a canary, retry an order, or add another broker request.
+
 ## Read-only Paper-order Reconciliation
 
 ISSUE-040 adds `moomoo-paper-order-reconcile`. Its default validate-only mode checks retained discovery and preflight evidence plus the client order ID without loading the SDK:
